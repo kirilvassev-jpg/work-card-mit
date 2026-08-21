@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Работна карта — МиТ</title>
+    <style>
+        :root {
+            --primary: #1a5276;
+            --primary-light: #2980b9;
+            --accent: #e67e22;
+            --success: #27ae60;
+            --danger: #c0392b;
+            --bg: #f5f6fa;
+            --card: #ffffff;
+            --text: #2c3e50;
+            --text-muted: #7f8c8d;
+            --border: #dce1e8;
+            --radius: 10px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            padding-bottom: 100px;
+        }
+
+        /* Header */
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 16px 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .header h1 { font-size: 18px; font-weight: 600; letter-spacing: 0.5px; }
+        .header .subtitle { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+
+        /* Offline banner */
+        .offline-banner {
+            display: none;
+            background: var(--danger);
+            color: white;
+            text-align: center;
+            padding: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .offline-banner.show { display: block; }
+
+        /* Form sections */
+        .form-container { max-width: 600px; margin: 0 auto; padding: 12px; }
+
+        .section {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-light);
+        }
+
+        /* Form fields */
+        .field { margin-bottom: 14px; }
+        .field:last-child { margin-bottom: 0; }
+        .field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+        .field label .required { color: var(--danger); margin-left: 2px; }
+
+        select, input[type="text"], input[type="date"], input[type="number"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 15px;
+            color: var(--text);
+            background: white;
+            -webkit-appearance: none;
+            appearance: none;
+            transition: border-color 0.2s;
+        }
+        select { background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237f8c8d' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center; padding-right: 36px; }
+        select:focus, input:focus { outline: none; border-color: var(--primary-light); box-shadow: 0 0 0 3px rgba(41,128,185,0.12); }
+
+        /* Radio group */
+        .radio-group { display: flex; flex-direction: column; gap: 8px; }
+        .radio-option {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border: 1.5px solid var(--border);
+            border-radius: 8px; cursor: pointer; transition: all 0.2s;
+        }
+        .radio-option:has(input:checked) { border-color: var(--primary-light); background: rgba(41,128,185,0.06); }
+        .radio-option input[type="radio"] { width: 18px; height: 18px; accent-color: var(--primary); }
+        .radio-option span { font-size: 14px; font-weight: 500; }
+
+        /* Checkbox grid */
+        .checkbox-grid { display: flex; flex-direction: column; gap: 6px; }
+        .checkbox-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 12px; border: 1px solid var(--border);
+            border-radius: 8px; cursor: pointer; transition: all 0.2s;
+        }
+        .checkbox-item:has(input:checked) { border-color: var(--accent); background: rgba(230,126,34,0.06); }
+        .checkbox-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); flex-shrink: 0; }
+        .checkbox-item span { font-size: 14px; }
+
+        /* Toggle */
+        .toggle-group { display: flex; gap: 8px; }
+        .toggle-btn {
+            flex: 1; padding: 10px; border: 1.5px solid var(--border);
+            border-radius: 8px; background: white; font-size: 14px;
+            font-weight: 600; cursor: pointer; text-align: center; transition: all 0.2s;
+        }
+        .toggle-btn.active-yes { border-color: var(--success); background: rgba(39,174,96,0.08); color: var(--success); }
+        .toggle-btn.active-no { border-color: var(--danger); background: rgba(192,57,43,0.08); color: var(--danger); }
+
+        /* Material category */
+        .material-category {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .material-category:last-child { margin-bottom: 0; }
+        .material-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 12px; background: #f8f9fb; cursor: pointer;
+            font-size: 14px; font-weight: 600; color: var(--text);
+        }
+        .material-header .arrow { transition: transform 0.2s; font-size: 12px; color: var(--text-muted); }
+        .material-header .arrow.open { transform: rotate(180deg); }
+        .material-body { padding: 10px 12px; display: none; }
+        .material-body.open { display: block; }
+        .material-qty {
+            display: flex; align-items: center; gap: 8px;
+            margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+        }
+        .material-qty label { font-size: 13px; white-space: nowrap; margin-bottom: 0; }
+        .material-qty input { width: 100px; }
+        .material-qty .unit { font-size: 13px; color: var(--text-muted); }
+
+        /* Hidden sections */
+        .conditional { display: none; }
+        .conditional.visible { display: block; }
+
+        /* Submit */
+        .submit-btn {
+            display: block; width: 100%; padding: 14px;
+            background: var(--success); color: white; border: none;
+            border-radius: var(--radius); font-size: 16px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px;
+        }
+        .submit-btn:active { transform: scale(0.98); }
+        .submit-btn:disabled { background: #bdc3c7; cursor: not-allowed; }
+
+        /* Status messages */
+        .status {
+            text-align: center; padding: 12px; border-radius: var(--radius);
+            margin-bottom: 12px; font-size: 14px; font-weight: 500; display: none;
+        }
+        .status.success { display: block; background: rgba(39,174,96,0.1); color: var(--success); }
+        .status.error { display: block; background: rgba(192,57,43,0.1); color: var(--danger); }
+
+        /* Loading spinner */
+        .loading { display: none; text-align: center; padding: 40px; }
+        .loading.show { display: block; }
+        .spinner {
+            width: 36px; height: 36px; border: 3px solid var(--border);
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 0.8s linear infinite; margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Validation */
+        .field.invalid select, .field.invalid input { border-color: var(--danger); }
+        .field .error-msg { color: var(--danger); font-size: 12px; margin-top: 4px; display: none; }
+        .field.invalid .error-msg { display: block; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>РАБОТНА КАРТА</h1>
+</div>
+
+<div id="offlineBanner" class="offline-banner">⚠ Няма интернет връзка. Опитай по-късно.</div>
+
+<div id="loading" class="loading show">
+    <div class="spinner"></div>
+    <div style="color:var(--text-muted);font-size:14px;">Зареждане...</div>
+</div>
+
+<div id="statusMsg" class="status"></div>
+
+<form id="workCardForm" class="form-container" style="display:none;" onsubmit="return false;">
+
+    <!-- ОСНОВНИ ДАННИ -->
+    <div class="section">
+        <div class="section-title">Основни данни</div>
+
+        <div class="field" id="fMechanic">
+            <label>Механик <span class="required">*</span></label>
+            <select id="mechanic"><option value="">— Избери —</option></select>
+            <div class="error-msg">Избери механик</div>
+        </div>
+
+        <div class="field" id="fDate">
+            <label>Дата <span class="required">*</span></label>
+            <input type="date" id="workDate">
+            <div class="error-msg">Въведи дата</div>
+        </div>
+
+        <div class="field" id="fVehicle">
+            <label>Автомобил / Бус / Машина <span class="required">*</span></label>
+            <input type="text" id="vehicle" placeholder="напр. JCB 3CX, Iveco Daily...">
+            <div class="error-msg">Въведи автомобил или машина</div>
+        </div>
+
+        <div class="field" id="fRegNumber">
+            <label>рег № / сер № / Инв № <span class="required">*</span></label>
+            <input type="text" id="regNumber" placeholder="напр. СА 1234 ВХ, SER-5678...">
+            <div class="error-msg">Въведи номер</div>
+        </div>
+
+        <div class="field">
+            <label>km / м.ч.</label>
+            <input type="text" id="kmHours" placeholder="напр. 12500 km или 3200 м.ч.">
+        </div>
+
+        <div class="field" id="fClient">
+            <label>Клиент: Име, Фамилия <span class="required">*</span></label>
+            <input type="text" id="client" placeholder="напр. Иван Иванов">
+            <div class="error-msg">Въведи клиент</div>
+        </div>
+    </div>
+
+    <!-- ВИД ДЕЙНОСТ -->
+    <div class="section">
+        <div class="section-title">Вид дейност</div>
+        <div class="field" id="fActivity">
+            <div id="activityTypes" class="radio-group"></div>
+            <div class="error-msg">Избери вид дейност</div>
+        </div>
+    </div>
+
+    <!-- ОБСЛУЖВАНЕ (условна секция) -->
+    <div id="sectionServices" class="section conditional">
+        <div class="section-title">Обслужване — Филтри</div>
+        <div id="servicesList" class="checkbox-grid"></div>
+    </div>
+
+    <!-- РЕМОНТ (условна секция) -->
+    <div id="sectionRepair" class="section conditional">
+        <div class="section-title">Ремонт</div>
+        <div class="field">
+            <label>Ремонтна система</label>
+            <div id="repairSystemsList" class="checkbox-grid"></div>
+        </div>
+        <div class="field" style="margin-top:14px;">
+            <label>Вид ремонт</label>
+            <select id="repairType"><option value="">— Избери —</option></select>
+        </div>
+    </div>
+
+    <!-- ВЛОЖЕНИ МАТЕРИАЛИ -->
+    <div class="section">
+        <div class="section-title">Вложени материали</div>
+        <div class="field">
+            <div class="toggle-group">
+                <button type="button" class="toggle-btn" onclick="toggleMaterials(true)">Да</button>
+                <button type="button" class="toggle-btn" onclick="toggleMaterials(false)">Не</button>
+            </div>
+        </div>
+        <div id="materialsSection" class="conditional">
+            <!-- Масло -->
+            <div class="material-category" data-cat="oil">
+                <div class="material-header" onclick="toggleCategory(this)">
+                    <span>🛢 Масло</span>
+                    <span class="arrow">▼</span>
+                </div>
+                <div class="material-body">
+                    <div id="oilsList" class="checkbox-grid"></div>
+                    <div class="material-qty">
+                        <label>Количество:</label>
+                        <input type="number" id="oilQty" step="0.1" min="0" placeholder="0">
+                        <span class="unit">литри</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Антифриз -->
+            <div class="material-category" data-cat="antifreeze">
+                <div class="material-header" onclick="toggleCategory(this)">
+                    <span>💧 Антифриз</span>
+                    <span class="arrow">▼</span>
+                </div>
+                <div class="material-body">
+                    <div id="antifreezesList" class="checkbox-grid"></div>
+                    <div class="material-qty">
+                        <label>Количество:</label>
+                        <input type="number" id="antifreezeQty" step="0.1" min="0" placeholder="0">
+                        <span class="unit">литри</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Крушки -->
+            <div class="material-category" data-cat="bulb">
+                <div class="material-header" onclick="toggleCategory(this)">
+                    <span>💡 Крушки</span>
+                    <span class="arrow">▼</span>
+                </div>
+                <div class="material-body">
+                    <div id="bulbsList" class="checkbox-grid"></div>
+                    <div class="material-qty">
+                        <label>Количество:</label>
+                        <input type="number" id="bulbQty" step="1" min="0" placeholder="0">
+                        <span class="unit">брой</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Бързи връзки -->
+            <div class="material-category" data-cat="quick_coupling">
+                <div class="material-header" onclick="toggleCategory(this)">
+                    <span>🔩 Бързи връзки</span>
+                    <span class="arrow">▼</span>
+                </div>
+                <div class="material-body">
+                    <div id="quickCouplingsList" class="checkbox-grid"></div>
+                    <div class="material-qty">
+                        <label>Количество:</label>
+                        <input type="number" id="couplingQty" step="1" min="0" placeholder="0">
+                        <span class="unit">брой</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Зъби -->
+            <div class="material-category" data-cat="teeth">
+                <div class="material-header" onclick="toggleCategory(this)">
+                    <span>⚙ Зъби</span>
+                    <span class="arrow">▼</span>
+                </div>
+                <div class="material-body">
+                    <div id="teethList" class="checkbox-grid"></div>
+                    <div class="material-qty">
+                        <label>Количество:</label>
+                        <input type="number" id="teethQty" step="1" min="0" placeholder="0">
+                        <span class="unit">брой</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ВРЕМЕ ЗА РАБОТА -->
+    <div class="section">
+        <div class="section-title">Време за работа</div>
+        <div class="field" id="fWorkHours">
+            <label>Човекочасове <span class="required">*</span></label>
+            <input type="number" id="workHours" step="0.5" min="0" placeholder="напр. 2.5">
+            <div class="error-msg">Въведи време за работа</div>
+        </div>
+    </div>
+
+    <!-- БУТОН -->
+    <button type="button" class="submit-btn" id="submitBtn" onclick="submitForm()">
+        Запиши работна карта
+    </button>
+</form>
+
+<script>
+// ============================================
+// КОНФИГУРАЦИЯ — ЗАМЕНИ С ТВОИТЕ СТОЙНОСТИ
+// ============================================
+const SUPABASE_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_aMxRatJ2BJxE5vQIhffing_8_zMpBDO';
+
+// ============================================
+// SUPABASE HELPERS
+// ============================================
+async function supabaseGet(table, query = '') {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
+        headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        }
+    });
+    if (!res.ok) throw new Error(`GET ${table}: ${res.status}`);
+    return res.json();
+}
+
+async function supabaseInsert(table, data) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+        method: 'POST',
+        headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`POST ${table}: ${res.status} — ${err}`);
+    }
+    return res.json();
+}
+
+// ============================================
+// НОМЕНКЛАТУРИ — ЗАРЕЖДАНЕ
+// ============================================
+let nomenclatures = {};
+
+async function loadNomenclatures() {
+    try {
+        const data = await supabaseGet('nomenclatures', 'is_active=eq.true&order=sort_order');
+        nomenclatures = {};
+        data.forEach(item => {
+            if (!nomenclatures[item.group_name]) nomenclatures[item.group_name] = [];
+            nomenclatures[item.group_name].push(item);
+        });
+        buildForm();
+        document.getElementById('loading').classList.remove('show');
+        document.getElementById('workCardForm').style.display = 'block';
+    } catch (e) {
+        console.error('Грешка при зареждане:', e);
+        document.getElementById('loading').innerHTML =
+            '<div style="color:var(--danger);font-size:14px;">Грешка при зареждане. Провери интернет връзката.</div>';
+    }
+}
+
+// ============================================
+// ИЗГРАЖДАНЕ НА ФОРМАТА
+// ============================================
+function buildForm() {
+    // Механици
+    const mechSelect = document.getElementById('mechanic');
+    (nomenclatures.mechanics || []).forEach(m => {
+        mechSelect.innerHTML += `<option value="${m.value}">${m.label}</option>`;
+    });
+
+    // Дата — днес по подразбиране
+    document.getElementById('workDate').value = new Date().toISOString().split('T')[0];
+
+    // Вид дейност
+    const actDiv = document.getElementById('activityTypes');
+    (nomenclatures.activity_types || []).forEach(a => {
+        actDiv.innerHTML += `
+            <label class="radio-option">
+                <input type="radio" name="activityType" value="${a.value}" onchange="onActivityChange('${a.value}')">
+                <span>${a.label}</span>
+            </label>`;
+    });
+
+    // Обслужване — филтри
+    const servDiv = document.getElementById('servicesList');
+    (nomenclatures.services || []).forEach(s => {
+        servDiv.innerHTML += `
+            <label class="checkbox-item">
+                <input type="checkbox" name="services" value="${s.value}">
+                <span>${s.label}</span>
+            </label>`;
+    });
+
+    // Ремонтни системи
+    const repSysDiv = document.getElementById('repairSystemsList');
+    (nomenclatures.repair_systems || []).forEach(r => {
+        repSysDiv.innerHTML += `
+            <label class="checkbox-item">
+                <input type="checkbox" name="repairSystems" value="${r.value}">
+                <span>${r.label}</span>
+            </label>`;
+    });
+
+    // Вид ремонт dropdown
+    const repTypeSelect = document.getElementById('repairType');
+    (nomenclatures.repair_types || []).forEach(r => {
+        repTypeSelect.innerHTML += `<option value="${r.value}">${r.label}</option>`;
+    });
+
+    // Материали
+    buildCheckboxes('oilsList', nomenclatures.oils || [], 'oils');
+    buildCheckboxes('antifreezesList', nomenclatures.antifreezes || [], 'antifreezes');
+    buildCheckboxes('bulbsList', nomenclatures.bulbs || [], 'bulbs');
+    buildCheckboxes('quickCouplingsList', nomenclatures.quick_couplings || [], 'quick_couplings');
+    buildCheckboxes('teethList', nomenclatures.teeth || [], 'teeth');
+}
+
+function buildCheckboxes(containerId, items, groupName) {
+    const container = document.getElementById(containerId);
+    items.forEach(item => {
+        container.innerHTML += `
+            <label class="checkbox-item">
+                <input type="checkbox" name="${groupName}" value="${item.value}">
+                <span>${item.label}</span>
+            </label>`;
+    });
+}
+
+// ============================================
+// УСЛОВНИ СЕКЦИИ
+// ============================================
+function onActivityChange(value) {
+    const servSection = document.getElementById('sectionServices');
+    const repSection = document.getElementById('sectionRepair');
+
+    servSection.classList.toggle('visible', value === 'ОБСЛУЖВАНЕ');
+    repSection.classList.toggle('visible', value === 'РЕМОНТ' || value === 'ГАРАНЦИОНЕН РЕМОНТ');
+}
+
+let hasMaterials = false;
+function toggleMaterials(yes) {
+    hasMaterials = yes;
+    const btns = document.querySelectorAll('.toggle-btn');
+    btns[0].className = 'toggle-btn' + (yes ? ' active-yes' : '');
+    btns[1].className = 'toggle-btn' + (!yes ? ' active-no' : '');
+    document.getElementById('materialsSection').classList.toggle('visible', yes);
+}
+
+function toggleCategory(header) {
+    const body = header.nextElementSibling;
+    const arrow = header.querySelector('.arrow');
+    body.classList.toggle('open');
+    arrow.classList.toggle('open');
+}
+
+// ============================================
+// ВАЛИДАЦИЯ
+// ============================================
+function validate() {
+    let valid = true;
+    const checks = [
+        { id: 'fMechanic', test: () => document.getElementById('mechanic').value !== '' },
+        { id: 'fDate', test: () => document.getElementById('workDate').value !== '' },
+        { id: 'fVehicle', test: () => document.getElementById('vehicle').value.trim() !== '' },
+        { id: 'fRegNumber', test: () => document.getElementById('regNumber').value.trim() !== '' },
+        { id: 'fClient', test: () => document.getElementById('client').value.trim() !== '' },
+        { id: 'fActivity', test: () => document.querySelector('input[name="activityType"]:checked') !== null },
+        { id: 'fWorkHours', test: () => document.getElementById('workHours').value !== '' },
+    ];
+
+    checks.forEach(c => {
+        const el = document.getElementById(c.id);
+        if (!c.test()) { el.classList.add('invalid'); valid = false; }
+        else { el.classList.remove('invalid'); }
+    });
+
+    if (!valid) {
+        const first = document.querySelector('.field.invalid');
+        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return valid;
+}
+
+// ============================================
+// СЪБИРАНЕ НА ДАННИ
+// ============================================
+function getCheckedValues(name) {
+    return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
+}
+
+function collectMaterials() {
+    const materials = [];
+    const cats = [
+        { name: 'oils', category: 'oil', qtyId: 'oilQty', unit: 'литри' },
+        { name: 'antifreezes', category: 'antifreeze', qtyId: 'antifreezeQty', unit: 'литри' },
+        { name: 'bulbs', category: 'bulb', qtyId: 'bulbQty', unit: 'брой' },
+        { name: 'quick_couplings', category: 'quick_coupling', qtyId: 'couplingQty', unit: 'брой' },
+        { name: 'teeth', category: 'teeth', qtyId: 'teethQty', unit: 'брой' },
+    ];
+
+    cats.forEach(cat => {
+        const selected = getCheckedValues(cat.name);
+        if (selected.length > 0) {
+            const qty = parseFloat(document.getElementById(cat.qtyId).value) || 0;
+            materials.push({
+                category: cat.category,
+                item_type: selected.join(', '),
+                quantity: qty,
+                unit: cat.unit
+            });
+        }
+    });
+    return materials;
+}
+
+// ============================================
+// ИЗПРАЩАНЕ
+// ============================================
+async function submitForm() {
+    if (!navigator.onLine) {
+        showStatus('Няма интернет връзка. Опитай по-късно.', 'error');
+        return;
+    }
+
+    if (!validate()) return;
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Записване...';
+
+    try {
+        const activityType = document.querySelector('input[name="activityType"]:checked').value;
+
+        const cardData = {
+            mechanic: document.getElementById('mechanic').value,
+            work_date: document.getElementById('workDate').value,
+            vehicle: document.getElementById('vehicle').value.trim(),
+            reg_number: document.getElementById('regNumber').value.trim(),
+            km_hours: document.getElementById('kmHours').value.trim() || null,
+            client: document.getElementById('client').value.trim(),
+            activity_type: activityType,
+            services: activityType === 'ОБСЛУЖВАНЕ' ? getCheckedValues('services') : [],
+            repair_systems: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? getCheckedValues('repairSystems') : [],
+            repair_type: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? document.getElementById('repairType').value || null : null,
+            has_materials: hasMaterials,
+            work_hours: parseFloat(document.getElementById('workHours').value)
+        };
+
+        // Записваме работната карта
+        const result = await supabaseInsert('work_cards', cardData);
+        const cardId = result[0].id;
+
+        // Записваме материалите
+        if (hasMaterials) {
+            const materials = collectMaterials();
+            if (materials.length > 0) {
+                const matData = materials.map(m => ({ ...m, work_card_id: cardId }));
+                await supabaseInsert('work_card_materials', matData);
+            }
+        }
+
+        showStatus('✓ Работната карта е записана успешно!', 'success');
+        resetForm();
+    } catch (e) {
+        console.error('Грешка при запис:', e);
+        showStatus('Грешка при запис: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Запиши работна карта';
+    }
+}
+
+// ============================================
+// ПОМОЩНИ ФУНКЦИИ
+// ============================================
+function showStatus(msg, type) {
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    el.className = 'status ' + type;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (type === 'success') setTimeout(() => { el.className = 'status'; }, 5000);
+}
+
+function resetForm() {
+    // Запазваме механика и датата
+    const mech = document.getElementById('mechanic').value;
+    const date = document.getElementById('workDate').value;
+
+    document.querySelectorAll('input[type="text"], input[type="number"]').forEach(i => i.value = '');
+    document.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(i => i.checked = false);
+    document.getElementById('mechanic').value = mech;
+    document.getElementById('workDate').value = date;
+
+    // Скриваме условните секции
+    document.getElementById('sectionServices').classList.remove('visible');
+    document.getElementById('sectionRepair').classList.remove('visible');
+    toggleMaterials(false);
+
+    // Затваряме отворените категории материали
+    document.querySelectorAll('.material-body').forEach(b => b.classList.remove('open'));
+    document.querySelectorAll('.material-header .arrow').forEach(a => a.classList.remove('open'));
+
+    // Скролваме нагоре
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Offline detection
+window.addEventListener('online', () => document.getElementById('offlineBanner').classList.remove('show'));
+window.addEventListener('offline', () => document.getElementById('offlineBanner').classList.add('show'));
+
+// Инициализация
+document.addEventListener('DOMContentLoaded', loadNomenclatures);
+</script>
+
+</body>
+</html>
