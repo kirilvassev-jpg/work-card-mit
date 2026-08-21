@@ -216,6 +216,7 @@ const SUPABASE_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_aMxRatJ2BJxE5vQIhffing_8_zMpBDO';
 
 let allCards = [];
+let allMaterials = [];
 
 async function supabaseGet(table, query = '') {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
@@ -245,6 +246,31 @@ function setDefaultDates() {
     document.getElementById('filterTo').value = now.toISOString().split('T')[0];
 }
 
+// Format date DD.MM.YYYY
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+}
+
+// Format datetime
+function formatDateTime(dtStr) {
+    if (!dtStr) return '';
+    const d = new Date(dtStr);
+    return `${formatDate(dtStr)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+// Get materials for a card
+function getMaterialsForCard(cardId) {
+    const mats = allMaterials.filter(m => m.work_card_id === cardId);
+    const result = {};
+    const catNames = { oil: 'Масло', antifreeze: 'Антифриз', bulb: 'Крушки', quick_coupling: 'Бързи връзки', teeth: 'Зъби' };
+    mats.forEach(m => {
+        result[catNames[m.category] || m.category] = `${m.item_type} (${m.quantity} ${m.unit})`;
+    });
+    return result;
+}
+
 // Load cards with filters
 async function loadCards() {
     const loading = document.getElementById('loading');
@@ -271,12 +297,21 @@ async function loadCards() {
         if (from) query += `&work_date=gte.${from}`;
         if (to) query += `&work_date=lte.${to}`;
 
-        const data = await supabaseGet('v_work_cards_export', query);
+        // Query work_cards table directly
+        const data = await supabaseGet('work_cards', query);
 
-        // Client-side vehicle/reg filter (partial match)
+        // Load materials for all cards
+        if (data.length > 0) {
+            const ids = data.map(c => c.id);
+            allMaterials = await supabaseGet('work_card_materials', `work_card_id=in.(${ids.join(',')})`);
+        } else {
+            allMaterials = [];
+        }
+
+        // Client-side vehicle/reg filter
         allCards = vehicle
-            ? data.filter(c => (c['Автомобил/Бус/Машина'] || '').toLowerCase().includes(vehicle.toLowerCase()) ||
-                               (c['рег№/сер№/Инв№'] || '').toLowerCase().includes(vehicle.toLowerCase()))
+            ? data.filter(c => (c.vehicle || '').toLowerCase().includes(vehicle.toLowerCase()) ||
+                               (c.reg_number || '').toLowerCase().includes(vehicle.toLowerCase()))
             : data;
 
         updateStats(allCards);
@@ -292,10 +327,10 @@ async function loadCards() {
 
 function updateStats(cards) {
     document.getElementById('statTotal').textContent = cards.length;
-    const totalHours = cards.reduce((sum, c) => sum + (parseFloat(c['Време (чч)']) || 0), 0);
+    const totalHours = cards.reduce((sum, c) => sum + (parseFloat(c.work_hours) || 0), 0);
     document.getElementById('statHours').textContent = totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
-    document.getElementById('statService').textContent = cards.filter(c => c['Вид дейност'] === 'ОБСЛУЖВАНЕ').length;
-    document.getElementById('statRepair').textContent = cards.filter(c => c['Вид дейност'] === 'РЕМОНТ' || c['Вид дейност'] === 'ГАРАНЦИОНЕН РЕМОНТ').length;
+    document.getElementById('statService').textContent = cards.filter(c => c.activity_type === 'ОБСЛУЖВАНЕ').length;
+    document.getElementById('statRepair').textContent = cards.filter(c => c.activity_type === 'РЕМОНТ' || c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ').length;
 }
 
 function renderCards(cards) {
@@ -308,45 +343,47 @@ function renderCards(cards) {
     }
 
     cardsList.innerHTML = cards.map((c, i) => {
-        const typeClass = c['Вид дейност'] === 'РЕМОНТ' ? 'type-repair' :
-                          c['Вид дейност'] === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'type-warranty' : '';
+        const typeClass = c.activity_type === 'РЕМОНТ' ? 'type-repair' :
+                          c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'type-warranty' : '';
 
-        const activityBadge = c['Вид дейност'] === 'ОБСЛУЖВАНЕ'
+        const activityBadge = c.activity_type === 'ОБСЛУЖВАНЕ'
             ? '<span class="badge badge-service">Обслужване</span>'
-            : c['Вид дейност'] === 'ГАРАНЦИОНЕН РЕМОНТ'
+            : c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ'
             ? '<span class="badge badge-warranty">Гаранционен</span>'
             : '<span class="badge badge-repair">Ремонт</span>';
 
-        const materialsBadge = c['Вложени материали'] === 'Да'
+        const materialsBadge = c.has_materials
             ? '<span class="badge badge-materials">Материали</span>' : '';
 
-        const hoursBadge = c['Време (чч)']
-            ? `<span class="badge badge-hours">${c['Време (чч)']} чч</span>` : '';
+        const hoursBadge = c.work_hours
+            ? `<span class="badge badge-hours">${c.work_hours} чч</span>` : '';
+
+        const mats = getMaterialsForCard(c.id);
 
         // Build details
         let details = '';
         const addDetail = (label, val) => { if (val) details += `<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-value">${val}</span></div>`; };
 
-        addDetail('Клиент', c['Клиент']);
-        addDetail('km / м.ч.', c['km/м.ч.']);
-        addDetail('Обслужване', c['Обслужване']);
-        addDetail('Ремонтни системи', c['Ремонтни системи']);
-        addDetail('Вид ремонт', c['Вид ремонт']);
-        addDetail('Масло', c['Масло']);
-        addDetail('Антифриз', c['Антифриз']);
-        addDetail('Крушки', c['Крушки']);
-        addDetail('Бързи връзки', c['Бързи връзки']);
-        addDetail('Зъби', c['Зъби']);
-        addDetail('Записано', c['Записано на']);
+        addDetail('Клиент', c.client);
+        addDetail('km / м.ч.', c.km_hours);
+        if (c.services && c.services.length > 0) addDetail('Обслужване', c.services.join(', '));
+        if (c.repair_systems && c.repair_systems.length > 0) addDetail('Ремонтни системи', c.repair_systems.join(', '));
+        addDetail('Вид ремонт', c.repair_type);
+        addDetail('Масло', mats['Масло']);
+        addDetail('Антифриз', mats['Антифриз']);
+        addDetail('Крушки', mats['Крушки']);
+        addDetail('Бързи връзки', mats['Бързи връзки']);
+        addDetail('Зъби', mats['Зъби']);
+        addDetail('Записано', formatDateTime(c.created_at));
 
         return `
         <div class="work-card ${typeClass}" onclick="toggleDetails(${i})">
             <div class="card-top">
-                <div class="card-mechanic">${c['Механик']}</div>
-                <div class="card-date">${c['Дата']}</div>
+                <div class="card-mechanic">${c.mechanic}</div>
+                <div class="card-date">${formatDate(c.work_date)}</div>
             </div>
-            <div class="card-vehicle">${c['Автомобил/Бус/Машина']}</div>
-            <div class="card-reg">${c['рег№/сер№/Инв№']}</div>
+            <div class="card-vehicle">${c.vehicle}</div>
+            <div class="card-reg">${c.reg_number}</div>
             <div class="card-badges">${activityBadge}${materialsBadge}${hoursBadge}</div>
             <div class="card-details" id="details-${i}">${details}</div>
         </div>`;
@@ -374,13 +411,32 @@ function exportExcel() {
         'Вид дейност','Обслужване','Ремонтни системи','Вид ремонт','Вложени материали',
         'Масло','Антифриз','Крушки','Бързи връзки','Зъби','Време (чч)','Записано на'];
 
-    const csvContent = '\uFEFF' + // UTF-8 BOM
+    const csvContent = '\uFEFF' +
         headers.join(';') + '\n' +
-        allCards.map(c => headers.map(h => {
-            let val = c[h] || '';
-            val = String(val).replace(/"/g, '""');
-            return `"${val}"`;
-        }).join(';')).join('\n');
+        allCards.map(c => {
+            const mats = getMaterialsForCard(c.id);
+            const row = [
+                c.mechanic,
+                formatDate(c.work_date),
+                c.vehicle,
+                c.reg_number,
+                c.km_hours || '',
+                c.client,
+                c.activity_type,
+                (c.services || []).join(', '),
+                (c.repair_systems || []).join(', '),
+                c.repair_type || '',
+                c.has_materials ? 'Да' : 'Не',
+                mats['Масло'] || '',
+                mats['Антифриз'] || '',
+                mats['Крушки'] || '',
+                mats['Бързи връзки'] || '',
+                mats['Зъби'] || '',
+                c.work_hours || '',
+                formatDateTime(c.created_at)
+            ];
+            return row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';');
+        }).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
