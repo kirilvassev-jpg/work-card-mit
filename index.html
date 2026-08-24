@@ -4,588 +4,255 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Работна карта — МиТ</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #0b2a52;
-            --primary-2: #1f7ae0;
-            --primary-3: #1bb1a8;
-            --bg: #edf4ff;
-            --bg-2: #f6f8ff;
-            --card: rgba(255, 255, 255, 0.74);
-            --card-strong: #ffffff;
-            --text: #18314f;
-            --text-muted: #6080a5;
-            --border: rgba(17, 52, 88, 0.1);
-            --shadow: 0 14px 30px rgba(18, 42, 74, 0.12);
-            --success: #1bbf76;
-            --success-soft: rgba(27, 191, 118, 0.12);
-            --danger: #ef5b5b;
-            --danger-soft: rgba(239, 91, 91, 0.1);
-            --blue: #2a7de1;
-            --green: #30b783;
-            --orange: #f39a39;
-            --red: #ea5d57;
-            --purple: #7c6cf7;
-            --navy: #153b68;
-            --radius: 20px;
+            --primary: #334155;
+            --primary-light: #4a6fa5;
+            --primary-gradient: linear-gradient(135deg, #1e293b 0%, #334155 50%, #4a6fa5 100%);
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-purple: #8b5cf6;
+            --accent-teal: #14b8a6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-lg: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(77, 139, 252, 0.18), transparent 28%),
-                radial-gradient(circle at top right, rgba(24, 195, 164, 0.12), transparent 25%),
-                linear-gradient(180deg, #edf4ff 0%, #f7f9fe 100%);
-            color: var(--text);
-            line-height: 1.6;
-            font-size: 16px;
-            padding-bottom: 92px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg); color: var(--text); line-height: 1.5;
+            padding-bottom: 80px;
         }
 
-        a { text-decoration: none; }
-
+        /* Header */
         .header {
-            background: linear-gradient(135deg, #071f3d 0%, #123c66 35%, #1d8eb0 100%);
-            color: white;
-            padding: 18px 20px 22px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 10px 25px rgba(14, 38, 67, 0.22);
-            backdrop-filter: blur(10px);
+            background: var(--primary-gradient);
+            color: white; padding: 20px 20px 16px;
+            text-align: center; position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 4px 20px rgba(30,41,59,0.3);
         }
+        .header-top { display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .header-icon { font-size: 24px; }
+        .header h1 { font-size: 20px; font-weight: 700; letter-spacing: 1px; }
 
-        .header-wrap {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            max-width: 720px;
-            margin: 0 auto;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .brand-icon {
-            width: 42px;
-            height: 42px;
-            display: grid;
-            place-items: center;
-            border-radius: 14px;
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.18);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
-            font-size: 22px;
-        }
-
-        .brand-title {
-            font-size: 1.05rem;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-        }
-
-        .brand-subtitle {
-            font-size: 0.68rem;
-            opacity: 0.76;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-
-        .nav-links {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 12px;
-            max-width: 720px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .nav-links a {
-            color: rgba(255,255,255,0.82);
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.18);
-            border-radius: 999px;
-            padding: 7px 14px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            transition: all 0.25s ease;
-        }
-
-        .nav-links a.active,
-        .nav-links a:hover {
-            color: white;
-            background: rgba(255,255,255,0.16);
-            box-shadow: 0 8px 18px rgba(14, 38, 67, 0.18);
-        }
-
+        /* Offline banner */
         .offline-banner {
-            display: none;
-            background: linear-gradient(135deg, #f1574b, #d73434);
-            color: white;
-            text-align: center;
-            padding: 10px 14px;
-            font-size: 0.79rem;
-            font-weight: 700;
-            letter-spacing: 0.02em;
+            display: none; background: linear-gradient(135deg, #dc2626, #ef4444);
+            color: white; text-align: center; padding: 10px; font-size: 13px; font-weight: 600;
+            animation: slideDown 0.3s ease;
         }
-
         .offline-banner.show { display: block; }
+        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
 
-        .form-container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 14px 12px 24px;
+        /* Bottom nav */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; border-top: 1px solid var(--border);
+            display: flex; z-index: 100;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.06);
         }
+        .bottom-nav a {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            padding: 8px 0 10px; text-decoration: none; font-size: 11px;
+            font-weight: 600; color: var(--text-muted); transition: all 0.2s;
+        }
+        .bottom-nav a.active { color: var(--accent-blue); }
+        .bottom-nav a .nav-icon { font-size: 20px; margin-bottom: 2px; }
+        .bottom-nav a.active::after {
+            content: ''; display: block; width: 24px; height: 3px;
+            background: var(--accent-blue); border-radius: 2px; margin-top: 2px;
+        }
+
+        /* Form */
+        .form-container { max-width: 600px; margin: 0 auto; padding: 12px; }
 
         .section {
-            position: relative;
-            background: rgba(255,255,255,0.68);
-            border: 1px solid rgba(17,52,88,0.08);
-            border-left: 5px solid var(--blue);
-            border-radius: var(--radius);
-            padding: 18px 16px 16px;
-            margin-bottom: 14px;
-            box-shadow: var(--shadow);
-            backdrop-filter: blur(12px);
-            overflow: hidden;
+            background: var(--card); border-radius: var(--radius);
+            padding: 16px; margin-bottom: 12px;
+            box-shadow: var(--shadow); border-left: 4px solid var(--border);
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: fadeInUp 0.4s ease backwards;
         }
+        .section:nth-child(1) { border-left-color: var(--accent-blue); animation-delay: 0.05s; }
+        .section:nth-child(2) { border-left-color: var(--accent-green); animation-delay: 0.1s; }
+        .section:nth-child(3) { border-left-color: var(--accent-orange); animation-delay: 0.15s; }
+        .section:nth-child(4) { border-left-color: var(--accent-red); animation-delay: 0.15s; }
+        .section:nth-child(5) { border-left-color: var(--accent-purple); animation-delay: 0.2s; }
+        .section:nth-child(6) { border-left-color: var(--accent-teal); animation-delay: 0.25s; }
 
-        .section:nth-of-type(1) { --section-accent: var(--blue); border-left-color: var(--blue); }
-        .section:nth-of-type(2) { --section-accent: var(--green); border-left-color: var(--green); }
-        .section:nth-of-type(3) { --section-accent: var(--orange); border-left-color: var(--orange); }
-        .section:nth-of-type(4) { --section-accent: var(--red); border-left-color: var(--red); }
-        .section:nth-of-type(5) { --section-accent: var(--purple); border-left-color: var(--purple); }
-        .section:nth-of-type(6) { --section-accent: var(--navy); border-left-color: var(--navy); }
-
-        #sectionServices { border-left-color: var(--orange); }
-        #sectionRepair { border-left-color: var(--red); }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
         .section-title {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.77rem;
-            font-weight: 800;
-            color: var(--text);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-bottom: 14px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(17,52,88,0.08);
+            font-size: 13px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; margin-bottom: 14px;
+            padding-bottom: 8px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 8px;
         }
+        .section-title .icon { font-size: 16px; }
+        .section:nth-child(1) .section-title { color: var(--accent-blue); }
+        .section:nth-child(2) .section-title { color: var(--accent-green); }
+        .section:nth-child(3) .section-title { color: var(--accent-orange); }
+        .section:nth-child(4) .section-title { color: var(--accent-red); }
+        .section:nth-child(5) .section-title { color: var(--accent-purple); }
+        .section:nth-child(6) .section-title { color: var(--accent-teal); }
 
-        .section-title::before {
-            content: attr(data-icon);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-            border-radius: 8px;
-            background: color-mix(in srgb, var(--section-accent) 14%, white);
-            color: var(--section-accent);
-            box-shadow: inset 0 0 0 1px rgba(17,52,88,0.04);
-        }
-
+        /* Fields */
         .field { margin-bottom: 14px; }
         .field:last-child { margin-bottom: 0; }
-
-        .field label {
-            display: block;
-            font-size: 0.78rem;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 7px;
-        }
-
+        .field label { display: block; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 5px; }
         .field label .required { color: var(--danger); margin-left: 2px; }
 
         select, input[type="text"], input[type="date"], input[type="number"] {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1.5px solid rgba(17,52,88,0.12);
-            border-radius: 12px;
-            font-size: 0.98rem;
-            color: var(--text);
-            background: rgba(255,255,255,0.85);
-            appearance: none;
-            -webkit-appearance: none;
-            transition: all 0.2s ease;
-        }
-
-        select {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236080a5' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 14px center;
-            padding-right: 38px;
-        }
-
-        select:focus, input:focus {
-            outline: none;
-            border-color: var(--section-accent, var(--primary-2));
-            box-shadow: 0 0 0 4px color-mix(in srgb, var(--section-accent, var(--primary-2)) 16%, transparent);
-            background-color: white;
-        }
-
-        .radio-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .radio-option {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 14px;
-            border: 1.5px solid rgba(17,52,88,0.12);
-            border-radius: 14px;
-            cursor: pointer;
-            background: rgba(255, 255, 255, 0.65);
-            transition: all 0.22s ease;
-            box-shadow: 0 2px 8px rgba(18,42,74,0.04);
-        }
-
-        .radio-option[data-type="ОБСЛУЖВАНЕ"] { --radio-color: var(--green); }
-        .radio-option[data-type="РЕМОНТ"] { --radio-color: var(--red); }
-        .radio-option[data-type="ГАРАНЦИОНЕН РЕМОНТ"] { --radio-color: var(--orange); }
-
-        .radio-option:has(input:checked) {
-            border-color: var(--radio-color, var(--blue));
-            background: color-mix(in srgb, var(--radio-color, var(--blue)) 10%, white);
-            box-shadow: 0 10px 18px color-mix(in srgb, var(--radio-color, var(--blue)) 14%, transparent);
-        }
-
-        .radio-option input[type="radio"] {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--radio-color, var(--blue));
-            flex-shrink: 0;
-        }
-
-        .radio-option span {
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: var(--text);
-        }
-
-        .checkbox-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            border: 1.5px solid rgba(17,52,88,0.12);
-            border-radius: 12px;
-            cursor: pointer;
-            background: rgba(255,255,255,0.55);
-            transition: all 0.18s ease;
-        }
-
-        .checkbox-item:has(input:checked) {
-            border-color: var(--section-accent, var(--blue));
-            background: color-mix(in srgb, var(--section-accent, var(--blue)) 10%, white);
-        }
-
-        .checkbox-item input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--section-accent, var(--blue));
-            flex-shrink: 0;
-        }
-
-        .checkbox-item span {
-            font-size: 0.88rem;
-            color: var(--text);
-        }
-
-        .toggle-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            padding: 6px;
-            background: rgba(148, 163, 184, 0.12);
-            border-radius: 999px;
-            border: 1px solid rgba(17,52,88,0.08);
-        }
-
-        .toggle-btn {
-            position: relative;
-            flex: 1;
-            padding: 11px 10px;
-            border: none;
-            border-radius: 999px;
-            background: transparent;
-            color: var(--text-muted);
-            font-size: 0.92rem;
-            font-weight: 800;
-            cursor: pointer;
+            width: 100%; padding: 11px 14px; border: 1.5px solid var(--border);
+            border-radius: 10px; font-size: 15px; color: var(--text); background: #f8fafc;
             transition: all 0.25s ease;
         }
+        select { background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 14px center; padding-right: 36px; -webkit-appearance: none; appearance: none; }
+        select:focus, input:focus {
+            outline: none; border-color: var(--accent-blue); background: white;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+        }
 
+        /* Radio - activity type cards */
+        .radio-group { display: flex; flex-direction: column; gap: 8px; }
+        .radio-option {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 14px; border: 1.5px solid var(--border);
+            border-radius: 10px; cursor: pointer; transition: all 0.25s ease;
+            background: #f8fafc;
+        }
+        .radio-option:hover { border-color: var(--accent-blue); background: white; }
+        .radio-option:has(input:checked) {
+            border-color: var(--accent-blue); background: rgba(59,130,246,0.06);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        .radio-option input[type="radio"] { width: 18px; height: 18px; accent-color: var(--accent-blue); }
+        .radio-option span { font-size: 14px; font-weight: 600; }
+
+        /* Checkboxes */
+        .checkbox-grid { display: flex; flex-direction: column; gap: 6px; }
+        .checkbox-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 12px; border: 1px solid var(--border);
+            border-radius: 8px; cursor: pointer; transition: all 0.2s; background: #f8fafc;
+        }
+        .checkbox-item:has(input:checked) {
+            border-color: var(--accent-orange); background: rgba(245,158,11,0.06);
+        }
+        .checkbox-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent-orange); flex-shrink: 0; }
+        .checkbox-item span { font-size: 14px; }
+
+        /* Toggle switch */
+        .toggle-group { display: flex; gap: 8px; }
+        .toggle-btn {
+            flex: 1; padding: 11px; border: 1.5px solid var(--border);
+            border-radius: 10px; background: #f8fafc; font-size: 14px;
+            font-weight: 700; cursor: pointer; text-align: center;
+            transition: all 0.3s ease;
+        }
         .toggle-btn.active-yes {
-            background: linear-gradient(135deg, rgba(27,191,118,0.2), rgba(27,191,118,0.08));
-            color: var(--success);
-            box-shadow: 0 8px 20px rgba(27, 191, 118, 0.16);
+            border-color: var(--success); background: rgba(16,185,129,0.08);
+            color: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.1);
         }
-
         .toggle-btn.active-no {
-            background: linear-gradient(135deg, rgba(239,91,91,0.18), rgba(239,91,91,0.08));
-            color: var(--danger);
-            box-shadow: 0 8px 20px rgba(239, 91, 91, 0.12);
+            border-color: var(--danger); background: rgba(239,68,68,0.06);
+            color: var(--danger); box-shadow: 0 0 0 3px rgba(239,68,68,0.08);
         }
 
-        .material-category {
-            border: 1px solid rgba(17,52,88,0.08);
-            border-radius: 14px;
-            margin-bottom: 10px;
-            overflow: hidden;
-            background: rgba(255,255,255,0.42);
-            box-shadow: 0 8px 18px rgba(12,24,42,0.04);
-        }
-
+        /* Material categories */
+        .material-category { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
         .material-category:last-child { margin-bottom: 0; }
-
         .material-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 14px;
-            background: linear-gradient(135deg, rgba(124,108,247,0.06), rgba(50,127,255,0.05));
-            cursor: pointer;
-            font-size: 0.92rem;
-            font-weight: 800;
-            color: var(--text);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 14px; background: #f8fafc; cursor: pointer;
+            font-size: 14px; font-weight: 600; color: var(--text);
+            transition: background 0.2s;
         }
-
-        .material-header .arrow {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            background: rgba(17,52,88,0.06);
-            transition: transform 0.25s ease;
-            color: var(--text-muted);
-        }
-
+        .material-header:hover { background: #f1f5f9; }
+        .material-header .mat-icon { font-size: 18px; margin-right: 8px; }
+        .material-header .arrow { transition: transform 0.3s ease; font-size: 12px; color: var(--text-muted); }
         .material-header .arrow.open { transform: rotate(180deg); }
-
-        .material-body {
-            display: none;
-            padding: 12px 12px 10px;
-            animation: fadeInUp 0.2s ease;
-        }
-
+        .material-body { padding: 12px 14px; display: none; animation: fadeIn 0.3s ease; }
         .material-body.open { display: block; }
-
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .material-qty {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid rgba(17,52,88,0.08);
+            display: flex; align-items: center; gap: 8px;
+            margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
         }
+        .material-qty label { font-size: 13px; white-space: nowrap; margin-bottom: 0; }
+        .material-qty input { width: 100px; }
+        .material-qty .unit { font-size: 13px; color: var(--text-muted); }
 
-        .material-qty label {
-            font-size: 0.8rem;
-            font-weight: 700;
-            white-space: nowrap;
-            margin-bottom: 0;
-        }
-
-        .material-qty input {
-            width: 104px;
-        }
-
-        .material-qty .unit {
-            font-size: 0.72rem;
-            color: var(--text-muted);
-            text-transform: lowercase;
-        }
-
+        /* Conditional */
         .conditional { display: none; }
         .conditional.visible { display: block; }
 
+        /* Submit button */
+        .submit-section { padding: 0 12px; max-width: 600px; margin: 0 auto; animation: fadeInUp 0.4s ease 0.3s backwards; }
         .submit-btn {
-            position: sticky;
-            bottom: 84px;
-            display: block;
-            width: 100%;
-            padding: 15px 18px;
-            background: linear-gradient(135deg, #1bbf76 0%, #1ea878 100%);
-            color: white;
-            border: none;
-            border-radius: 16px;
-            font-size: 1rem;
-            font-weight: 800;
-            cursor: pointer;
-            letter-spacing: 0.04em;
-            box-shadow: 0 12px 26px rgba(27,191,118,0.28);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            overflow: hidden;
+            display: block; width: 100%; padding: 15px;
+            background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+            color: white; border: none; border-radius: var(--radius);
+            font-size: 16px; font-weight: 700; cursor: pointer;
+            letter-spacing: 0.5px; transition: all 0.3s ease;
+            box-shadow: 0 4px 14px rgba(59,130,246,0.35);
+            position: relative; overflow: hidden;
         }
-
-        .submit-btn:hover { box-shadow: 0 16px 30px rgba(27,191,118,0.32); }
+        .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.4); }
         .submit-btn:active { transform: scale(0.98); }
-        .submit-btn:disabled { background: linear-gradient(135deg, #b4bcc9, #9aa6b5); box-shadow: none; cursor: not-allowed; }
-
+        .submit-btn:disabled { background: #94a3b8; box-shadow: none; cursor: not-allowed; transform: none; }
         .submit-btn::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.35) 50%, transparent 80%);
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
             transform: translateX(-100%);
-            animation: shimmer 2.4s linear infinite;
         }
+        .submit-btn:not(:disabled):hover::after { transform: translateX(100%); transition: transform 0.6s ease; }
 
+        /* Status */
         .status {
-            text-align: center;
-            padding: 14px 12px;
-            border-radius: 14px;
-            margin: 0 12px 12px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            display: none;
-            box-shadow: 0 6px 18px rgba(13,39,75,0.08);
+            text-align: center; padding: 14px; border-radius: var(--radius);
+            margin: 0 12px 12px; max-width: 600px; font-size: 14px; font-weight: 600;
+            display: none; animation: fadeInUp 0.3s ease;
         }
+        .status.success { display: block; background: rgba(16,185,129,0.1); color: var(--success); border: 1px solid rgba(16,185,129,0.2); }
+        .status.error { display: block; background: rgba(239,68,68,0.08); color: var(--danger); border: 1px solid rgba(239,68,68,0.15); }
 
-        .status.success {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            background: var(--success-soft);
-            color: var(--success);
-            border: 1px solid rgba(27,191,118,0.18);
-        }
-
-        .status.error {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            background: var(--danger-soft);
-            color: var(--danger);
-            border: 1px solid rgba(239,91,91,0.14);
-        }
-
-        .status.success::before {
-            content: "✓";
-            width: 22px;
-            height: 22px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: white;
-            box-shadow: 0 4px 10px rgba(27,191,118,0.15);
-            animation: popIn 0.25s ease;
-        }
-
-        .status.error::before {
-            content: "!";
-            width: 22px;
-            height: 22px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: white;
-            box-shadow: 0 4px 10px rgba(239,91,91,0.12);
-        }
-
-        .loading {
-            display: none;
-            padding: 34px 18px 18px;
-            text-align: center;
-        }
-
+        /* Loading */
+        .loading { display: none; text-align: center; padding: 50px; }
         .loading.show { display: block; }
-
-        .skeleton-box {
-            width: min(100%, 540px);
-            height: 240px;
-            margin: 0 auto 18px;
-            border-radius: 20px;
-            background: linear-gradient(90deg, rgba(17,52,88,0.06), rgba(255,255,255,0.9), rgba(17,52,88,0.06));
-            background-size: 200% 100%;
-            animation: skeleton 1.2s ease-in-out infinite;
-            box-shadow: 0 10px 18px rgba(15, 35, 59, 0.05);
+        .spinner {
+            width: 40px; height: 40px; border: 3px solid var(--border);
+            border-top-color: var(--accent-blue); border-radius: 50%;
+            animation: spin 0.8s linear infinite; margin: 0 auto 14px;
         }
-
-        .loading-label {
-            font-size: 0.82rem;
-            color: var(--text-muted);
-            letter-spacing: 0.04em;
-        }
-
-        .field.invalid select, .field.invalid input {
-            border-color: var(--danger);
-            box-shadow: 0 0 0 4px rgba(239,91,91,0.08);
-        }
-
-        .field .error-msg {
-            color: var(--danger);
-            font-size: 0.72rem;
-            margin-top: 5px;
-            display: none;
-        }
-
-        .field.invalid .error-msg { display: block; }
-
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes shimmer { 100% { transform: translateX(100%); } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes popIn { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        @keyframes skeleton {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
 
-        @media (min-width: 720px) {
-            .header {
-                padding-top: 22px;
-                padding-bottom: 26px;
-            }
-
-            .nav-links {
-                margin-top: 14px;
-            }
-        }
+        /* Validation */
+        .field.invalid select, .field.invalid input { border-color: var(--danger); background: rgba(239,68,68,0.03); }
+        .field .error-msg { color: var(--danger); font-size: 12px; margin-top: 4px; display: none; }
+        .field.invalid .error-msg { display: block; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <div class="header-wrap">
-        <div class="brand">
-            <div class="brand-icon">🛠️</div>
-            <div>
-                <div class="brand-title">РАБОТНА КАРТА</div>
-                <div class="brand-subtitle">MiT • механик</div>
-            </div>
-        </div>
-    </div>
-    <div class="nav-links">
-        <a href="index.html" class="active">Нова карта</a>
-        <a href="history.html">Преглед</a>
+    <div class="header-top">
+        <span class="header-icon">🔧</span>
+        <h1>РАБОТНА КАРТА</h1>
     </div>
 </div>
 
@@ -600,39 +267,32 @@
 
 <form id="workCardForm" class="form-container" style="display:none;" onsubmit="return false;">
 
-    <!-- ОСНОВНИ ДАННИ -->
-    <div class="section" data-accent="blue">
-        <div class="section-title" data-icon="📋">Основни данни</div>
-
+    <div class="section">
+        <div class="section-title"><span class="icon">📋</span> Основни данни</div>
         <div class="field" id="fMechanic">
             <label>Механик <span class="required">*</span></label>
             <select id="mechanic"><option value="">— Избери —</option></select>
             <div class="error-msg">Избери механик</div>
         </div>
-
         <div class="field" id="fDate">
             <label>Дата <span class="required">*</span></label>
             <input type="date" id="workDate">
             <div class="error-msg">Въведи дата</div>
         </div>
-
         <div class="field" id="fVehicle">
             <label>Автомобил / Бус / Машина <span class="required">*</span></label>
             <input type="text" id="vehicle" placeholder="напр. JCB 3CX, Iveco Daily...">
             <div class="error-msg">Въведи автомобил или машина</div>
         </div>
-
         <div class="field" id="fRegNumber">
             <label>рег № / сер № / Инв № <span class="required">*</span></label>
             <input type="text" id="regNumber" placeholder="напр. СА 1234 ВХ, SER-5678...">
             <div class="error-msg">Въведи номер</div>
         </div>
-
         <div class="field">
             <label>km / м.ч.</label>
             <input type="text" id="kmHours" placeholder="напр. 12500 km или 3200 м.ч.">
         </div>
-
         <div class="field" id="fClient">
             <label>Клиент: Име, Фамилия <span class="required">*</span></label>
             <input type="text" id="client" placeholder="напр. Иван Иванов">
@@ -640,24 +300,21 @@
         </div>
     </div>
 
-    <!-- ВИД ДЕЙНОСТ -->
-    <div class="section" data-accent="green">
-        <div class="section-title" data-icon="✅">Вид дейност</div>
+    <div class="section">
+        <div class="section-title"><span class="icon">⚡</span> Вид дейност</div>
         <div class="field" id="fActivity">
             <div id="activityTypes" class="radio-group"></div>
             <div class="error-msg">Избери вид дейност</div>
         </div>
     </div>
 
-    <!-- ОБСЛУЖВАНЕ (условна секция) -->
-    <div id="sectionServices" class="section conditional" data-accent="orange">
-        <div class="section-title" data-icon="🔧">Обслужване — Филтри</div>
+    <div id="sectionServices" class="section conditional">
+        <div class="section-title"><span class="icon">🔄</span> Обслужване — Филтри</div>
         <div id="servicesList" class="checkbox-grid"></div>
     </div>
 
-    <!-- РЕМОНТ (условна секция) -->
-    <div id="sectionRepair" class="section conditional" data-accent="red">
-        <div class="section-title" data-icon="🛠️">Ремонт</div>
+    <div id="sectionRepair" class="section conditional">
+        <div class="section-title"><span class="icon">🛠</span> Ремонт</div>
         <div class="field">
             <label>Ремонтна система</label>
             <div id="repairSystemsList" class="checkbox-grid"></div>
@@ -668,9 +325,8 @@
         </div>
     </div>
 
-    <!-- ВЛОЖЕНИ МАТЕРИАЛИ -->
-    <div class="section" data-accent="purple">
-        <div class="section-title" data-icon="🧰">Вложени материали</div>
+    <div class="section">
+        <div class="section-title"><span class="icon">📦</span> Вложени материали</div>
         <div class="field">
             <div class="toggle-group">
                 <button type="button" class="toggle-btn" onclick="toggleMaterials(true)">Да</button>
@@ -678,253 +334,101 @@
             </div>
         </div>
         <div id="materialsSection" class="conditional">
-            <!-- Масло -->
-            <div class="material-category" data-cat="oil">
-                <div class="material-header" onclick="toggleCategory(this)">
-                    <span>🛢 Масло</span>
-                    <span class="arrow">▼</span>
-                </div>
-                <div class="material-body">
-                    <div id="oilsList" class="checkbox-grid"></div>
-                    <div class="material-qty">
-                        <label>Количество:</label>
-                        <input type="number" id="oilQty" step="0.1" min="0" placeholder="0">
-                        <span class="unit">литри</span>
-                    </div>
-                </div>
-            </div>
-            <!-- Антифриз -->
-            <div class="material-category" data-cat="antifreeze">
-                <div class="material-header" onclick="toggleCategory(this)">
-                    <span>💧 Антифриз</span>
-                    <span class="arrow">▼</span>
-                </div>
-                <div class="material-body">
-                    <div id="antifreezesList" class="checkbox-grid"></div>
-                    <div class="material-qty">
-                        <label>Количество:</label>
-                        <input type="number" id="antifreezeQty" step="0.1" min="0" placeholder="0">
-                        <span class="unit">литри</span>
-                    </div>
-                </div>
-            </div>
-            <!-- Крушки -->
-            <div class="material-category" data-cat="bulb">
-                <div class="material-header" onclick="toggleCategory(this)">
-                    <span>💡 Крушки</span>
-                    <span class="arrow">▼</span>
-                </div>
-                <div class="material-body">
-                    <div id="bulbsList" class="checkbox-grid"></div>
-                    <div class="material-qty">
-                        <label>Количество:</label>
-                        <input type="number" id="bulbQty" step="1" min="0" placeholder="0">
-                        <span class="unit">брой</span>
-                    </div>
-                </div>
-            </div>
-            <!-- Бързи връзки -->
-            <div class="material-category" data-cat="quick_coupling">
-                <div class="material-header" onclick="toggleCategory(this)">
-                    <span>🔩 Бързи връзки</span>
-                    <span class="arrow">▼</span>
-                </div>
-                <div class="material-body">
-                    <div id="quickCouplingsList" class="checkbox-grid"></div>
-                    <div class="material-qty">
-                        <label>Количество:</label>
-                        <input type="number" id="couplingQty" step="1" min="0" placeholder="0">
-                        <span class="unit">брой</span>
-                    </div>
-                </div>
-            </div>
-            <!-- Зъби -->
-            <div class="material-category" data-cat="teeth">
-                <div class="material-header" onclick="toggleCategory(this)">
-                    <span>⚙ Зъби</span>
-                    <span class="arrow">▼</span>
-                </div>
-                <div class="material-body">
-                    <div id="teethList" class="checkbox-grid"></div>
-                    <div class="material-qty">
-                        <label>Количество:</label>
-                        <input type="number" id="teethQty" step="1" min="0" placeholder="0">
-                        <span class="unit">брой</span>
-                    </div>
-                </div>
-            </div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">🛢</span>Масло</span><span class="arrow">▼</span></div><div class="material-body"><div id="oilsList" class="checkbox-grid"></div><div class="material-qty"><label>Количество:</label><input type="number" id="oilQty" step="0.1" min="0" placeholder="0"><span class="unit">литри</span></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">💧</span>Антифриз</span><span class="arrow">▼</span></div><div class="material-body"><div id="antifreezesList" class="checkbox-grid"></div><div class="material-qty"><label>Количество:</label><input type="number" id="antifreezeQty" step="0.1" min="0" placeholder="0"><span class="unit">литри</span></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">💡</span>Крушки</span><span class="arrow">▼</span></div><div class="material-body"><div id="bulbsList" class="checkbox-grid"></div><div class="material-qty"><label>Количество:</label><input type="number" id="bulbQty" step="1" min="0" placeholder="0"><span class="unit">брой</span></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">🔩</span>Бързи връзки</span><span class="arrow">▼</span></div><div class="material-body"><div id="quickCouplingsList" class="checkbox-grid"></div><div class="material-qty"><label>Количество:</label><input type="number" id="couplingQty" step="1" min="0" placeholder="0"><span class="unit">брой</span></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">⚙</span>Зъби</span><span class="arrow">▼</span></div><div class="material-body"><div id="teethList" class="checkbox-grid"></div><div class="material-qty"><label>Количество:</label><input type="number" id="teethQty" step="1" min="0" placeholder="0"><span class="unit">брой</span></div></div></div>
         </div>
     </div>
 
-    <!-- ВРЕМЕ ЗА РАБОТА -->
-    <div class="section" data-accent="navy">
-        <div class="section-title" data-icon="⏱">Време за работа</div>
+    <div class="section">
+        <div class="section-title"><span class="icon">⏱</span> Време за работа</div>
         <div class="field" id="fWorkHours">
             <label>Човекочасове <span class="required">*</span></label>
             <input type="number" id="workHours" step="0.5" min="0" placeholder="напр. 2.5">
             <div class="error-msg">Въведи време за работа</div>
         </div>
     </div>
-
-    <!-- БУТОН -->
-    <button type="button" class="submit-btn" id="submitBtn" onclick="submitForm()">
-        Запиши работна карта
-    </button>
 </form>
 
-<nav class="bottom-nav" aria-label="Навигация">
-    <a href="index.html" class="nav-item active">
-        <span>📝</span>
-        <small>Нова карта</small>
-    </a>
-    <a href="history.html" class="nav-item">
-        <span>📊</span>
-        <small>Преглед</small>
-    </a>
+<div class="submit-section" id="submitSection" style="display:none;">
+    <button type="button" class="submit-btn" id="submitBtn" onclick="submitForm()">
+        ✓ Запиши работна карта
+    </button>
+</div>
+
+<nav class="bottom-nav">
+    <a href="index.html" class="active"><span class="nav-icon">📝</span>Нова карта</a>
+    <a href="history.html"><span class="nav-icon">📊</span>Преглед</a>
 </nav>
 
 <script>
-// ============================================
-// КОНФИГУРАЦИЯ — ЗАМЕНИ С ТВОИТЕ СТОЙНОСТИ
-// ============================================
 const SUPABASE_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_aMxRatJ2BJxE5vQIhffing_8_zMpBDO';
 
-// ============================================
-// SUPABASE HELPERS
-// ============================================
 async function supabaseGet(table, query = '') {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
-        headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-        }
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
     });
     if (!res.ok) throw new Error(`GET ${table}: ${res.status}`);
     return res.json();
 }
-
 async function supabaseInsert(table, data) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
         method: 'POST',
-        headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-        },
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
         body: JSON.stringify(data)
     });
-    if (!res.ok) {
-        const err = await res.text();
-        throw new Error(`POST ${table}: ${res.status} — ${err}`);
-    }
+    if (!res.ok) { const err = await res.text(); throw new Error(`POST ${table}: ${res.status} — ${err}`); }
     return res.json();
 }
 
-// ============================================
-// НОМЕНКЛАТУРИ — ЗАРЕЖДАНЕ
-// ============================================
 let nomenclatures = {};
-
 async function loadNomenclatures() {
     try {
         const data = await supabaseGet('nomenclatures', 'is_active=eq.true&order=sort_order');
         nomenclatures = {};
-        data.forEach(item => {
-            if (!nomenclatures[item.group_name]) nomenclatures[item.group_name] = [];
-            nomenclatures[item.group_name].push(item);
-        });
+        data.forEach(item => { if (!nomenclatures[item.group_name]) nomenclatures[item.group_name] = []; nomenclatures[item.group_name].push(item); });
         buildForm();
         document.getElementById('loading').classList.remove('show');
         document.getElementById('workCardForm').style.display = 'block';
-        document.getElementById('statusMsg').style.marginTop = '12px';
+        document.getElementById('submitSection').style.display = 'block';
     } catch (e) {
         console.error('Грешка при зареждане:', e);
-        document.getElementById('loading').innerHTML =
-            '<div style="color:var(--danger);font-size:14px;">Грешка при зареждане. Провери интернет връзката.</div>';
+        document.getElementById('loading').innerHTML = '<div style="color:var(--danger);font-size:14px;">Грешка при зареждане. Провери интернет връзката.</div>';
     }
 }
 
-// ============================================
-// ИЗГРАЖДАНЕ НА ФОРМАТА
-// ============================================
 function buildForm() {
-    // Механици
     const mechSelect = document.getElementById('mechanic');
-    (nomenclatures.mechanics || []).forEach(m => {
-        mechSelect.innerHTML += `<option value="${m.value}">${m.label}</option>`;
-    });
-
-    // Дата — днес по подразбиране
+    (nomenclatures.mechanics || []).forEach(m => { mechSelect.innerHTML += `<option value="${m.value}">${m.label}</option>`; });
     document.getElementById('workDate').value = new Date().toISOString().split('T')[0];
-
-    // Вид дейност
     const actDiv = document.getElementById('activityTypes');
     (nomenclatures.activity_types || []).forEach(a => {
-        actDiv.innerHTML += `
-            <label class="radio-option" data-type="${a.value}">
-                <input type="radio" name="activityType" value="${a.value}" onchange="onActivityChange('${a.value}')">
-                <span>${a.label}</span>
-            </label>`;
+        actDiv.innerHTML += `<label class="radio-option"><input type="radio" name="activityType" value="${a.value}" onchange="onActivityChange('${a.value}')"><span>${a.label}</span></label>`;
     });
-
-    // Обслужване — филтри
     const servDiv = document.getElementById('servicesList');
-    (nomenclatures.services || []).forEach(s => {
-        servDiv.innerHTML += `
-            <label class="checkbox-item">
-                <input type="checkbox" name="services" value="${s.value}">
-                <span>${s.label}</span>
-            </label>`;
-    });
-
-    // Ремонтни системи
+    (nomenclatures.services || []).forEach(s => { servDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="services" value="${s.value}"><span>${s.label}</span></label>`; });
     const repSysDiv = document.getElementById('repairSystemsList');
-    (nomenclatures.repair_systems || []).forEach(r => {
-        repSysDiv.innerHTML += `
-            <label class="checkbox-item">
-                <input type="checkbox" name="repairSystems" value="${r.value}">
-                <span>${r.label}</span>
-            </label>`;
-    });
-
-    // Вид ремонт dropdown
+    (nomenclatures.repair_systems || []).forEach(r => { repSysDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="repairSystems" value="${r.value}"><span>${r.label}</span></label>`; });
     const repTypeSelect = document.getElementById('repairType');
-    (nomenclatures.repair_types || []).forEach(r => {
-        repTypeSelect.innerHTML += `<option value="${r.value}">${r.label}</option>`;
-    });
-
-    // Материали
+    (nomenclatures.repair_types || []).forEach(r => { repTypeSelect.innerHTML += `<option value="${r.value}">${r.label}</option>`; });
     buildCheckboxes('oilsList', nomenclatures.oils || [], 'oils');
     buildCheckboxes('antifreezesList', nomenclatures.antifreezes || [], 'antifreezes');
     buildCheckboxes('bulbsList', nomenclatures.bulbs || [], 'bulbs');
     buildCheckboxes('quickCouplingsList', nomenclatures.quick_couplings || [], 'quick_couplings');
     buildCheckboxes('teethList', nomenclatures.teeth || [], 'teeth');
 }
-
 function buildCheckboxes(containerId, items, groupName) {
     const container = document.getElementById(containerId);
-    items.forEach(item => {
-        container.innerHTML += `
-            <label class="checkbox-item">
-                <input type="checkbox" name="${groupName}" value="${item.value}">
-                <span>${item.label}</span>
-            </label>`;
-    });
+    items.forEach(item => { container.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="${groupName}" value="${item.value}"><span>${item.label}</span></label>`; });
 }
 
-// ============================================
-// УСЛОВНИ СЕКЦИИ
-// ============================================
 function onActivityChange(value) {
-    const servSection = document.getElementById('sectionServices');
-    const repSection = document.getElementById('sectionRepair');
-
-    servSection.classList.toggle('visible', value === 'ОБСЛУЖВАНЕ');
-    repSection.classList.toggle('visible', value === 'РЕМОНТ' || value === 'ГАРАНЦИОНЕН РЕМОНТ');
+    document.getElementById('sectionServices').classList.toggle('visible', value === 'ОБСЛУЖВАНЕ');
+    document.getElementById('sectionRepair').classList.toggle('visible', value === 'РЕМОНТ' || value === 'ГАРАНЦИОНЕН РЕМОНТ');
 }
-
 let hasMaterials = false;
 function toggleMaterials(yes) {
     hasMaterials = yes;
@@ -933,17 +437,12 @@ function toggleMaterials(yes) {
     btns[1].className = 'toggle-btn' + (!yes ? ' active-no' : '');
     document.getElementById('materialsSection').classList.toggle('visible', yes);
 }
-
 function toggleCategory(header) {
     const body = header.nextElementSibling;
     const arrow = header.querySelector('.arrow');
-    body.classList.toggle('open');
-    arrow.classList.toggle('open');
+    body.classList.toggle('open'); arrow.classList.toggle('open');
 }
 
-// ============================================
-// ВАЛИДАЦИЯ
-// ============================================
 function validate() {
     let valid = true;
     const checks = [
@@ -955,27 +454,12 @@ function validate() {
         { id: 'fActivity', test: () => document.querySelector('input[name="activityType"]:checked') !== null },
         { id: 'fWorkHours', test: () => document.getElementById('workHours').value !== '' },
     ];
-
-    checks.forEach(c => {
-        const el = document.getElementById(c.id);
-        if (!c.test()) { el.classList.add('invalid'); valid = false; }
-        else { el.classList.remove('invalid'); }
-    });
-
-    if (!valid) {
-        const first = document.querySelector('.field.invalid');
-        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    checks.forEach(c => { const el = document.getElementById(c.id); if (!c.test()) { el.classList.add('invalid'); valid = false; } else { el.classList.remove('invalid'); } });
+    if (!valid) { const first = document.querySelector('.field.invalid'); if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
     return valid;
 }
 
-// ============================================
-// СЪБИРАНЕ НА ДАННИ
-// ============================================
-function getCheckedValues(name) {
-    return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
-}
-
+function getCheckedValues(name) { return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value); }
 function collectMaterials() {
     const materials = [];
     const cats = [
@@ -985,120 +469,59 @@ function collectMaterials() {
         { name: 'quick_couplings', category: 'quick_coupling', qtyId: 'couplingQty', unit: 'брой' },
         { name: 'teeth', category: 'teeth', qtyId: 'teethQty', unit: 'брой' },
     ];
-
     cats.forEach(cat => {
         const selected = getCheckedValues(cat.name);
-        if (selected.length > 0) {
-            const qty = parseFloat(document.getElementById(cat.qtyId).value) || 0;
-            materials.push({
-                category: cat.category,
-                item_type: selected.join(', '),
-                quantity: qty,
-                unit: cat.unit
-            });
-        }
+        if (selected.length > 0) { const qty = parseFloat(document.getElementById(cat.qtyId).value) || 0; materials.push({ category: cat.category, item_type: selected.join(', '), quantity: qty, unit: cat.unit }); }
     });
     return materials;
 }
 
-// ============================================
-// ИЗПРАЩАНЕ
-// ============================================
 async function submitForm() {
-    if (!navigator.onLine) {
-        showStatus('Няма интернет връзка. Опитай по-късно.', 'error');
-        return;
-    }
-
+    if (!navigator.onLine) { showStatus('Няма интернет връзка. Опитай по-късно.', 'error'); return; }
     if (!validate()) return;
-
     const btn = document.getElementById('submitBtn');
-    btn.disabled = true;
-    btn.textContent = 'Записване...';
-
+    btn.disabled = true; btn.textContent = 'Записване...';
     try {
         const activityType = document.querySelector('input[name="activityType"]:checked').value;
-
         const cardData = {
-            mechanic: document.getElementById('mechanic').value,
-            work_date: document.getElementById('workDate').value,
-            vehicle: document.getElementById('vehicle').value.trim(),
-            reg_number: document.getElementById('regNumber').value.trim(),
-            km_hours: document.getElementById('kmHours').value.trim() || null,
-            client: document.getElementById('client').value.trim(),
+            mechanic: document.getElementById('mechanic').value, work_date: document.getElementById('workDate').value,
+            vehicle: document.getElementById('vehicle').value.trim(), reg_number: document.getElementById('regNumber').value.trim(),
+            km_hours: document.getElementById('kmHours').value.trim() || null, client: document.getElementById('client').value.trim(),
             activity_type: activityType,
             services: activityType === 'ОБСЛУЖВАНЕ' ? getCheckedValues('services') : [],
             repair_systems: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? getCheckedValues('repairSystems') : [],
             repair_type: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? document.getElementById('repairType').value || null : null,
-            has_materials: hasMaterials,
-            work_hours: parseFloat(document.getElementById('workHours').value)
+            has_materials: hasMaterials, work_hours: parseFloat(document.getElementById('workHours').value)
         };
-
-        // Записваме работната карта
         const result = await supabaseInsert('work_cards', cardData);
         const cardId = result[0].id;
-
-        // Записваме материалите
-        if (hasMaterials) {
-            const materials = collectMaterials();
-            if (materials.length > 0) {
-                const matData = materials.map(m => ({ ...m, work_card_id: cardId }));
-                await supabaseInsert('work_card_materials', matData);
-            }
-        }
-
+        if (hasMaterials) { const materials = collectMaterials(); if (materials.length > 0) { await supabaseInsert('work_card_materials', materials.map(m => ({ ...m, work_card_id: cardId }))); } }
         showStatus('✓ Работната карта е записана успешно!', 'success');
         resetForm();
-    } catch (e) {
-        console.error('Грешка при запис:', e);
-        showStatus('Грешка при запис: ' + e.message, 'error');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = 'Запиши работна карта';
-    }
+    } catch (e) { console.error('Грешка при запис:', e); showStatus('Грешка при запис: ' + e.message, 'error'); }
+    finally { btn.disabled = false; btn.textContent = '✓ Запиши работна карта'; }
 }
 
-// ============================================
-// ПОМОЩНИ ФУНКЦИИ
-// ============================================
 function showStatus(msg, type) {
-    const el = document.getElementById('statusMsg');
-    el.className = 'status ' + type;
-    el.innerHTML = msg;
+    const el = document.getElementById('statusMsg'); el.textContent = msg; el.className = 'status ' + type;
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    if (type === 'success') setTimeout(() => { el.className = 'status'; el.innerHTML = ''; }, 5000);
+    if (type === 'success') setTimeout(() => { el.className = 'status'; }, 5000);
 }
-
 function resetForm() {
-    // Запазваме механика и датата
-    const mech = document.getElementById('mechanic').value;
-    const date = document.getElementById('workDate').value;
-
+    const mech = document.getElementById('mechanic').value; const date = document.getElementById('workDate').value;
     document.querySelectorAll('input[type="text"], input[type="number"]').forEach(i => i.value = '');
     document.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(i => i.checked = false);
-    document.getElementById('mechanic').value = mech;
-    document.getElementById('workDate').value = date;
-
-    // Скриваме условните секции
+    document.getElementById('mechanic').value = mech; document.getElementById('workDate').value = date;
     document.getElementById('sectionServices').classList.remove('visible');
     document.getElementById('sectionRepair').classList.remove('visible');
     toggleMaterials(false);
-
-    // Затваряме отворените категории материали
     document.querySelectorAll('.material-body').forEach(b => b.classList.remove('open'));
     document.querySelectorAll('.material-header .arrow').forEach(a => a.classList.remove('open'));
-
-    // Скролваме нагоре
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
-// Offline detection
 window.addEventListener('online', () => document.getElementById('offlineBanner').classList.remove('show'));
 window.addEventListener('offline', () => document.getElementById('offlineBanner').classList.add('show'));
-
-// Инициализация
 document.addEventListener('DOMContentLoaded', loadNomenclatures);
 </script>
-
 </body>
 </html>
