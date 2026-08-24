@@ -479,6 +479,7 @@ function collectMaterials() {
 async function submitForm() {
     if (!navigator.onLine) { showStatus('Няма интернет връзка. Опитай по-късно.', 'error'); return; }
     if (!validate()) return;
+    if (!confirm('Сигурен ли си, че искаш да запишеш тази работна карта?')) return;
     const btn = document.getElementById('submitBtn');
     btn.disabled = true; btn.textContent = 'Записване...';
     try {
@@ -496,7 +497,7 @@ async function submitForm() {
         const result = await supabaseInsert('work_cards', cardData);
         const cardId = result[0].id;
         if (hasMaterials) { const materials = collectMaterials(); if (materials.length > 0) { await supabaseInsert('work_card_materials', materials.map(m => ({ ...m, work_card_id: cardId }))); } }
-        showStatus('✓ Работната карта е записана успешно!', 'success');
+        showStatus(`✓ Записана: ${cardData.mechanic} — ${cardData.vehicle} (${cardData.reg_number}) — ${cardData.activity_type}`, 'success');
         resetForm();
     } catch (e) { console.error('Грешка при запис:', e); showStatus('Грешка при запис: ' + e.message, 'error'); }
     finally { btn.disabled = false; btn.textContent = '✓ Запиши работна карта'; }
@@ -505,7 +506,7 @@ async function submitForm() {
 function showStatus(msg, type) {
     const el = document.getElementById('statusMsg'); el.textContent = msg; el.className = 'status ' + type;
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    if (type === 'success') setTimeout(() => { el.className = 'status'; }, 5000);
+    if (type === 'success') setTimeout(() => { el.className = 'status'; }, 8000);
 }
 function resetForm() {
     const mech = document.getElementById('mechanic').value; const date = document.getElementById('workDate').value;
