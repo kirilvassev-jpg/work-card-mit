@@ -6,479 +6,137 @@
     <title>Работни карти — Преглед</title>
     <style>
         :root {
-            --primary: #0c2d58;
-            --primary-2: #1a7ce1;
-            --primary-3: #21b9ac;
-            --bg: #edf4ff;
-            --card: rgba(255,255,255,0.7);
-            --card-strong: #ffffff;
-            --text: #1a3451;
-            --text-muted: #597796;
-            --border: rgba(13,59,94,0.1);
-            --shadow: 0 14px 30px rgba(18, 42, 74, 0.11);
-            --success: #21b36c;
-            --success-soft: rgba(33,179,108,0.12);
-            --danger: #ec5d5d;
-            --danger-soft: rgba(236,93,93,0.1);
-            --orange: #f59f39;
-            --red: #ea5d57;
-            --green: #2bbd81;
-            --purple: #7d65ef;
-            --radius: 20px;
+            --primary: #1a5276;
+            --primary-light: #2980b9;
+            --accent: #e67e22;
+            --success: #27ae60;
+            --danger: #c0392b;
+            --bg: #f5f6fa;
+            --card: #ffffff;
+            --text: #2c3e50;
+            --text-muted: #7f8c8d;
+            --border: #dce1e8;
+            --radius: 10px;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(67,124,255,0.12), transparent 28%),
-                radial-gradient(circle at top right, rgba(33,185,172,0.12), transparent 24%),
-                linear-gradient(180deg, #edf4ff 0%, #f7f9fe 100%);
-            color: var(--text);
-            line-height: 1.5;
-            padding-bottom: 96px;
+            background: var(--bg); color: var(--text); line-height: 1.5;
         }
 
         .header {
-            background: linear-gradient(135deg, #071f3d 0%, #123c66 35%, #1d8eb0 100%);
-            color: white;
-            padding: 18px 20px 22px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 10px 25px rgba(14, 38, 67, 0.22);
-            backdrop-filter: blur(10px);
-            text-align: center;
+            background: var(--primary); color: white;
+            padding: 16px 20px; text-align: center;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
-
-        .header h1 {
-            font-size: 1.05rem;
-            letter-spacing: 0.08em;
-            font-weight: 800;
-        }
-
-        .nav-links {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 12px;
-        }
-
+        .header h1 { font-size: 18px; font-weight: 600; }
+        .nav-links { display: flex; justify-content: center; gap: 16px; margin-top: 6px; }
         .nav-links a {
-            color: rgba(255,255,255,0.82);
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.18);
-            border-radius: 999px;
-            padding: 7px 14px;
-            font-size: 0.78rem;
-            font-weight: 700;
-            transition: all 0.25s ease;
+            color: rgba(255,255,255,0.8); text-decoration: none;
+            font-size: 13px; padding: 4px 12px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.3); transition: all 0.2s;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            color: white; background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.6);
         }
 
-        .nav-links a.active,
-        .nav-links a:hover {
-            color: white;
-            background: rgba(255,255,255,0.16);
-            box-shadow: 0 8px 18px rgba(14, 38, 67, 0.18);
-        }
+        .container { max-width: 900px; margin: 0 auto; padding: 12px; }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 14px 12px 24px;
-        }
-
+        /* Filters */
         .filters {
-            background: rgba(255,255,255,0.68);
-            border: 1px solid rgba(17,52,88,0.08);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            backdrop-filter: blur(12px);
-            padding: 14px;
-            margin-bottom: 14px;
-            overflow: hidden;
+            background: var(--card); border-radius: var(--radius);
+            padding: 14px; margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
         }
-
-        .filters-toggle {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border: none;
-            background: transparent;
-            color: var(--text);
-            font-size: 0.82rem;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            padding: 4px 2px 10px;
-            cursor: pointer;
-        }
-
-        .toggle-arrow {
-            color: var(--primary-2);
-            font-size: 0.88rem;
-            transition: transform 0.2s ease;
-        }
-
-        .filters-panel {
-            display: block;
-            transition: all 0.25s ease;
-        }
-
-        .filters-panel.collapsed {
-            display: none;
-        }
-
-        .filter-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+        .filters-title {
+            font-size: 13px; font-weight: 600; color: var(--primary);
+            text-transform: uppercase; letter-spacing: 0.5px;
             margin-bottom: 10px;
         }
-
+        .filter-row {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            margin-bottom: 10px;
+        }
         .filter-row.single { grid-template-columns: 1fr; }
-
-        @media (max-width: 480px) {
-            .filter-row { grid-template-columns: 1fr; }
+        @media (max-width: 480px) { .filter-row { grid-template-columns: 1fr; } }
+        .filter-row label { font-size: 12px; color: var(--text-muted); margin-bottom: 3px; display: block; }
+        .filter-row select, .filter-row input {
+            width: 100%; padding: 8px 10px; border: 1.5px solid var(--border);
+            border-radius: 8px; font-size: 14px; color: var(--text); background: white;
         }
-
-        .filter-row label {
-            font-size: 0.72rem;
-            color: var(--text-muted);
-            font-weight: 700;
-            margin-bottom: 5px;
-            display: block;
+        .filter-row select { -webkit-appearance: none; appearance: none;
+            background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237f8c8d' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 10px center;
+            padding-right: 30px;
         }
-
-        .filter-row select,
-        .filter-row input {
-            width: 100%;
-            padding: 11px 12px;
-            border: 1.5px solid rgba(17,52,88,0.12);
-            border-radius: 12px;
-            color: var(--text);
-            background: rgba(255,255,255,0.86);
-            font-size: 0.9rem;
-        }
-
-        .filter-row select {
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23607796' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            padding-right: 34px;
-        }
-
-        .filter-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 6px;
-            flex-wrap: wrap;
-        }
-
+        .filter-actions { display: flex; gap: 8px; margin-top: 4px; }
         .btn {
-            border: none;
-            border-radius: 12px;
-            padding: 10px 14px;
-            font-size: 0.82rem;
-            font-weight: 800;
-            cursor: pointer;
-            transition: transform 0.18s ease, box-shadow 0.18s ease;
+            padding: 8px 16px; border: none; border-radius: 8px;
+            font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
         }
+        .btn-primary { background: var(--primary); color: white; flex: 1; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-outline { background: white; color: var(--text-muted); border: 1.5px solid var(--border); }
+        .btn:active { transform: scale(0.97); }
 
-        .btn:active { transform: scale(0.98); }
-
-        .btn-primary {
-            flex: 1;
-            background: linear-gradient(135deg, var(--primary), var(--primary-2));
-            color: white;
-            box-shadow: 0 10px 18px rgba(26,124,225,0.2);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, var(--success), #1ea96d);
-            color: white;
-            box-shadow: 0 10px 18px rgba(33,179,108,0.18);
-        }
-
-        .btn-outline {
-            background: rgba(255,255,255,0.7);
-            color: var(--text-muted);
-            border: 1.5px solid rgba(17,52,88,0.1);
-        }
-
+        /* Stats */
         .stats {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
-            margin-bottom: 14px;
+            display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;
         }
-
         .stat-card {
-            background: rgba(255,255,255,0.72);
-            border-radius: 18px;
-            padding: 12px 10px;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(17,52,88,0.06);
-            text-align: center;
+            background: var(--card); border-radius: var(--radius);
+            padding: 12px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            flex: 1; min-width: 100px; text-align: center;
         }
+        .stat-value { font-size: 22px; font-weight: 700; color: var(--primary); }
+        .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
 
-        .stat-value {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            font-size: 1.2rem;
-            font-weight: 800;
-            color: var(--text);
-        }
-
-        .stat-value::before {
-            font-size: 1rem;
-            opacity: 0.8;
-        }
-
-        .stat-card:nth-child(1) .stat-value::before { content: '📋'; }
-        .stat-card:nth-child(2) .stat-value::before { content: '⏱'; }
-        .stat-card:nth-child(3) .stat-value::before { content: '🔧'; }
-        .stat-card:nth-child(4) .stat-value::before { content: '🛠'; }
-
-        .stat-label {
-            margin-top: 4px;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-
-        .cards-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
+        /* Cards list */
+        .cards-list { display: flex; flex-direction: column; gap: 10px; }
         .work-card {
-            position: relative;
-            display: flex;
-            gap: 12px;
-            background: rgba(255,255,255,0.74);
-            border-radius: 20px;
-            padding: 12px 12px 12px 10px;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(17,52,88,0.06);
-            border-left: 4px solid var(--primary-2);
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            overflow: hidden;
+            background: var(--card); border-radius: var(--radius);
+            padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            border-left: 4px solid var(--primary-light);
+            cursor: pointer; transition: all 0.2s;
         }
-
         .work-card:active { transform: scale(0.99); }
-        .work-card.type-repair { border-left-color: var(--orange); }
-        .work-card.type-warranty { border-left-color: var(--red); }
+        .work-card.type-repair { border-left-color: var(--accent); }
+        .work-card.type-warranty { border-left-color: var(--danger); }
 
-        .card-avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            display: grid;
-            place-items: center;
-            font-size: 0.88rem;
-            font-weight: 800;
-            color: white;
-            background: linear-gradient(135deg, var(--primary-2), var(--primary-3));
-            box-shadow: 0 8px 16px rgba(26,124,225,0.24);
-            flex-shrink: 0;
-        }
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .card-mechanic { font-size: 15px; font-weight: 600; color: var(--text); }
+        .card-date { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+        .card-vehicle { font-size: 14px; color: var(--text); margin-bottom: 4px; }
+        .card-reg { font-size: 13px; color: var(--text-muted); }
 
-        .work-card.type-repair .card-avatar {
-            background: linear-gradient(135deg, var(--orange), #df7e28);
-        }
-
-        .work-card.type-warranty .card-avatar {
-            background: linear-gradient(135deg, #ff7a68, var(--red));
-        }
-
-        .card-main {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .card-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 6px;
-        }
-
-        .card-mechanic {
-            font-size: 0.96rem;
-            font-weight: 800;
-            color: var(--text);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .card-date {
-            font-size: 0.72rem;
-            color: var(--text-muted);
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-        .card-vehicle {
-            font-size: 0.9rem;
-            color: var(--text);
-            font-weight: 700;
-        }
-
-        .card-reg {
-            margin-top: 2px;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-
-        .card-badges {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 10px;
-        }
-
+        .card-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
         .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 8px;
-            border-radius: 999px;
-            font-size: 0.67rem;
-            font-weight: 800;
-            letter-spacing: 0.03em;
+            padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;
         }
+        .badge-service { background: #ebf5fb; color: #1a5276; }
+        .badge-repair { background: #fef5e7; color: #b7520d; }
+        .badge-warranty { background: #fdedec; color: #922b21; }
+        .badge-materials { background: #eafaf1; color: #1e8449; }
+        .badge-hours { background: #f4f6f7; color: #5d6d7e; }
 
-        .badge-service {
-            background: rgba(42,125,225,0.12);
-            color: var(--primary-2);
-        }
-
-        .badge-repair {
-            background: rgba(245,159,57,0.14);
-            color: #c26a18;
-        }
-
-        .badge-warranty {
-            background: rgba(234,93,87,0.12);
-            color: #b33d36;
-        }
-
-        .badge-materials {
-            background: rgba(33,179,108,0.12);
-            color: var(--success);
-        }
-
-        .badge-hours {
-            background: rgba(95,120,148,0.12);
-            color: var(--text-muted);
-        }
-
-        .card-details {
-            display: none;
-            margin-top: 12px;
-            padding-top: 10px;
-            border-top: 1px solid rgba(17,52,88,0.08);
-        }
-
+        /* Expanded card details */
+        .card-details { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
         .card-details.open { display: block; }
+        .detail-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+        .detail-label { color: var(--text-muted); }
+        .detail-value { color: var(--text); font-weight: 500; text-align: right; max-width: 60%; }
 
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 4px 0;
-            font-size: 0.76rem;
-        }
-
-        .detail-label {
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-
-        .detail-value {
-            color: var(--text);
-            font-weight: 700;
-            text-align: right;
-            max-width: 62%;
-            word-break: break-word;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px 10px;
-        }
-
+        /* Loading & empty */
+        .loading { text-align: center; padding: 40px; }
         .spinner {
-            width: 32px;
-            height: 32px;
-            border: 3px solid rgba(17,52,88,0.1);
-            border-top-color: var(--primary-2);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 10px;
+            width: 32px; height: 32px; border: 3px solid var(--border);
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 0.8s linear infinite; margin: 0 auto 10px;
         }
-
-        .empty, .error-msg {
-            text-align: center;
-            padding: 28px 10px;
-            color: var(--text-muted);
-            font-size: 0.88rem;
-        }
-
-        .error-msg {
-            color: var(--danger);
-            font-weight: 700;
-        }
-
-        .bottom-nav {
-            position: fixed;
-            left: 12px;
-            right: 12px;
-            bottom: 12px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            padding: 8px;
-            background: rgba(12, 45, 88, 0.86);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 18px;
-            box-shadow: 0 12px 26px rgba(13, 29, 50, 0.22);
-            backdrop-filter: blur(12px);
-            z-index: 200;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 10px 8px;
-            border-radius: 12px;
-            color: rgba(255,255,255,0.74);
-            font-size: 0.8rem;
-            font-weight: 700;
-            transition: all 0.2s ease;
-        }
-
-        .nav-item.active {
-            background: linear-gradient(135deg, rgba(26,124,225,0.26), rgba(33,185,172,0.22));
-            color: white;
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
-        }
-
         @keyframes spin { to { transform: rotate(360deg); } }
+        .empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px; }
+        .error-msg { text-align: center; padding: 20px; color: var(--danger); font-size: 14px; }
     </style>
 </head>
 <body>
@@ -494,48 +152,42 @@
 <div class="container">
     <!-- Filters -->
     <div class="filters">
-        <button type="button" id="filterToggle" class="filters-toggle">
-            <span>Филтри</span>
-            <span class="toggle-arrow">▼</span>
-        </button>
-
-        <div id="filterPanel" class="filters-panel">
-            <div class="filter-row">
-                <div>
-                    <label>Механик</label>
-                    <select id="filterMechanic"><option value="">Всички</option></select>
-                </div>
-                <div>
-                    <label>Вид дейност</label>
-                    <select id="filterActivity">
-                        <option value="">Всички</option>
-                        <option value="ОБСЛУЖВАНЕ">Обслужване</option>
-                        <option value="РЕМОНТ">Ремонт</option>
-                        <option value="ГАРАНЦИОНЕН РЕМОНТ">Гаранционен ремонт</option>
-                    </select>
-                </div>
+        <div class="filters-title">Филтри</div>
+        <div class="filter-row">
+            <div>
+                <label>Механик</label>
+                <select id="filterMechanic"><option value="">Всички</option></select>
             </div>
-            <div class="filter-row">
-                <div>
-                    <label>От дата</label>
-                    <input type="date" id="filterFrom">
-                </div>
-                <div>
-                    <label>До дата</label>
-                    <input type="date" id="filterTo">
-                </div>
+            <div>
+                <label>Вид дейност</label>
+                <select id="filterActivity">
+                    <option value="">Всички</option>
+                    <option value="ОБСЛУЖВАНЕ">Обслужване</option>
+                    <option value="РЕМОНТ">Ремонт</option>
+                    <option value="ГАРАНЦИОНЕН РЕМОНТ">Гаранционен ремонт</option>
+                </select>
             </div>
-            <div class="filter-row single">
-                <div>
-                    <label>Машина / рег. номер</label>
-                    <input type="text" id="filterVehicle" placeholder="Търси по машина или номер...">
-                </div>
+        </div>
+        <div class="filter-row">
+            <div>
+                <label>От дата</label>
+                <input type="date" id="filterFrom">
             </div>
-            <div class="filter-actions">
-                <button class="btn btn-primary" onclick="loadCards()">Покажи</button>
-                <button class="btn btn-outline" onclick="clearFilters()">Изчисти</button>
-                <button class="btn btn-success" onclick="exportExcel()">📥 Excel</button>
+            <div>
+                <label>До дата</label>
+                <input type="date" id="filterTo">
             </div>
+        </div>
+        <div class="filter-row single">
+            <div>
+                <label>Машина / рег. номер</label>
+                <input type="text" id="filterVehicle" placeholder="Търси по машина или номер...">
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button class="btn btn-primary" onclick="loadCards()">Покажи</button>
+            <button class="btn btn-outline" onclick="clearFilters()">Изчисти</button>
+            <button class="btn btn-success" onclick="exportExcel()">📥 Excel</button>
         </div>
     </div>
 
@@ -558,17 +210,6 @@
     <div id="emptyState" class="empty" style="display:none;">Няма намерени записи за избрания период.</div>
     <div id="errorState" class="error-msg" style="display:none;"></div>
 </div>
-
-<nav class="bottom-nav" aria-label="Навигация">
-    <a href="index.html" class="nav-item">
-        <span>📝</span>
-        <small>Нова карта</small>
-    </a>
-    <a href="history.html" class="nav-item active">
-        <span>📊</span>
-        <small>Преглед</small>
-    </a>
-</nav>
 
 <script>
 const SUPABASE_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co';
@@ -717,15 +358,9 @@ function renderCards(cards) {
         const hoursBadge = c.work_hours
             ? `<span class="badge badge-hours">${c.work_hours} чч</span>` : '';
 
-        const initials = (c.mechanic || 'М')
-            .split(/\s+/)
-            .slice(0, 2)
-            .map(part => part[0] || '')
-            .join('')
-            .toUpperCase() || 'М';
-
         const mats = getMaterialsForCard(c.id);
 
+        // Build details
         let details = '';
         const addDetail = (label, val) => { if (val) details += `<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-value">${val}</span></div>`; };
 
@@ -743,17 +378,14 @@ function renderCards(cards) {
 
         return `
         <div class="work-card ${typeClass}" onclick="toggleDetails(${i})">
-            <div class="card-avatar">${initials}</div>
-            <div class="card-main">
-                <div class="card-top">
-                    <div class="card-mechanic">${c.mechanic}</div>
-                    <div class="card-date">${formatDate(c.work_date)}</div>
-                </div>
-                <div class="card-vehicle">${c.vehicle}</div>
-                <div class="card-reg">${c.reg_number}</div>
-                <div class="card-badges">${activityBadge}${materialsBadge}${hoursBadge}</div>
-                <div class="card-details" id="details-${i}">${details}</div>
+            <div class="card-top">
+                <div class="card-mechanic">${c.mechanic}</div>
+                <div class="card-date">${formatDate(c.work_date)}</div>
             </div>
+            <div class="card-vehicle">${c.vehicle}</div>
+            <div class="card-reg">${c.reg_number}</div>
+            <div class="card-badges">${activityBadge}${materialsBadge}${hoursBadge}</div>
+            <div class="card-details" id="details-${i}">${details}</div>
         </div>`;
     }).join('');
 }
@@ -767,7 +399,8 @@ function clearFilters() {
     document.getElementById('filterMechanic').value = '';
     document.getElementById('filterActivity').value = '';
     document.getElementById('filterVehicle').value = '';
-    setDefaultDates();
+    document.getElementById('filterFrom').value = '';
+    document.getElementById('filterTo').value = '';
     loadCards();
 }
 
@@ -819,17 +452,6 @@ function exportExcel() {
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
-    const filterToggle = document.getElementById('filterToggle');
-    const filterPanel = document.getElementById('filterPanel');
-
-    if (filterToggle && filterPanel) {
-        filterToggle.addEventListener('click', () => {
-            const collapsed = filterPanel.classList.toggle('collapsed');
-            const arrow = filterToggle.querySelector('.toggle-arrow');
-            arrow.textContent = collapsed ? '▲' : '▼';
-        });
-    }
-
     loadMechanics();
     setDefaultDates();
     loadCards();
