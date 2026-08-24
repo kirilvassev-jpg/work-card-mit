@@ -217,6 +217,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_aMxRatJ2BJxE5vQIhffing_8_zMpBDO';
 
 let allCards = [];
 let allMaterials = [];
+let loadRequestId = 0;
 
 async function supabaseGet(table, query = '') {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
@@ -273,6 +274,7 @@ function getMaterialsForCard(cardId) {
 
 // Load cards with filters
 async function loadCards() {
+    const requestId = ++loadRequestId;
     const loading = document.getElementById('loading');
     const cardsList = document.getElementById('cardsList');
     const emptyState = document.getElementById('emptyState');
@@ -300,6 +302,9 @@ async function loadCards() {
         // Query work_cards table directly
         const data = await supabaseGet('work_cards', query);
 
+        // Ignore stale responses from an earlier, slower request
+        if (requestId !== loadRequestId) return;
+
         // Load materials for all cards
         if (data.length > 0) {
             const ids = data.map(c => c.id);
@@ -307,6 +312,8 @@ async function loadCards() {
         } else {
             allMaterials = [];
         }
+
+        if (requestId !== loadRequestId) return;
 
         // Client-side vehicle/reg filter
         allCards = vehicle
@@ -317,11 +324,12 @@ async function loadCards() {
         updateStats(allCards);
         renderCards(allCards);
     } catch(e) {
+        if (requestId !== loadRequestId) return;
         console.error(e);
         errorState.textContent = 'Грешка при зареждане: ' + e.message;
         errorState.style.display = 'block';
     } finally {
-        loading.style.display = 'none';
+        if (requestId === loadRequestId) loading.style.display = 'none';
     }
 }
 
