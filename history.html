@@ -4,235 +4,243 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Работни карти — Преглед</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #0b2a52;
-            --primary-light: #1f7ae0;
-            --accent: #f39a39;
-            --success: #1bbf76;
-            --danger: #ea5d57;
-            --bg: #edf4ff;
-            --card: rgba(255, 255, 255, 0.78);
-            --card-strong: #ffffff;
-            --text: #18314f;
-            --text-muted: #5c7595;
-            --border: rgba(17, 52, 88, 0.1);
-            --shadow: 0 14px 30px rgba(18, 42, 74, 0.12);
-            --radius: 20px;
+            --primary: #334155;
+            --primary-light: #4a6fa5;
+            --primary-gradient: linear-gradient(135deg, #1e293b 0%, #334155 50%, #4a6fa5 100%);
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-purple: #8b5cf6;
+            --accent-teal: #14b8a6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-lg: 0 4px 12px rgba(0,0,0,0.1);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(77, 139, 252, 0.18), transparent 28%),
-                radial-gradient(circle at top right, rgba(24, 195, 164, 0.12), transparent 25%),
-                linear-gradient(180deg, #edf4ff 0%, #f7f9fe 100%);
-            color: var(--text); line-height: 1.6; font-size: 16px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg); color: var(--text); line-height: 1.5;
+            padding-bottom: 80px;
         }
 
+        /* Header */
         .header {
-            background: linear-gradient(135deg, #071f3d 0%, #123c66 35%, #1d8eb0 100%);
-            color: white;
-            padding: 18px 20px 22px; text-align: center;
-            position: sticky; top: 0; z-index: 100;
-            box-shadow: 0 10px 25px rgba(14, 38, 67, 0.22);
+            background: var(--primary-gradient);
+            color: white; padding: 20px 20px 16px;
+            text-align: center; position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 4px 20px rgba(30,41,59,0.3);
         }
-        .header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: 0.06em; }
-        .nav-links { display: flex; justify-content: center; gap: 10px; margin-top: 12px; }
-        .nav-links a {
-            color: rgba(255,255,255,0.82); text-decoration: none;
-            font-size: 0.85rem; font-weight: 600; padding: 7px 16px; border-radius: 999px;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.18); transition: all 0.25s ease;
+        .header-top { display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .header-icon { font-size: 24px; }
+        .header h1 { font-size: 20px; font-weight: 700; letter-spacing: 1px; }
+
+        /* Bottom nav */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; border-top: 1px solid var(--border);
+            display: flex; z-index: 100;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.06);
         }
-        .nav-links a:hover, .nav-links a.active {
-            color: white; background: rgba(255,255,255,0.16);
-            box-shadow: 0 8px 18px rgba(14, 38, 67, 0.18);
+        .bottom-nav a {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            padding: 8px 0 10px; text-decoration: none; font-size: 11px;
+            font-weight: 600; color: var(--text-muted); transition: all 0.2s;
+        }
+        .bottom-nav a.active { color: var(--accent-blue); }
+        .bottom-nav a .nav-icon { font-size: 20px; margin-bottom: 2px; }
+        .bottom-nav a.active::after {
+            content: ''; display: block; width: 24px; height: 3px;
+            background: var(--accent-blue); border-radius: 2px; margin-top: 2px;
         }
 
-        .container { max-width: 900px; margin: 0 auto; padding: 16px 14px; }
+        .container { max-width: 900px; margin: 0 auto; padding: 12px; }
 
         /* Filters */
         .filters {
             background: var(--card); border-radius: var(--radius);
-            border: 1px solid rgba(17,52,88,0.08);
-            padding: 18px 16px; margin-bottom: 16px;
-            box-shadow: var(--shadow); backdrop-filter: blur(12px);
+            margin-bottom: 12px; box-shadow: var(--shadow); overflow: hidden;
         }
-        .filters-title {
-            font-size: 0.85rem; font-weight: 800; color: var(--primary);
-            text-transform: uppercase; letter-spacing: 0.08em;
-            margin-bottom: 14px;
+        .filters-toggle {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 16px; cursor: pointer; font-size: 14px; font-weight: 700;
+            color: var(--primary); user-select: none;
         }
-        .filter-row {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-            margin-bottom: 12px;
-        }
+        .filters-toggle .ft-icon { font-size: 16px; }
+        .filters-toggle .ft-arrow { font-size: 12px; color: var(--text-muted); transition: transform 0.3s; }
+        .filters-toggle .ft-arrow.open { transform: rotate(180deg); }
+        .filters-body { padding: 0 16px 16px; display: none; animation: fadeIn 0.3s ease; }
+        .filters-body.open { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .filter-row.single { grid-template-columns: 1fr; }
         @media (max-width: 480px) { .filter-row { grid-template-columns: 1fr; } }
-        .filter-row label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block; }
+        .filter-row label { font-size: 12px; color: var(--text-muted); margin-bottom: 3px; display: block; font-weight: 500; }
         .filter-row select, .filter-row input {
-            width: 100%; padding: 12px 14px; border: 1.5px solid rgba(17,52,88,0.12);
-            border-radius: 12px; font-size: 1rem; color: var(--text); background: rgba(255,255,255,0.9);
-            font-family: inherit; transition: all 0.2s ease;
-        }
-        .filter-row select:focus, .filter-row input:focus {
-            outline: none; border-color: var(--primary-light); background: white;
-            box-shadow: 0 0 0 4px rgba(31,122,224,0.14);
+            width: 100%; padding: 9px 12px; border: 1.5px solid var(--border);
+            border-radius: 8px; font-size: 14px; color: var(--text); background: #f8fafc;
+            transition: all 0.25s;
         }
         .filter-row select { -webkit-appearance: none; appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235c7595' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: right 14px center;
-            padding-right: 36px;
+            background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 10px center;
+            padding-right: 30px;
         }
-        .filter-actions { display: flex; gap: 10px; margin-top: 6px; }
+        .filter-row select:focus, .filter-row input:focus { outline: none; border-color: var(--accent-blue); background: white; box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+        .filter-actions { display: flex; gap: 8px; margin-top: 4px; }
         .btn {
-            padding: 12px 18px; border: none; border-radius: 12px;
-            font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
-            font-family: inherit; letter-spacing: 0.02em;
+            padding: 9px 18px; border: none; border-radius: 8px;
+            font-size: 13px; font-weight: 700; cursor: pointer;
+            transition: all 0.25s; position: relative; overflow: hidden;
         }
-        .btn-primary { background: linear-gradient(135deg, #1f7ae0, #123c66); color: white; flex: 1;
-            box-shadow: 0 10px 20px rgba(31,122,224,0.28); }
-        .btn-success { background: linear-gradient(135deg, #1bbf76, #1ea878); color: white;
-            box-shadow: 0 10px 20px rgba(27,191,118,0.28); }
-        .btn-outline { background: rgba(255,255,255,0.9); color: var(--text-muted); border: 1.5px solid rgba(17,52,88,0.14); }
         .btn:active { transform: scale(0.97); }
+        .btn-primary { background: linear-gradient(135deg, var(--accent-blue), #2563eb); color: white; flex: 1; box-shadow: 0 2px 8px rgba(59,130,246,0.25); }
+        .btn-success { background: linear-gradient(135deg, var(--success), #059669); color: white; box-shadow: 0 2px 8px rgba(16,185,129,0.25); }
+        .btn-outline { background: white; color: var(--text-muted); border: 1.5px solid var(--border); }
 
         /* Stats */
-        .stats {
-            display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
-        }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+        @media (max-width: 480px) { .stats { grid-template-columns: repeat(2, 1fr); } }
         .stat-card {
             background: var(--card); border-radius: var(--radius);
-            border: 1px solid rgba(17,52,88,0.08);
-            padding: 16px 14px; box-shadow: var(--shadow); backdrop-filter: blur(12px);
-            flex: 1; min-width: 100px; text-align: center;
+            padding: 14px 12px; box-shadow: var(--shadow); text-align: center;
+            border-top: 3px solid var(--border); transition: transform 0.2s;
         }
-        .stat-value { font-size: 1.7rem; font-weight: 800; color: var(--primary-light); }
-        .stat-label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+        .stat-card:nth-child(1) { border-top-color: var(--accent-blue); }
+        .stat-card:nth-child(2) { border-top-color: var(--accent-teal); }
+        .stat-card:nth-child(3) { border-top-color: var(--accent-orange); }
+        .stat-card:nth-child(4) { border-top-color: var(--accent-red); }
+        .stat-icon { font-size: 20px; margin-bottom: 4px; }
+        .stat-value { font-size: 24px; font-weight: 800; color: var(--primary); }
+        .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
 
-        /* Cards list */
-        .cards-list { display: flex; flex-direction: column; gap: 12px; }
+        /* Cards */
+        .cards-list { display: flex; flex-direction: column; gap: 10px; }
         .work-card {
             background: var(--card); border-radius: var(--radius);
-            border: 1px solid rgba(17,52,88,0.08);
-            padding: 16px; box-shadow: var(--shadow); backdrop-filter: blur(12px);
-            border-left: 5px solid var(--primary-light);
-            cursor: pointer; transition: all 0.2s;
+            padding: 0; box-shadow: var(--shadow); overflow: hidden;
+            cursor: pointer; transition: all 0.25s;
+            animation: fadeInUp 0.3s ease backwards;
         }
-        .work-card:active { transform: scale(0.99); }
-        .work-card.type-repair { border-left-color: var(--accent); }
-        .work-card.type-warranty { border-left-color: var(--danger); }
+        .work-card:hover { box-shadow: var(--shadow-lg); }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-        .card-mechanic { font-size: 1.08rem; font-weight: 800; color: var(--text); }
-        .card-date { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
-        .card-vehicle { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 4px; }
-        .card-reg { font-size: 0.88rem; color: var(--text-muted); }
+        .card-main { display: flex; gap: 0; }
+        .card-stripe { width: 5px; flex-shrink: 0; }
+        .work-card.type-service .card-stripe { background: var(--accent-blue); }
+        .work-card.type-repair .card-stripe { background: var(--accent-orange); }
+        .work-card.type-warranty .card-stripe { background: var(--accent-red); }
+        .card-content { flex: 1; padding: 14px; display: flex; gap: 12px; }
 
-        .card-badges { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
-        .badge {
-            padding: 5px 12px; border-radius: 999px; font-size: 0.76rem; font-weight: 700;
+        .card-avatar {
+            width: 44px; height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 800; color: white; flex-shrink: 0;
+            text-transform: uppercase;
         }
-        .badge-service { background: rgba(31,122,224,0.12); color: #123c66; }
-        .badge-repair { background: rgba(243,154,57,0.16); color: #b7520d; }
-        .badge-warranty { background: rgba(234,93,87,0.14); color: #922b21; }
-        .badge-materials { background: rgba(27,191,118,0.14); color: #1e8449; }
-        .badge-hours { background: rgba(17,52,88,0.08); color: var(--text-muted); }
+        .work-card.type-service .card-avatar { background: linear-gradient(135deg, var(--accent-blue), #2563eb); }
+        .work-card.type-repair .card-avatar { background: linear-gradient(135deg, var(--accent-orange), #d97706); }
+        .work-card.type-warranty .card-avatar { background: linear-gradient(135deg, var(--accent-red), #dc2626); }
 
-        /* Expanded card details */
-        .card-details { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(17,52,88,0.1); }
+        .card-info { flex: 1; min-width: 0; }
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+        .card-mechanic { font-size: 15px; font-weight: 700; color: var(--text); }
+        .card-date { font-size: 12px; color: var(--text-muted); white-space: nowrap; font-weight: 500; }
+        .card-vehicle { font-size: 14px; color: var(--text); margin-bottom: 2px; }
+        .card-reg { font-size: 13px; color: var(--text-muted); }
+        .card-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+        .badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; }
+        .badge-service { background: rgba(59,130,246,0.1); color: #2563eb; }
+        .badge-repair { background: rgba(245,158,11,0.1); color: #b45309; }
+        .badge-warranty { background: rgba(239,68,68,0.1); color: #dc2626; }
+        .badge-materials { background: rgba(16,185,129,0.1); color: #059669; }
+        .badge-hours { background: rgba(100,116,139,0.1); color: #475569; }
+
+        .card-details {
+            display: none; padding: 0 14px 14px 70px;
+            animation: fadeIn 0.3s ease;
+        }
         .card-details.open { display: block; }
-        .detail-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 0.92rem; }
-        .detail-label { color: var(--text-muted); font-weight: 600; }
+        .detail-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { color: var(--text-muted); font-weight: 500; }
         .detail-value { color: var(--text); font-weight: 600; text-align: right; max-width: 60%; }
 
-        /* Loading & empty */
-        .loading { text-align: center; padding: 40px; }
+        .loading { text-align: center; padding: 50px; }
         .spinner {
-            width: 34px; height: 34px; border: 3px solid rgba(17,52,88,0.12);
-            border-top-color: var(--primary-light); border-radius: 50%;
-            animation: spin 0.8s linear infinite; margin: 0 auto 12px;
+            width: 36px; height: 36px; border: 3px solid var(--border);
+            border-top-color: var(--accent-blue); border-radius: 50%;
+            animation: spin 0.8s linear infinite; margin: 0 auto 10px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 1rem; font-weight: 500; }
-        .error-msg { text-align: center; padding: 20px; color: var(--danger); font-size: 0.95rem; font-weight: 600; }
+        .empty { text-align: center; padding: 50px; color: var(--text-muted); font-size: 14px; }
+        .empty-icon { font-size: 40px; margin-bottom: 10px; opacity: 0.5; }
+        .error-msg { text-align: center; padding: 20px; color: var(--danger); font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h1>РАБОТНИ КАРТИ</h1>
-    <div class="nav-links">
-        <a href="index.html">Нова карта</a>
-        <a href="history.html" class="active">Преглед</a>
+    <div class="header-top">
+        <span class="header-icon">📊</span>
+        <h1>РАБОТНИ КАРТИ</h1>
     </div>
 </div>
 
 <div class="container">
-    <!-- Filters -->
     <div class="filters">
-        <div class="filters-title">Филтри</div>
-        <div class="filter-row">
-            <div>
-                <label>Механик</label>
-                <select id="filterMechanic"><option value="">Всички</option></select>
-            </div>
-            <div>
-                <label>Вид дейност</label>
-                <select id="filterActivity">
-                    <option value="">Всички</option>
-                    <option value="ОБСЛУЖВАНЕ">Обслужване</option>
-                    <option value="РЕМОНТ">Ремонт</option>
-                    <option value="ГАРАНЦИОНЕН РЕМОНТ">Гаранционен ремонт</option>
-                </select>
-            </div>
+        <div class="filters-toggle" onclick="toggleFilters()">
+            <span><span class="ft-icon">🔍</span> Филтри</span>
+            <span class="ft-arrow" id="filterArrow">▼</span>
         </div>
-        <div class="filter-row">
-            <div>
-                <label>От дата</label>
-                <input type="date" id="filterFrom">
+        <div class="filters-body open" id="filtersBody">
+            <div class="filter-row">
+                <div><label>Механик</label><select id="filterMechanic"><option value="">Всички</option></select></div>
+                <div><label>Вид дейност</label><select id="filterActivity"><option value="">Всички</option><option value="ОБСЛУЖВАНЕ">Обслужване</option><option value="РЕМОНТ">Ремонт</option><option value="ГАРАНЦИОНЕН РЕМОНТ">Гаранционен ремонт</option></select></div>
             </div>
-            <div>
-                <label>До дата</label>
-                <input type="date" id="filterTo">
+            <div class="filter-row">
+                <div><label>От дата</label><input type="date" id="filterFrom"></div>
+                <div><label>До дата</label><input type="date" id="filterTo"></div>
             </div>
-        </div>
-        <div class="filter-row single">
-            <div>
-                <label>Машина / рег. номер</label>
-                <input type="text" id="filterVehicle" placeholder="Търси по машина или номер...">
+            <div class="filter-row single">
+                <div><label>Машина / рег. номер</label><input type="text" id="filterVehicle" placeholder="Търси по машина или номер..."></div>
             </div>
-        </div>
-        <div class="filter-actions">
-            <button class="btn btn-primary" onclick="loadCards()">Покажи</button>
-            <button class="btn btn-outline" onclick="clearFilters()">Изчисти</button>
-            <button class="btn btn-success" onclick="exportExcel()">📥 Excel</button>
+            <div class="filter-actions">
+                <button class="btn btn-primary" onclick="loadCards()">🔍 Покажи</button>
+                <button class="btn btn-outline" onclick="clearFilters()">✕ Изчисти</button>
+                <button class="btn btn-success" onclick="exportExcel()">📥 Excel</button>
+            </div>
         </div>
     </div>
 
-    <!-- Stats -->
-    <div class="stats" id="statsBar">
-        <div class="stat-card"><div class="stat-value" id="statTotal">-</div><div class="stat-label">Записи</div></div>
-        <div class="stat-card"><div class="stat-value" id="statHours">-</div><div class="stat-label">Общо чч</div></div>
-        <div class="stat-card"><div class="stat-value" id="statService">-</div><div class="stat-label">Обслужв.</div></div>
-        <div class="stat-card"><div class="stat-value" id="statRepair">-</div><div class="stat-label">Ремонти</div></div>
+    <div class="stats">
+        <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-value" id="statTotal">-</div><div class="stat-label">Записи</div></div>
+        <div class="stat-card"><div class="stat-icon">⏱</div><div class="stat-value" id="statHours">-</div><div class="stat-label">Часове</div></div>
+        <div class="stat-card"><div class="stat-icon">🔧</div><div class="stat-value" id="statService">-</div><div class="stat-label">Обслужв.</div></div>
+        <div class="stat-card"><div class="stat-icon">🛠</div><div class="stat-value" id="statRepair">-</div><div class="stat-label">Ремонти</div></div>
     </div>
 
-    <!-- Loading -->
     <div id="loading" class="loading">
         <div class="spinner"></div>
         <div style="color:var(--text-muted);font-size:13px;">Зареждане...</div>
     </div>
-
-    <!-- Cards -->
     <div id="cardsList" class="cards-list"></div>
-    <div id="emptyState" class="empty" style="display:none;">Няма намерени записи за избрания период.</div>
+    <div id="emptyState" class="empty" style="display:none;"><div class="empty-icon">📭</div>Няма намерени записи за избрания период.</div>
     <div id="errorState" class="error-msg" style="display:none;"></div>
 </div>
+
+<nav class="bottom-nav">
+    <a href="index.html"><span class="nav-icon">📝</span>Нова карта</a>
+    <a href="history.html" class="active"><span class="nav-icon">📊</span>Преглед</a>
+</nav>
 
 <script>
 const SUPABASE_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co';
@@ -240,20 +248,20 @@ const SUPABASE_ANON_KEY = 'sb_publishable_aMxRatJ2BJxE5vQIhffing_8_zMpBDO';
 
 let allCards = [];
 let allMaterials = [];
-let loadRequestId = 0;
 
 async function supabaseGet(table, query = '') {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
-        headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-        }
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
     });
     if (!res.ok) throw new Error(`GET ${table}: ${res.status}`);
     return res.json();
 }
 
-// Load mechanics for filter dropdown
+function toggleFilters() {
+    document.getElementById('filtersBody').classList.toggle('open');
+    document.getElementById('filterArrow').classList.toggle('open');
+}
+
 async function loadMechanics() {
     try {
         const data = await supabaseGet('nomenclatures', 'group_name=eq.mechanics&is_active=eq.true&order=sort_order');
@@ -262,7 +270,6 @@ async function loadMechanics() {
     } catch(e) { console.error(e); }
 }
 
-// Set default date range (current month)
 function setDefaultDates() {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -270,90 +277,48 @@ function setDefaultDates() {
     document.getElementById('filterTo').value = now.toISOString().split('T')[0];
 }
 
-// Format date DD.MM.YYYY
-function formatDate(dateStr) {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
-}
+function formatDate(dateStr) { if (!dateStr) return ''; const d = new Date(dateStr); return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`; }
+function formatDateTime(dtStr) { if (!dtStr) return ''; const d = new Date(dtStr); return `${formatDate(dtStr)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
 
-// Format datetime
-function formatDateTime(dtStr) {
-    if (!dtStr) return '';
-    const d = new Date(dtStr);
-    return `${formatDate(dtStr)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-}
+function getInitials(name) { return name.split(' ').map(n => n[0]).join('').substring(0, 2); }
 
-// Get materials for a card
 function getMaterialsForCard(cardId) {
     const mats = allMaterials.filter(m => m.work_card_id === cardId);
     const result = {};
     const catNames = { oil: 'Масло', antifreeze: 'Антифриз', bulb: 'Крушки', quick_coupling: 'Бързи връзки', teeth: 'Зъби' };
-    mats.forEach(m => {
-        result[catNames[m.category] || m.category] = `${m.item_type} (${m.quantity} ${m.unit})`;
-    });
+    mats.forEach(m => { result[catNames[m.category] || m.category] = `${m.item_type} (${m.quantity} ${m.unit})`; });
     return result;
 }
 
-// Load cards with filters
 async function loadCards() {
-    const requestId = ++loadRequestId;
     const loading = document.getElementById('loading');
     const cardsList = document.getElementById('cardsList');
     const emptyState = document.getElementById('emptyState');
     const errorState = document.getElementById('errorState');
-
-    loading.style.display = 'block';
-    cardsList.innerHTML = '';
-    emptyState.style.display = 'none';
-    errorState.style.display = 'none';
+    loading.style.display = 'block'; cardsList.innerHTML = ''; emptyState.style.display = 'none'; errorState.style.display = 'none';
 
     try {
         let query = 'order=work_date.desc,created_at.desc';
-
         const mechanic = document.getElementById('filterMechanic').value;
         const activity = document.getElementById('filterActivity').value;
         const from = document.getElementById('filterFrom').value;
         const to = document.getElementById('filterTo').value;
         const vehicle = document.getElementById('filterVehicle').value.trim();
-
         if (mechanic) query += `&mechanic=eq.${encodeURIComponent(mechanic)}`;
         if (activity) query += `&activity_type=eq.${encodeURIComponent(activity)}`;
         if (from) query += `&work_date=gte.${from}`;
         if (to) query += `&work_date=lte.${to}`;
 
-        // Query work_cards table directly
         const data = await supabaseGet('work_cards', query);
-
-        // Ignore stale responses from an earlier, slower request
-        if (requestId !== loadRequestId) return;
-
-        // Load materials for all cards
         if (data.length > 0) {
             const ids = data.map(c => c.id);
             allMaterials = await supabaseGet('work_card_materials', `work_card_id=in.(${ids.join(',')})`);
-        } else {
-            allMaterials = [];
-        }
+        } else { allMaterials = []; }
 
-        if (requestId !== loadRequestId) return;
-
-        // Client-side vehicle/reg filter
-        allCards = vehicle
-            ? data.filter(c => (c.vehicle || '').toLowerCase().includes(vehicle.toLowerCase()) ||
-                               (c.reg_number || '').toLowerCase().includes(vehicle.toLowerCase()))
-            : data;
-
-        updateStats(allCards);
-        renderCards(allCards);
-    } catch(e) {
-        if (requestId !== loadRequestId) return;
-        console.error(e);
-        errorState.textContent = 'Грешка при зареждане: ' + e.message;
-        errorState.style.display = 'block';
-    } finally {
-        if (requestId === loadRequestId) loading.style.display = 'none';
-    }
+        allCards = vehicle ? data.filter(c => (c.vehicle||'').toLowerCase().includes(vehicle.toLowerCase()) || (c.reg_number||'').toLowerCase().includes(vehicle.toLowerCase())) : data;
+        updateStats(allCards); renderCards(allCards);
+    } catch(e) { console.error(e); errorState.textContent = 'Грешка: ' + e.message; errorState.style.display = 'block'; }
+    finally { loading.style.display = 'none'; }
 }
 
 function updateStats(cards) {
@@ -367,64 +332,38 @@ function updateStats(cards) {
 function renderCards(cards) {
     const cardsList = document.getElementById('cardsList');
     const emptyState = document.getElementById('emptyState');
-
-    if (cards.length === 0) {
-        emptyState.style.display = 'block';
-        return;
-    }
+    if (cards.length === 0) { emptyState.style.display = 'block'; return; }
 
     cardsList.innerHTML = cards.map((c, i) => {
-        const typeClass = c.activity_type === 'РЕМОНТ' ? 'type-repair' :
-                          c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'type-warranty' : '';
-
-        const activityBadge = c.activity_type === 'ОБСЛУЖВАНЕ'
-            ? '<span class="badge badge-service">Обслужване</span>'
-            : c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ'
-            ? '<span class="badge badge-warranty">Гаранционен</span>'
-            : '<span class="badge badge-repair">Ремонт</span>';
-
-        const materialsBadge = c.has_materials
-            ? '<span class="badge badge-materials">Материали</span>' : '';
-
-        const hoursBadge = c.work_hours
-            ? `<span class="badge badge-hours">${c.work_hours} чч</span>` : '';
-
+        const typeClass = c.activity_type === 'ОБСЛУЖВАНЕ' ? 'type-service' : c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'type-warranty' : 'type-repair';
+        const actBadge = c.activity_type === 'ОБСЛУЖВАНЕ' ? '<span class="badge badge-service">Обслужване</span>' : c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ' ? '<span class="badge badge-warranty">Гаранционен</span>' : '<span class="badge badge-repair">Ремонт</span>';
+        const matBadge = c.has_materials ? '<span class="badge badge-materials">Материали</span>' : '';
+        const hoursBadge = c.work_hours ? `<span class="badge badge-hours">${c.work_hours} чч</span>` : '';
         const mats = getMaterialsForCard(c.id);
-
-        // Build details
         let details = '';
-        const addDetail = (label, val) => { if (val) details += `<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-value">${val}</span></div>`; };
+        const ad = (l,v) => { if(v) details += `<div class="detail-row"><span class="detail-label">${l}</span><span class="detail-value">${v}</span></div>`; };
+        ad('Клиент', c.client); ad('km / м.ч.', c.km_hours);
+        if (c.services && c.services.length > 0) ad('Обслужване', c.services.join(', '));
+        if (c.repair_systems && c.repair_systems.length > 0) ad('Ремонтни системи', c.repair_systems.join(', '));
+        ad('Вид ремонт', c.repair_type); ad('Масло', mats['Масло']); ad('Антифриз', mats['Антифриз']);
+        ad('Крушки', mats['Крушки']); ad('Бързи връзки', mats['Бързи връзки']); ad('Зъби', mats['Зъби']);
+        ad('Записано', formatDateTime(c.created_at));
 
-        addDetail('Клиент', c.client);
-        addDetail('km / м.ч.', c.km_hours);
-        if (c.services && c.services.length > 0) addDetail('Обслужване', c.services.join(', '));
-        if (c.repair_systems && c.repair_systems.length > 0) addDetail('Ремонтни системи', c.repair_systems.join(', '));
-        addDetail('Вид ремонт', c.repair_type);
-        addDetail('Масло', mats['Масло']);
-        addDetail('Антифриз', mats['Антифриз']);
-        addDetail('Крушки', mats['Крушки']);
-        addDetail('Бързи връзки', mats['Бързи връзки']);
-        addDetail('Зъби', mats['Зъби']);
-        addDetail('Записано', formatDateTime(c.created_at));
-
-        return `
-        <div class="work-card ${typeClass}" onclick="toggleDetails(${i})">
-            <div class="card-top">
-                <div class="card-mechanic">${c.mechanic}</div>
-                <div class="card-date">${formatDate(c.work_date)}</div>
-            </div>
-            <div class="card-vehicle">${c.vehicle}</div>
-            <div class="card-reg">${c.reg_number}</div>
-            <div class="card-badges">${activityBadge}${materialsBadge}${hoursBadge}</div>
+        return `<div class="work-card ${typeClass}" style="animation-delay:${i*0.04}s" onclick="toggleDetails(${i})">
+            <div class="card-main"><div class="card-stripe"></div><div class="card-content">
+                <div class="card-avatar">${getInitials(c.mechanic)}</div>
+                <div class="card-info">
+                    <div class="card-top"><div class="card-mechanic">${c.mechanic}</div><div class="card-date">${formatDate(c.work_date)}</div></div>
+                    <div class="card-vehicle">${c.vehicle}</div><div class="card-reg">${c.reg_number}</div>
+                    <div class="card-badges">${actBadge}${matBadge}${hoursBadge}</div>
+                </div>
+            </div></div>
             <div class="card-details" id="details-${i}">${details}</div>
         </div>`;
     }).join('');
 }
 
-function toggleDetails(index) {
-    const el = document.getElementById(`details-${index}`);
-    el.classList.toggle('open');
-}
+function toggleDetails(i) { document.getElementById(`details-${i}`).classList.toggle('open'); }
 
 function clearFilters() {
     document.getElementById('filterMechanic').value = '';
@@ -435,58 +374,22 @@ function clearFilters() {
     loadCards();
 }
 
-// Excel export
 function exportExcel() {
     if (allCards.length === 0) { alert('Няма данни за експорт.'); return; }
-
-    const headers = ['Механик','Дата','Автомобил/Бус/Машина','рег№/сер№/Инв№','km/м.ч.','Клиент',
-        'Вид дейност','Обслужване','Ремонтни системи','Вид ремонт','Вложени материали',
-        'Масло','Антифриз','Крушки','Бързи връзки','Зъби','Време (чч)','Записано на'];
-
-    const csvContent = '\uFEFF' +
-        headers.join(';') + '\n' +
-        allCards.map(c => {
-            const mats = getMaterialsForCard(c.id);
-            const row = [
-                c.mechanic,
-                formatDate(c.work_date),
-                c.vehicle,
-                c.reg_number,
-                c.km_hours || '',
-                c.client,
-                c.activity_type,
-                (c.services || []).join(', '),
-                (c.repair_systems || []).join(', '),
-                c.repair_type || '',
-                c.has_materials ? 'Да' : 'Не',
-                mats['Масло'] || '',
-                mats['Антифриз'] || '',
-                mats['Крушки'] || '',
-                mats['Бързи връзки'] || '',
-                mats['Зъби'] || '',
-                c.work_hours || '',
-                formatDateTime(c.created_at)
-            ];
-            return row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';');
-        }).join('\n');
-
+    const headers = ['Механик','Дата','Автомобил/Бус/Машина','рег№/сер№/Инв№','km/м.ч.','Клиент','Вид дейност','Обслужване','Ремонтни системи','Вид ремонт','Вложени материали','Масло','Антифриз','Крушки','Бързи връзки','Зъби','Време (чч)','Записано на'];
+    const csvContent = '\uFEFF' + headers.join(';') + '\n' + allCards.map(c => {
+        const mats = getMaterialsForCard(c.id);
+        const row = [c.mechanic, formatDate(c.work_date), c.vehicle, c.reg_number, c.km_hours||'', c.client, c.activity_type, (c.services||[]).join(', '), (c.repair_systems||[]).join(', '), c.repair_type||'', c.has_materials?'Да':'Не', mats['Масло']||'', mats['Антифриз']||'', mats['Крушки']||'', mats['Бързи връзки']||'', mats['Зъби']||'', c.work_hours||'', formatDateTime(c.created_at)];
+        return row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';');
+    }).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     const from = document.getElementById('filterFrom').value || 'all';
     const to = document.getElementById('filterTo').value || 'all';
-    a.download = `Работни_Карти_${from}_${to}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    a.download = `Работни_Карти_${from}_${to}.csv`; a.click();
 }
 
-// Init
-document.addEventListener('DOMContentLoaded', () => {
-    loadMechanics();
-    setDefaultDates();
-    loadCards();
-});
+document.addEventListener('DOMContentLoaded', () => { loadMechanics(); setDefaultDates(); loadCards(); });
 </script>
 </body>
 </html>
