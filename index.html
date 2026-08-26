@@ -155,6 +155,10 @@
         }
         .checkbox-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent-orange); flex-shrink: 0; }
         .checkbox-item span { font-size: 14px; }
+        #mechanicsList.checkbox-item:has(input:checked), #mechanicsList .checkbox-item:has(input:checked) {
+            border-color: var(--accent-blue); background: rgba(59,130,246,0.06);
+        }
+        #mechanicsList .checkbox-item input[type="checkbox"] { accent-color: var(--accent-blue); }
 
         /* Toggle switch */
         .toggle-group { display: flex; gap: 8px; }
@@ -271,7 +275,7 @@
         <div class="section-title"><span class="icon">📋</span> Основни данни</div>
         <div class="field" id="fMechanic">
             <label>Механик <span class="required">*</span></label>
-            <select id="mechanic"><option value="">— Избери —</option></select>
+            <div id="mechanicsList" class="checkbox-grid"></div>
             <div class="error-msg">Избери механик</div>
         </div>
         <div class="field" id="fDate">
@@ -289,9 +293,10 @@
             <input type="text" id="regNumber" placeholder="напр. СА 1234 ВХ, SER-5678...">
             <div class="error-msg">Въведи номер</div>
         </div>
-        <div class="field">
-            <label>km / м.ч.</label>
+        <div class="field" id="fKmHours">
+            <label>km / м.ч. <span class="required">*</span></label>
             <input type="text" id="kmHours" placeholder="напр. 12500 km или 3200 м.ч.">
+            <div class="error-msg">Въведи km или моточасове</div>
         </div>
         <div class="field" id="fClient">
             <label>Клиент: Име, Фамилия <span class="required">*</span></label>
@@ -323,15 +328,20 @@
             <label>Вид ремонт</label>
             <select id="repairType"><option value="">— Избери —</option></select>
         </div>
+        <div class="field" style="margin-top:14px;">
+            <label>Извършен ремонт</label>
+            <input type="text" id="repairDescription" placeholder="Описание на извършения ремонт...">
+        </div>
     </div>
 
     <div class="section">
-        <div class="section-title"><span class="icon">📦</span> Вложени материали</div>
-        <div class="field">
+        <div class="section-title"><span class="icon">📦</span> Вложени материали <span class="required">*</span></div>
+        <div class="field" id="fMaterials">
             <div class="toggle-group">
                 <button type="button" class="toggle-btn" onclick="toggleMaterials(true)">Да</button>
                 <button type="button" class="toggle-btn" onclick="toggleMaterials(false)">Не</button>
             </div>
+            <div class="error-msg">Избери Да или Не</div>
         </div>
         <div id="materialsSection" class="conditional">
             <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">🛢</span>Масло</span><span class="arrow">▼</span></div><div class="material-body"><div id="oilsList" class="checkbox-grid"></div><div class="material-qty"><label>Количество:</label><input type="number" id="oilQty" step="0.1" min="0" placeholder="0"><span class="unit">литри</span></div></div></div>
@@ -401,8 +411,8 @@ async function loadNomenclatures() {
 }
 
 function buildForm() {
-    const mechSelect = document.getElementById('mechanic');
-    (nomenclatures.mechanics || []).forEach(m => { mechSelect.innerHTML += `<option value="${m.value}">${m.label}</option>`; });
+    const mechDiv = document.getElementById('mechanicsList');
+    (nomenclatures.mechanics || []).forEach(m => { mechDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="mechanics" value="${m.value}"><span>${m.label}</span></label>`; });
     document.getElementById('workDate').value = new Date().toISOString().split('T')[0];
     const actDiv = document.getElementById('activityTypes');
     (nomenclatures.activity_types || []).forEach(a => {
@@ -429,7 +439,7 @@ function onActivityChange(value) {
     document.getElementById('sectionServices').classList.toggle('visible', value === 'ОБСЛУЖВАНЕ');
     document.getElementById('sectionRepair').classList.toggle('visible', value === 'РЕМОНТ' || value === 'ГАРАНЦИОНЕН РЕМОНТ');
 }
-let hasMaterials = false;
+let hasMaterials = null;
 function toggleMaterials(yes) {
     hasMaterials = yes;
     const btns = document.querySelectorAll('.toggle-btn');
@@ -446,12 +456,14 @@ function toggleCategory(header) {
 function validate() {
     let valid = true;
     const checks = [
-        { id: 'fMechanic', test: () => document.getElementById('mechanic').value !== '' },
+        { id: 'fMechanic', test: () => document.querySelectorAll('input[name="mechanics"]:checked').length > 0 },
         { id: 'fDate', test: () => document.getElementById('workDate').value !== '' },
         { id: 'fVehicle', test: () => document.getElementById('vehicle').value.trim() !== '' },
         { id: 'fRegNumber', test: () => document.getElementById('regNumber').value.trim() !== '' },
         { id: 'fClient', test: () => document.getElementById('client').value.trim() !== '' },
         { id: 'fActivity', test: () => document.querySelector('input[name="activityType"]:checked') !== null },
+        { id: 'fKmHours', test: () => document.getElementById('kmHours').value.trim() !== '' },
+        { id: 'fMaterials', test: () => hasMaterials !== null },
         { id: 'fWorkHours', test: () => document.getElementById('workHours').value !== '' },
     ];
     checks.forEach(c => { const el = document.getElementById(c.id); if (!c.test()) { el.classList.add('invalid'); valid = false; } else { el.classList.remove('invalid'); } });
@@ -485,19 +497,20 @@ async function submitForm() {
     try {
         const activityType = document.querySelector('input[name="activityType"]:checked').value;
         const cardData = {
-            mechanic: document.getElementById('mechanic').value, work_date: document.getElementById('workDate').value,
+            mechanic: Array.from(document.querySelectorAll('input[name="mechanics"]:checked')).map(cb => cb.value), work_date: document.getElementById('workDate').value,
             vehicle: document.getElementById('vehicle').value.trim(), reg_number: document.getElementById('regNumber').value.trim(),
             km_hours: document.getElementById('kmHours').value.trim() || null, client: document.getElementById('client').value.trim(),
             activity_type: activityType,
             services: activityType === 'ОБСЛУЖВАНЕ' ? getCheckedValues('services') : [],
             repair_systems: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? getCheckedValues('repairSystems') : [],
             repair_type: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? document.getElementById('repairType').value || null : null,
+            repair_description: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? document.getElementById('repairDescription').value.trim() || null : null,
             has_materials: hasMaterials, work_hours: parseFloat(document.getElementById('workHours').value)
         };
         const result = await supabaseInsert('work_cards', cardData);
         const cardId = result[0].id;
         if (hasMaterials) { const materials = collectMaterials(); if (materials.length > 0) { await supabaseInsert('work_card_materials', materials.map(m => ({ ...m, work_card_id: cardId }))); } }
-        showStatus(`✓ Записана: ${cardData.mechanic} — ${cardData.vehicle} (${cardData.reg_number}) — ${cardData.activity_type}`, 'success');
+        showStatus(`✓ Записана: ${cardData.mechanic.join(', ')} — ${cardData.vehicle} (${cardData.reg_number}) — ${cardData.activity_type}`, 'success');
         resetForm();
     } catch (e) { console.error('Грешка при запис:', e); showStatus('Грешка при запис: ' + e.message, 'error'); }
     finally { btn.disabled = false; btn.textContent = '✓ Запиши работна карта'; }
@@ -509,13 +522,17 @@ function showStatus(msg, type) {
     if (type === 'success') setTimeout(() => { el.className = 'status'; }, 8000);
 }
 function resetForm() {
-    const mech = document.getElementById('mechanic').value; const date = document.getElementById('workDate').value;
+    const mechs = Array.from(document.querySelectorAll('input[name="mechanics"]:checked')).map(cb => cb.value); const date = document.getElementById('workDate').value;
     document.querySelectorAll('input[type="text"], input[type="number"]').forEach(i => i.value = '');
     document.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(i => i.checked = false);
-    document.getElementById('mechanic').value = mech; document.getElementById('workDate').value = date;
+    document.querySelectorAll('input[name="mechanics"]').forEach(cb => { if (mechs.includes(cb.value)) cb.checked = true; });
+    document.getElementById('workDate').value = date;
+    document.getElementById('repairDescription').value = '';
     document.getElementById('sectionServices').classList.remove('visible');
     document.getElementById('sectionRepair').classList.remove('visible');
-    toggleMaterials(false);
+    hasMaterials = null;
+    document.querySelectorAll('.toggle-btn').forEach(b => b.className = 'toggle-btn');
+    document.getElementById('materialsSection').classList.remove('visible');
     document.querySelectorAll('.material-body').forEach(b => b.classList.remove('open'));
     document.querySelectorAll('.material-header .arrow').forEach(a => a.classList.remove('open'));
     window.scrollTo({ top: 0, behavior: 'smooth' });

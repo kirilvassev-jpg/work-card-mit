@@ -304,7 +304,7 @@ async function loadCards() {
         const from = document.getElementById('filterFrom').value;
         const to = document.getElementById('filterTo').value;
         const vehicle = document.getElementById('filterVehicle').value.trim();
-        if (mechanic) query += `&mechanic=eq.${encodeURIComponent(mechanic)}`;
+        if (mechanic) query += `&mechanic=cs.{${encodeURIComponent(mechanic)}}`;
         if (activity) query += `&activity_type=eq.${encodeURIComponent(activity)}`;
         if (from) query += `&work_date=gte.${from}`;
         if (to) query += `&work_date=lte.${to}`;
@@ -345,15 +345,15 @@ function renderCards(cards) {
         ad('Клиент', c.client); ad('km / м.ч.', c.km_hours);
         if (c.services && c.services.length > 0) ad('Обслужване', c.services.join(', '));
         if (c.repair_systems && c.repair_systems.length > 0) ad('Ремонтни системи', c.repair_systems.join(', '));
-        ad('Вид ремонт', c.repair_type); ad('Масло', mats['Масло']); ad('Антифриз', mats['Антифриз']);
+        ad('Вид ремонт', c.repair_type); ad('Извършен ремонт', c.repair_description); ad('Масло', mats['Масло']); ad('Антифриз', mats['Антифриз']);
         ad('Крушки', mats['Крушки']); ad('Бързи връзки', mats['Бързи връзки']); ad('Зъби', mats['Зъби']);
         ad('Записано', formatDateTime(c.created_at));
 
         return `<div class="work-card ${typeClass}" style="animation-delay:${i*0.04}s" onclick="toggleDetails(${i})">
             <div class="card-main"><div class="card-stripe"></div><div class="card-content">
-                <div class="card-avatar">${getInitials(c.mechanic)}</div>
+                <div class="card-avatar">${getInitials(Array.isArray(c.mechanic) ? c.mechanic[0] : c.mechanic)}</div>
                 <div class="card-info">
-                    <div class="card-top"><div class="card-mechanic">${c.mechanic}</div><div class="card-date">${formatDate(c.work_date)}</div></div>
+                    <div class="card-top"><div class="card-mechanic">${Array.isArray(c.mechanic) ? c.mechanic.join(', ') : c.mechanic}</div><div class="card-date">${formatDate(c.work_date)}</div></div>
                     <div class="card-vehicle">${c.vehicle}</div><div class="card-reg">${c.reg_number}</div>
                     <div class="card-badges">${actBadge}${matBadge}${hoursBadge}</div>
                 </div>
@@ -376,10 +376,10 @@ function clearFilters() {
 
 function exportExcel() {
     if (allCards.length === 0) { alert('Няма данни за експорт.'); return; }
-    const headers = ['Механик','Дата','Автомобил/Бус/Машина','рег№/сер№/Инв№','km/м.ч.','Клиент','Вид дейност','Обслужване','Ремонтни системи','Вид ремонт','Вложени материали','Масло','Антифриз','Крушки','Бързи връзки','Зъби','Време (чч)','Записано на'];
+    const headers = ['Механик','Дата','Автомобил/Бус/Машина','рег№/сер№/Инв№','km/м.ч.','Клиент','Вид дейност','Обслужване','Ремонтни системи','Вид ремонт','Извършен ремонт','Вложени материали','Масло','Антифриз','Крушки','Бързи връзки','Зъби','Време (чч)','Записано на'];
     const csvContent = '\uFEFF' + headers.join(';') + '\n' + allCards.map(c => {
         const mats = getMaterialsForCard(c.id);
-        const row = [c.mechanic, formatDate(c.work_date), c.vehicle, c.reg_number, c.km_hours||'', c.client, c.activity_type, (c.services||[]).join(', '), (c.repair_systems||[]).join(', '), c.repair_type||'', c.has_materials?'Да':'Не', mats['Масло']||'', mats['Антифриз']||'', mats['Крушки']||'', mats['Бързи връзки']||'', mats['Зъби']||'', c.work_hours||'', formatDateTime(c.created_at)];
+        const row = [Array.isArray(c.mechanic) ? c.mechanic.join(', ') : c.mechanic, formatDate(c.work_date), c.vehicle, c.reg_number, c.km_hours||'', c.client, c.activity_type, (c.services||[]).join(', '), (c.repair_systems||[]).join(', '), c.repair_type||'', c.repair_description||'', c.has_materials?'Да':'Не', mats['Масло']||'', mats['Антифриз']||'', mats['Крушки']||'', mats['Бързи връзки']||'', mats['Зъби']||'', c.work_hours||'', formatDateTime(c.created_at)];
         return row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';');
     }).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
