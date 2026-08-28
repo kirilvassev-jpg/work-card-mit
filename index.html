@@ -147,19 +147,20 @@
         /* Checkboxes */
         .checkbox-grid { display: flex; flex-direction: column; gap: 6px; }
         .checkbox-item {
-            display: flex; align-items: center; gap: 10px;
+            display: flex; align-items: center; gap: 12px;
             padding: 9px 12px; border: 1px solid var(--border);
             border-radius: 8px; cursor: pointer; transition: all 0.2s; background: #f8fafc;
         }
         .checkbox-item:has(input:checked) {
             border-color: var(--accent-orange); background: rgba(245,158,11,0.06);
         }
-        .checkbox-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent-orange); flex-shrink: 0; }
-        .checkbox-item span { font-size: 14px; }
+        .checkbox-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent-orange); flex-shrink: 0; margin: 0; vertical-align: middle; }
+        .checkbox-item span { font-size: 14px; vertical-align: middle; line-height: 1.4; }
         #mechanicsList.checkbox-item:has(input:checked), #mechanicsList .checkbox-item:has(input:checked) {
             border-color: var(--accent-blue); background: rgba(59,130,246,0.06);
         }
         #mechanicsList .checkbox-item input[type="checkbox"] { accent-color: var(--accent-blue); }
+        #mechanicsList .checkbox-item { justify-content: center; }
 
         /* Toggle switch */
         .toggle-group { display: flex; gap: 8px; }
