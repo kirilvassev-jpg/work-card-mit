@@ -6,22 +6,20 @@
     <title>Работна карта — МиТ</title>
     <style>
         :root {
-            --primary: #334155;
-            --primary-light: #4a6fa5;
-            --primary-gradient: linear-gradient(135deg, #1e293b 0%, #334155 50%, #4a6fa5 100%);
-            --accent-blue: #3b82f6;
-            --accent-green: #10b981;
-            --accent-orange: #f59e0b;
-            --accent-red: #ef4444;
-            --accent-purple: #8b5cf6;
-            --accent-teal: #14b8a6;
+            --primary: #1a3a8f;
+            --primary-dark: #0d1f52;
+            --primary-light: #2955c7;
+            --primary-gradient: linear-gradient(135deg, #0d1f52 0%, #1a3a8f 50%, #2955c7 100%);
+            --accent-blue: #2955c7;
+            --accent-red: #e41e2b;
+            --accent-red-dark: #c41820;
             --success: #10b981;
-            --danger: #ef4444;
-            --bg: #f1f5f9;
+            --danger: #e41e2b;
+            --bg: #f0f4f8;
             --card: #ffffff;
-            --text: #1e293b;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
+            --text: #1a2332;
+            --text-muted: #5a6577;
+            --border: #d8dfe8;
             --radius: 12px;
             --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
             --shadow-lg: 0 4px 12px rgba(0,0,0,0.1);
@@ -67,11 +65,11 @@
             padding: 8px 0 10px; text-decoration: none; font-size: 14px;
             font-weight: 600; color: var(--text-muted); transition: all 0.2s;
         }
-        .bottom-nav a.active { color: var(--accent-blue); }
+        .bottom-nav a.active { color: var(--primary); }
         .bottom-nav a .nav-icon { font-size: 24px; margin-bottom: 2px; }
         .bottom-nav a.active::after {
             content: ''; display: block; width: 24px; height: 3px;
-            background: var(--accent-blue); border-radius: 2px; margin-top: 2px;
+            background: var(--accent-red); border-radius: 2px; margin-top: 2px;
         }
 
         /* Form */
@@ -84,12 +82,12 @@
             transition: transform 0.2s, box-shadow 0.2s;
             animation: fadeInUp 0.4s ease backwards;
         }
-        .section:nth-child(1) { border-left-color: var(--accent-blue); animation-delay: 0.05s; }
-        .section:nth-child(2) { border-left-color: var(--accent-green); animation-delay: 0.1s; }
-        .section:nth-child(3) { border-left-color: var(--accent-orange); animation-delay: 0.15s; }
+        .section:nth-child(1) { border-left-color: var(--primary); animation-delay: 0.05s; }
+        .section:nth-child(2) { border-left-color: var(--accent-red); animation-delay: 0.1s; }
+        .section:nth-child(3) { border-left-color: var(--accent-blue); animation-delay: 0.15s; }
         .section:nth-child(4) { border-left-color: var(--accent-red); animation-delay: 0.15s; }
-        .section:nth-child(5) { border-left-color: var(--accent-purple); animation-delay: 0.2s; }
-        .section:nth-child(6) { border-left-color: var(--accent-teal); animation-delay: 0.25s; }
+        .section:nth-child(5) { border-left-color: var(--primary); animation-delay: 0.2s; }
+        .section:nth-child(6) { border-left-color: var(--accent-blue); animation-delay: 0.25s; }
 
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(12px); }
@@ -103,12 +101,12 @@
             display: flex; align-items: center; gap: 8px;
         }
         .section-title .icon { font-size: 16px; }
-        .section:nth-child(1) .section-title { color: var(--accent-blue); }
-        .section:nth-child(2) .section-title { color: var(--accent-green); }
-        .section:nth-child(3) .section-title { color: var(--accent-orange); }
+        .section:nth-child(1) .section-title { color: var(--primary); }
+        .section:nth-child(2) .section-title { color: var(--accent-red); }
+        .section:nth-child(3) .section-title { color: var(--accent-blue); }
         .section:nth-child(4) .section-title { color: var(--accent-red); }
-        .section:nth-child(5) .section-title { color: var(--accent-purple); }
-        .section:nth-child(6) .section-title { color: var(--accent-teal); }
+        .section:nth-child(5) .section-title { color: var(--primary); }
+        .section:nth-child(6) .section-title { color: var(--accent-blue); }
 
         /* Fields */
         .field { margin-bottom: 14px; }
@@ -125,7 +123,7 @@
         select { background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 14px center; padding-right: 36px; -webkit-appearance: none; appearance: none; }
         select:focus, input:focus, textarea:focus {
             outline: none; border-color: var(--accent-blue); background: white;
-            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+            box-shadow: 0 0 0 3px rgba(41,85,199,0.15);
         }
 
         /* Radio - activity type cards */
@@ -136,12 +134,12 @@
             border-radius: 10px; cursor: pointer; transition: all 0.25s ease;
             background: #f8fafc;
         }
-        .radio-option:hover { border-color: var(--accent-blue); background: white; }
+        .radio-option:hover { border-color: var(--accent-red); background: white; }
         .radio-option:has(input:checked) {
-            border-color: var(--accent-blue); background: rgba(59,130,246,0.06);
-            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+            border-color: var(--accent-red); background: rgba(228,30,43,0.06);
+            box-shadow: 0 0 0 3px rgba(228,30,43,0.1);
         }
-        .radio-option input[type="radio"] { width: 18px; height: 18px; accent-color: var(--accent-blue); margin: 0; vertical-align: middle; }
+        .radio-option input[type="radio"] { width: 18px; height: 18px; accent-color: var(--accent-red); margin: 0; vertical-align: middle; }
         .radio-option span { font-size: 14px; font-weight: 600; vertical-align: middle; line-height: 1.4; }
 
         /* Checkboxes */
@@ -152,14 +150,14 @@
             border-radius: 8px; cursor: pointer; transition: all 0.2s; background: #f8fafc;
         }
         .checkbox-item:has(input:checked) {
-            border-color: var(--accent-orange); background: rgba(245,158,11,0.06);
+            border-color: var(--primary); background: rgba(26,58,143,0.06);
         }
-        .checkbox-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent-orange); flex-shrink: 0; margin: 0; vertical-align: middle; }
+        .checkbox-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); flex-shrink: 0; margin: 0; vertical-align: middle; }
         .checkbox-item span { font-size: 14px; vertical-align: middle; line-height: 1.4; }
         #mechanicsList.checkbox-item:has(input:checked), #mechanicsList .checkbox-item:has(input:checked) {
-            border-color: var(--accent-blue); background: rgba(59,130,246,0.06);
+            border-color: var(--primary); background: rgba(26,58,143,0.06);
         }
-        #mechanicsList .checkbox-item input[type="checkbox"] { accent-color: var(--accent-blue); }
+        #mechanicsList .checkbox-item input[type="checkbox"] { accent-color: var(--primary); }
         #mechanicsList .checkbox-item { justify-content: center; }
 
         /* Toggle switch */
@@ -175,8 +173,8 @@
             color: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.1);
         }
         .toggle-btn.active-no {
-            border-color: var(--danger); background: rgba(239,68,68,0.06);
-            color: var(--danger); box-shadow: 0 0 0 3px rgba(239,68,68,0.08);
+            border-color: var(--danger); background: rgba(228,30,43,0.06);
+            color: var(--danger); box-shadow: 0 0 0 3px rgba(228,30,43,0.08);
         }
 
         /* Material categories */
@@ -211,14 +209,14 @@
         .submit-section { padding: 0 12px; max-width: 600px; margin: 0 auto; animation: fadeInUp 0.4s ease 0.3s backwards; }
         .submit-btn {
             display: block; width: 100%; padding: 15px;
-            background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+            background: linear-gradient(135deg, var(--accent-red), var(--accent-red-dark));
             color: white; border: none; border-radius: var(--radius);
             font-size: 16px; font-weight: 700; cursor: pointer;
             letter-spacing: 0.5px; transition: all 0.3s ease;
-            box-shadow: 0 4px 14px rgba(59,130,246,0.35);
+            box-shadow: 0 4px 14px rgba(228,30,43,0.35);
             position: relative; overflow: hidden;
         }
-        .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.4); }
+        .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(228,30,43,0.4); }
         .submit-btn:active { transform: scale(0.98); }
         .submit-btn:disabled { background: #94a3b8; box-shadow: none; cursor: not-allowed; transform: none; }
         .submit-btn::after {
@@ -235,20 +233,20 @@
             display: none; animation: fadeInUp 0.3s ease;
         }
         .status.success { display: block; background: rgba(16,185,129,0.1); color: var(--success); border: 1px solid rgba(16,185,129,0.2); }
-        .status.error { display: block; background: rgba(239,68,68,0.08); color: var(--danger); border: 1px solid rgba(239,68,68,0.15); }
+        .status.error { display: block; background: rgba(228,30,43,0.08); color: var(--danger); border: 1px solid rgba(228,30,43,0.15); }
 
         /* Loading */
         .loading { display: none; text-align: center; padding: 50px; }
         .loading.show { display: block; }
         .spinner {
             width: 40px; height: 40px; border: 3px solid var(--border);
-            border-top-color: var(--accent-blue); border-radius: 50%;
+            border-top-color: var(--primary); border-radius: 50%;
             animation: spin 0.8s linear infinite; margin: 0 auto 14px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* Validation */
-        .field.invalid select, .field.invalid input { border-color: var(--danger); background: rgba(239,68,68,0.03); }
+        .field.invalid select, .field.invalid input { border-color: var(--danger); background: rgba(228,30,43,0.03); }
         .field .error-msg { color: var(--danger); font-size: 12px; margin-top: 4px; display: none; }
         .field.invalid .error-msg { display: block; }
     </style>
