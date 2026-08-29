@@ -173,6 +173,28 @@
         }
         #mechanicsList .checkbox-item input[type="checkbox"] { accent-color: var(--primary); }
         #mechanicsList .checkbox-item { justify-content: center; }
+        #mechanicsList {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        #mechanicsList .checkbox-item.checked,
+        #mechanicsList .checkbox-item:has(input:checked) {
+            transform: scale(1.03);
+            transition: all 0.2s ease;
+        }
+        #mechanicsList .checkbox-item.checked span,
+        #mechanicsList .checkbox-item:has(input:checked) span {
+            font-size: 15px;
+            font-weight: 700;
+        }
+        #mechanicsList .checkbox-item:not(.checked):not(:has(input:checked)) {
+            transition: all 0.2s ease;
+        }
+        #mechanicsList .checkbox-item:not(.checked):not(:has(input:checked)) span {
+            font-size: 13px;
+            font-weight: 400;
+        }
 
         /* Toggle switch */
         .toggle-group { display: flex; gap: 8px; }
