@@ -263,6 +263,15 @@
         .field.invalid select, .field.invalid input { border-color: var(--danger); background: rgba(220,38,38,0.03); }
         .field .error-msg { color: var(--danger); font-size: 12px; margin-top: 4px; display: none; }
         .field.invalid .error-msg { display: block; }
+
+        /* Mobile: larger tap targets for checkboxes/radios */
+        @media (max-width: 768px) {
+            .checkbox-item, .radio-option { gap: 14px; padding: 12px 16px; }
+            .checkbox-item input[type="checkbox"],
+            .radio-option input[type="radio"] {
+                width: 20px; height: 20px; min-width: 20px; cursor: pointer;
+            }
+        }
     </style>
 </head>
 <body>
