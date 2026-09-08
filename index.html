@@ -413,6 +413,10 @@
             <input type="number" id="workHours" step="0.5" min="0" placeholder="напр. 2.5" inputmode="decimal">
             <div class="error-msg">Въведи време за работа</div>
         </div>
+        <div class="field" id="fKmTraveled">
+            <label>Изминати км</label>
+            <input type="number" id="kmTraveled" step="1" min="0" placeholder="напр. 45">
+        </div>
     </div>
 </form>
 
@@ -560,7 +564,8 @@ async function submitForm() {
             repair_type: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? document.getElementById('repairType').value || null : null,
             repair_description: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? document.getElementById('repairDescription').value.trim() || null : null,
             has_materials: hasMaterials, work_hours: parseFloat(document.getElementById('workHours').value),
-            other_materials: hasMaterials ? document.getElementById('otherMaterials').value.trim() || null : null
+            other_materials: hasMaterials ? document.getElementById('otherMaterials').value.trim() || null : null,
+            km_traveled: document.getElementById('kmTraveled').value ? parseInt(document.getElementById('kmTraveled').value) : null
         };
         const result = await supabaseInsert('work_cards', cardData);
         const cardId = result[0].id;
@@ -584,6 +589,7 @@ function resetForm() {
     document.getElementById('workDate').value = date;
     document.getElementById('repairDescription').value = '';
     document.getElementById('otherMaterials').value = '';
+    document.getElementById('kmTraveled').value = '';
     document.getElementById('sectionServices').classList.remove('visible');
     document.getElementById('sectionRepair').classList.remove('visible');
     hasMaterials = null;

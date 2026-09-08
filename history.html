@@ -106,7 +106,7 @@
         .btn-outline { background: white; color: var(--text-muted); border: 1.5px solid var(--border); }
 
         /* Stats */
-        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+        .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 12px; }
         @media (max-width: 480px) { .stats { grid-template-columns: repeat(2, 1fr); } }
         .stat-card {
             background: var(--card); border-radius: var(--radius);
@@ -117,6 +117,8 @@
         .stat-card:nth-child(2) { border-top-color: var(--accent-blue); }
         .stat-card:nth-child(3) { border-top-color: var(--accent-red); }
         .stat-card:nth-child(4) { border-top-color: var(--accent-red-dark); }
+        .stat-card:nth-child(5) { border-top-color: var(--text-muted); }
+        .stat-card:nth-child(5) { border-top-color: var(--text-muted); }
         .stat-icon { font-size: 20px; margin-bottom: 4px; }
         .stat-value { font-size: 24px; font-weight: 800; color: var(--primary); }
         .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
@@ -162,6 +164,7 @@
         .badge-warranty { background: rgba(196,24,32,0.1); color: var(--accent-red-dark); }
         .badge-materials { background: rgba(16,185,129,0.1); color: #059669; }
         .badge-hours { background: rgba(100,116,139,0.1); color: #475569; }
+        .b-gray { background: rgba(100,116,139,0.1); color: #475569; }
 
         .card-details {
             display: none; padding: 0 14px 14px 70px;
@@ -352,6 +355,7 @@
         <div class="stat-card"><div class="stat-icon">⏱</div><div class="stat-value" id="statHours">-</div><div class="stat-label">Часове</div></div>
         <div class="stat-card"><div class="stat-icon">🔧</div><div class="stat-value" id="statService">-</div><div class="stat-label">Обслужв.</div></div>
         <div class="stat-card"><div class="stat-icon">🛠</div><div class="stat-value" id="statRepair">-</div><div class="stat-label">Ремонти</div></div>
+        <div class="stat-card"><div class="stat-icon">🚗</div><div class="stat-value" id="statKm">-</div><div class="stat-label">Км</div></div>
     </div>
 
     <div id="loading" class="loading">
@@ -429,6 +433,10 @@
         <div class="field">
             <label>Време за работа (човекочаса)</label>
             <input type="number" id="editWorkHours" step="0.5" min="0">
+        </div>
+        <div class="field">
+            <label>Изминати км</label>
+            <input type="number" id="editKmTraveled" step="1" min="0" placeholder="напр. 45">
         </div>
         <div style="display:flex; gap:10px; margin-top:20px;">
             <button type="button" class="btn btn-primary" style="flex:1;" onclick="saveEdit()">💾 Запази промените</button>
@@ -589,6 +597,8 @@ function updateStats(cards) {
     document.getElementById('statHours').textContent = totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
     document.getElementById('statService').textContent = cards.filter(c => c.activity_type === 'ОБСЛУЖВАНЕ').length;
     document.getElementById('statRepair').textContent = cards.filter(c => c.activity_type === 'РЕМОНТ' || c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ').length;
+    const totalKm = cards.reduce((sum, c) => sum + (parseInt(c.km_traveled) || 0), 0);
+    document.getElementById('statKm').textContent = totalKm;
 }
 
 function renderCards(cards) {
@@ -601,6 +611,7 @@ function renderCards(cards) {
         const actBadge = c.activity_type === 'ОБСЛУЖВАНЕ' ? '<span class="badge badge-service">Обслужване</span>' : c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ' ? '<span class="badge badge-warranty">Гаранционен</span>' : '<span class="badge badge-repair">Ремонт</span>';
         const matBadge = c.has_materials ? '<span class="badge badge-materials">Материали</span>' : '';
         const hoursBadge = c.work_hours ? `<span class="badge badge-hours">${c.work_hours} чч</span>` : '';
+        const kmBadge = c.km_traveled ? `<span class="badge b-gray">${c.km_traveled} км</span>` : '';
         const mats = getMaterialsForCard(c.id);
         let details = '';
         const ad = (l,v) => { if(v) details += `<div class="detail-row"><span class="detail-label">${l}</span><span class="detail-value">${v}</span></div>`; };
@@ -610,6 +621,7 @@ function renderCards(cards) {
         ad('Вид ремонт', c.repair_type); ad('Извършен ремонт', c.repair_description); ad('Масло', mats['Масло']); ad('Антифриз', mats['Антифриз']);
         ad('Крушки', mats['Крушки']); ad('Бързи връзки', mats['Бързи връзки']); ad('Зъби', mats['Зъби']);
         ad('Друго материали', c.other_materials);
+        ad('Изминати км', c.km_traveled ? c.km_traveled + ' км' : null);
         ad('Записано', formatDateTime(c.created_at));
 
         return `<div class="work-card ${typeClass}" style="animation-delay:${i*0.04}s" onclick="toggleDetails(${i})">
@@ -618,7 +630,7 @@ function renderCards(cards) {
                 <div class="card-info">
                     <div class="card-top"><div class="card-mechanic">${Array.isArray(c.mechanic) ? c.mechanic.join(', ') : c.mechanic}</div><div class="card-date">${formatDate(c.work_date)}</div></div>
                     <div class="card-vehicle">${c.vehicle}</div><div class="card-reg">${c.reg_number}</div>
-                    <div class="card-badges">${actBadge}${matBadge}${hoursBadge}</div>
+                    <div class="card-badges">${actBadge}${matBadge}${hoursBadge}${kmBadge}</div>
                 </div>
             </div></div>
             <div class="card-details" id="details-${i}">${details}<button type="button" class="btn btn-outline" style="width:100%;margin-top:10px;" onclick="event.stopPropagation(); editCard(${i})">✏️ Редактирай</button></div>
@@ -712,6 +724,7 @@ function buildEditForm(c) {
     editToggleMaterials(!!c.has_materials);
 
     document.getElementById('editWorkHours').value = c.work_hours != null ? c.work_hours : '';
+    document.getElementById('editKmTraveled').value = c.km_traveled != null ? c.km_traveled : '';
 }
 
 function getEditCheckedValues(name) { return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value); }
@@ -750,7 +763,8 @@ async function saveEdit() {
             repair_description: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? document.getElementById('editRepairDescription').value.trim() || null : null,
             has_materials: editHasMaterials,
             other_materials: editHasMaterials ? document.getElementById('editOtherMaterials').value.trim() || null : null,
-            work_hours: parseFloat(document.getElementById('editWorkHours').value)
+            work_hours: parseFloat(document.getElementById('editWorkHours').value),
+            km_traveled: document.getElementById('editKmTraveled').value ? parseInt(document.getElementById('editKmTraveled').value) : null
         };
         await supabasePatch('work_cards', `id=eq.${editingCardId}`, cardData);
         await supabaseDelete('work_card_materials', `work_card_id=eq.${editingCardId}`);
@@ -784,10 +798,10 @@ function clearFilters() {
 
 function exportExcel() {
     if (allCards.length === 0) { alert('Няма данни за експорт.'); return; }
-    const headers = ['Механик','Дата','Автомобил/Бус/Машина','рег№/сер№/Инв№','km/м.ч.','Клиент','Вид дейност','Обслужване','Ремонтни системи','Вид ремонт','Извършен ремонт','Вложени материали','Масло','Антифриз','Крушки','Бързи връзки','Зъби','Друго материали','Време (чч)','Записано на'];
+    const headers = ['Механик','Дата','Автомобил/Бус/Машина','рег№/сер№/Инв№','km/м.ч.','Клиент','Вид дейност','Обслужване','Ремонтни системи','Вид ремонт','Извършен ремонт','Вложени материали','Масло','Антифриз','Крушки','Бързи връзки','Зъби','Друго материали','Време (чч)','Изминати км','Записано на'];
     const csvContent = '\uFEFF' + headers.join(';') + '\n' + allCards.map(c => {
         const mats = getMaterialsForCard(c.id);
-        const row = [Array.isArray(c.mechanic) ? c.mechanic.join(', ') : c.mechanic, formatDate(c.work_date), c.vehicle, c.reg_number, c.km_hours||'', c.client, c.activity_type, (c.services||[]).join(', '), (c.repair_systems||[]).join(', '), c.repair_type||'', c.repair_description||'', c.has_materials?'Да':'Не', mats['Масло']||'', mats['Антифриз']||'', mats['Крушки']||'', mats['Бързи връзки']||'', mats['Зъби']||'', c.other_materials||'', c.work_hours||'', formatDateTime(c.created_at)];
+        const row = [Array.isArray(c.mechanic) ? c.mechanic.join(', ') : c.mechanic, formatDate(c.work_date), c.vehicle, c.reg_number, c.km_hours||'', c.client, c.activity_type, (c.services||[]).join(', '), (c.repair_systems||[]).join(', '), c.repair_type||'', c.repair_description||'', c.has_materials?'Да':'Не', mats['Масло']||'', mats['Антифриз']||'', mats['Крушки']||'', mats['Бързи връзки']||'', mats['Зъби']||'', c.other_materials||'', c.work_hours||'', c.km_traveled||'', formatDateTime(c.created_at)];
         return row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';');
     }).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
