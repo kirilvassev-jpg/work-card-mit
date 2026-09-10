@@ -240,6 +240,27 @@
         .material-qty label { font-size: 13px; white-space: nowrap; margin-bottom: 0; }
         .material-qty input { width: 100px; }
         .material-qty .unit { font-size: 13px; color: var(--text-muted); }
+        .material-item {
+            margin-bottom: 4px;
+        }
+        .item-qty {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 0 4px 38px;
+        }
+        .item-qty-input {
+            width: 80px;
+            padding: 6px 10px;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            text-align: center;
+        }
+        .item-qty .unit {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
 
         /* Conditional */
         .conditional { display: none; }
@@ -397,11 +418,11 @@
             <div class="error-msg">Избери Да или Не</div>
         </div>
         <div id="materialsSection" class="conditional">
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">🛢</span>Масло</span><span class="arrow">▼</span></div><div class="material-body"><div id="oilsList" class="checkbox-grid"></div><div class="material-qty"><label>Количество:</label><input type="number" id="oilQty" step="0.1" min="0" placeholder="0" inputmode="decimal"><span class="unit">литри</span></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">💧</span>Антифриз</span><span class="arrow">▼</span></div><div class="material-body"><div id="antifreezesList" class="checkbox-grid"></div><div class="material-qty"><label>Количество:</label><input type="number" id="antifreezeQty" step="0.1" min="0" placeholder="0" inputmode="decimal"><span class="unit">литри</span></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">💡</span>Крушки</span><span class="arrow">▼</span></div><div class="material-body"><div id="bulbsList" class="checkbox-grid"></div><div class="material-qty"><label>Количество:</label><input type="number" id="bulbQty" step="1" min="0" placeholder="0" inputmode="decimal"><span class="unit">брой</span></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">🔩</span>Бързи връзки</span><span class="arrow">▼</span></div><div class="material-body"><div id="quickCouplingsList" class="checkbox-grid"></div><div class="material-qty"><label>Количество:</label><input type="number" id="couplingQty" step="1" min="0" placeholder="0" inputmode="decimal"><span class="unit">брой</span></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">⚙</span>Зъби</span><span class="arrow">▼</span></div><div class="material-body"><div id="teethList" class="checkbox-grid"></div><div class="material-qty"><label>Количество:</label><input type="number" id="teethQty" step="1" min="0" placeholder="0" inputmode="decimal"><span class="unit">брой</span></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">🛢</span>Масло</span><span class="arrow">▼</span></div><div class="material-body"><div id="oilsList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">💧</span>Антифриз</span><span class="arrow">▼</span></div><div class="material-body"><div id="antifreezesList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">💡</span>Крушки</span><span class="arrow">▼</span></div><div class="material-body"><div id="bulbsList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">🔩</span>Бързи връзки</span><span class="arrow">▼</span></div><div class="material-body"><div id="quickCouplingsList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">⚙</span>Зъби</span><span class="arrow">▼</span></div><div class="material-body"><div id="teethList" class="checkbox-grid"></div></div></div>
             <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">📝</span>Друго</span><span class="arrow">▼</span></div><div class="material-body"><textarea id="otherMaterials" rows="3" placeholder="Опиши допълнителни материали..."></textarea></div></div>
         </div>
     </div>
@@ -482,15 +503,36 @@ function buildForm() {
     (nomenclatures.repair_systems || []).forEach(r => { repSysDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="repairSystems" value="${r.value}"><span>${r.label}</span></label>`; });
     const repTypeSelect = document.getElementById('repairType');
     (nomenclatures.repair_types || []).forEach(r => { repTypeSelect.innerHTML += `<option value="${r.value}">${r.label}</option>`; });
-    buildCheckboxes('oilsList', nomenclatures.oils || [], 'oils');
-    buildCheckboxes('antifreezesList', nomenclatures.antifreezes || [], 'antifreezes');
-    buildCheckboxes('bulbsList', nomenclatures.bulbs || [], 'bulbs');
-    buildCheckboxes('quickCouplingsList', nomenclatures.quick_couplings || [], 'quick_couplings');
-    buildCheckboxes('teethList', nomenclatures.teeth || [], 'teeth');
+    buildCheckboxes('oilsList', nomenclatures.oils || [], 'oils', 'литри', '0.1');
+    buildCheckboxes('antifreezesList', nomenclatures.antifreezes || [], 'antifreezes', 'литри', '0.1');
+    buildCheckboxes('bulbsList', nomenclatures.bulbs || [], 'bulbs', 'брой', '1');
+    buildCheckboxes('quickCouplingsList', nomenclatures.quick_couplings || [], 'quick_couplings', 'брой', '1');
+    buildCheckboxes('teethList', nomenclatures.teeth || [], 'teeth', 'брой', '1');
 }
-function buildCheckboxes(containerId, items, groupName) {
+function buildCheckboxes(containerId, items, groupName, unit, step) {
     const container = document.getElementById(containerId);
-    items.forEach(item => { container.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="${groupName}" value="${item.value}"><span>${item.label}</span></label>`; });
+    items.forEach(item => {
+        container.innerHTML += `<div class="material-item">
+            <label class="checkbox-item">
+                <input type="checkbox" name="${groupName}" value="${item.value}" onchange="toggleQtyField(this)">
+                <span>${item.label}</span>
+            </label>
+            <div class="item-qty" style="display:none;">
+                <input type="number" class="item-qty-input" step="${step}" min="0" placeholder="0" data-group="${groupName}" data-value="${item.value}">
+                <span class="unit">${unit}</span>
+            </div>
+        </div>`;
+    });
+}
+function toggleQtyField(checkbox) {
+    const qtyDiv = checkbox.closest('.material-item').querySelector('.item-qty');
+    if (checkbox.checked) {
+        qtyDiv.style.display = 'flex';
+        qtyDiv.querySelector('input').focus();
+    } else {
+        qtyDiv.style.display = 'none';
+        qtyDiv.querySelector('input').value = '';
+    }
 }
 
 function onActivityChange(value) {
@@ -533,15 +575,24 @@ function getCheckedValues(name) { return Array.from(document.querySelectorAll(`i
 function collectMaterials() {
     const materials = [];
     const cats = [
-        { name: 'oils', category: 'oil', qtyId: 'oilQty', unit: 'литри' },
-        { name: 'antifreezes', category: 'antifreeze', qtyId: 'antifreezeQty', unit: 'литри' },
-        { name: 'bulbs', category: 'bulb', qtyId: 'bulbQty', unit: 'брой' },
-        { name: 'quick_couplings', category: 'quick_coupling', qtyId: 'couplingQty', unit: 'брой' },
-        { name: 'teeth', category: 'teeth', qtyId: 'teethQty', unit: 'брой' },
+        { name: 'oils', category: 'oil', unit: 'литри' },
+        { name: 'antifreezes', category: 'antifreeze', unit: 'литри' },
+        { name: 'bulbs', category: 'bulb', unit: 'брой' },
+        { name: 'quick_couplings', category: 'quick_coupling', unit: 'брой' },
+        { name: 'teeth', category: 'teeth', unit: 'брой' },
     ];
     cats.forEach(cat => {
-        const selected = getCheckedValues(cat.name);
-        if (selected.length > 0) { const qty = parseFloat(document.getElementById(cat.qtyId).value) || 0; materials.push({ category: cat.category, item_type: selected.join(', '), quantity: qty, unit: cat.unit }); }
+        const checked = document.querySelectorAll(`input[name="${cat.name}"]:checked`);
+        checked.forEach(cb => {
+            const qtyInput = cb.closest('.material-item').querySelector('.item-qty-input');
+            const qty = parseFloat(qtyInput.value) || 0;
+            materials.push({
+                category: cat.category,
+                item_type: cb.value,
+                quantity: qty,
+                unit: cat.unit
+            });
+        });
     });
     return materials;
 }
@@ -597,6 +648,7 @@ function resetForm() {
     document.getElementById('materialsSection').classList.remove('visible');
     document.querySelectorAll('.material-body').forEach(b => b.classList.remove('open'));
     document.querySelectorAll('.material-header .arrow').forEach(a => a.classList.remove('open'));
+    document.querySelectorAll('.item-qty').forEach(el => { el.style.display = 'none'; el.querySelector('input').value = ''; });
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 window.addEventListener('online', () => document.getElementById('offlineBanner').classList.remove('show'));

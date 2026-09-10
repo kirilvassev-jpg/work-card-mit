@@ -301,6 +301,27 @@
         .material-qty label { font-size: 13px; white-space: nowrap; margin-bottom: 0; }
         .material-qty input { width: 100px; }
         .material-qty .unit { font-size: 13px; color: var(--text-muted); }
+        .material-item {
+            margin-bottom: 4px;
+        }
+        .item-qty {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 0 4px 30px;
+        }
+        .item-qty-input {
+            width: 80px;
+            padding: 6px 10px;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            text-align: center;
+        }
+        .item-qty .unit {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
         .conditional { display: none; }
         .conditional.visible { display: block; }
     </style>
@@ -423,11 +444,11 @@
             </div>
         </div>
         <div id="editMaterialsSection" class="conditional">
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">🛢</span>Масло</span><span class="arrow">▼</span></div><div class="material-body"><div id="editOilsList" class="checkbox-grid"></div><div class="material-qty"><label>Количество:</label><input type="number" id="editOilQty" step="0.1" min="0" placeholder="0"><span class="unit">литри</span></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">💧</span>Антифриз</span><span class="arrow">▼</span></div><div class="material-body"><div id="editAntifreezesList" class="checkbox-grid"></div><div class="material-qty"><label>Количество:</label><input type="number" id="editAntifreezeQty" step="0.1" min="0" placeholder="0"><span class="unit">литри</span></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">💡</span>Крушки</span><span class="arrow">▼</span></div><div class="material-body"><div id="editBulbsList" class="checkbox-grid"></div><div class="material-qty"><label>Количество:</label><input type="number" id="editBulbQty" step="1" min="0" placeholder="0"><span class="unit">брой</span></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">🔩</span>Бързи връзки</span><span class="arrow">▼</span></div><div class="material-body"><div id="editQuickCouplingsList" class="checkbox-grid"></div><div class="material-qty"><label>Количество:</label><input type="number" id="editCouplingQty" step="1" min="0" placeholder="0"><span class="unit">брой</span></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">⚙</span>Зъби</span><span class="arrow">▼</span></div><div class="material-body"><div id="editTeethList" class="checkbox-grid"></div><div class="material-qty"><label>Количество:</label><input type="number" id="editTeethQty" step="1" min="0" placeholder="0"><span class="unit">брой</span></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">🛢</span>Масло</span><span class="arrow">▼</span></div><div class="material-body"><div id="editOilsList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">💧</span>Антифриз</span><span class="arrow">▼</span></div><div class="material-body"><div id="editAntifreezesList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">💡</span>Крушки</span><span class="arrow">▼</span></div><div class="material-body"><div id="editBulbsList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">🔩</span>Бързи връзки</span><span class="arrow">▼</span></div><div class="material-body"><div id="editQuickCouplingsList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">⚙</span>Зъби</span><span class="arrow">▼</span></div><div class="material-body"><div id="editTeethList" class="checkbox-grid"></div></div></div>
             <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">📝</span>Друго</span><span class="arrow">▼</span></div><div class="material-body"><textarea id="editOtherMaterials" rows="3" placeholder="Опиши допълнителни материали..."></textarea></div></div>
         </div>
         <div class="field">
@@ -556,7 +577,12 @@ function getMaterialsForCard(cardId) {
     const mats = allMaterials.filter(m => m.work_card_id === cardId);
     const result = {};
     const catNames = { oil: 'Масло', antifreeze: 'Антифриз', bulb: 'Крушки', quick_coupling: 'Бързи връзки', teeth: 'Зъби' };
-    mats.forEach(m => { result[catNames[m.category] || m.category] = `${m.item_type} (${m.quantity} ${m.unit})`; });
+    Object.keys(catNames).forEach(cat => {
+        const catMats = mats.filter(m => m.category === cat);
+        if (catMats.length > 0) {
+            result[catNames[cat]] = catMats.map(m => `${m.item_type} (${m.quantity} ${m.unit})`).join(', ');
+        }
+    });
     return result;
 }
 
@@ -678,6 +704,35 @@ function buildEditCheckboxes(containerId, items, groupName, selectedValues) {
         container.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="${groupName}" value="${item.value}" ${checked}><span>${item.label}</span></label>`;
     });
 }
+function buildEditMaterialCheckboxes(containerId, items, groupName, catMats, unit, step) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    items.forEach(item => {
+        const mat = catMats.find(m => m.item_type === item.value);
+        const checked = mat ? 'checked' : '';
+        const qty = mat ? mat.quantity : '';
+        container.innerHTML += `<div class="material-item">
+            <label class="checkbox-item">
+                <input type="checkbox" name="${groupName}" value="${item.value}" ${checked} onchange="toggleQtyField(this)">
+                <span>${item.label}</span>
+            </label>
+            <div class="item-qty" style="display:${mat ? 'flex' : 'none'};">
+                <input type="number" class="item-qty-input" step="${step}" min="0" placeholder="0" value="${qty}" data-group="${groupName}" data-value="${item.value}">
+                <span class="unit">${unit}</span>
+            </div>
+        </div>`;
+    });
+}
+function toggleQtyField(checkbox) {
+    const qtyDiv = checkbox.closest('.material-item').querySelector('.item-qty');
+    if (checkbox.checked) {
+        qtyDiv.style.display = 'flex';
+        qtyDiv.querySelector('input').focus();
+    } else {
+        qtyDiv.style.display = 'none';
+        qtyDiv.querySelector('input').value = '';
+    }
+}
 
 function buildEditForm(c) {
     const mechList = Array.isArray(c.mechanic) ? c.mechanic : [c.mechanic];
@@ -708,18 +763,12 @@ function buildEditForm(c) {
     onEditActivityChange(c.activity_type);
 
     const mats = allMaterials.filter(m => m.work_card_id === c.id);
-    const matFor = (cat) => mats.find(m => m.category === cat);
-    const selValues = (cat) => { const m = matFor(cat); return m ? m.item_type.split(', ') : []; };
-    buildEditCheckboxes('editOilsList', allNomenclatures.oils || [], 'editOils', selValues('oil'));
-    buildEditCheckboxes('editAntifreezesList', allNomenclatures.antifreezes || [], 'editAntifreezes', selValues('antifreeze'));
-    buildEditCheckboxes('editBulbsList', allNomenclatures.bulbs || [], 'editBulbs', selValues('bulb'));
-    buildEditCheckboxes('editQuickCouplingsList', allNomenclatures.quick_couplings || [], 'editQuickCouplings', selValues('quick_coupling'));
-    buildEditCheckboxes('editTeethList', allNomenclatures.teeth || [], 'editTeeth', selValues('teeth'));
-    document.getElementById('editOilQty').value = matFor('oil') ? matFor('oil').quantity : '';
-    document.getElementById('editAntifreezeQty').value = matFor('antifreeze') ? matFor('antifreeze').quantity : '';
-    document.getElementById('editBulbQty').value = matFor('bulb') ? matFor('bulb').quantity : '';
-    document.getElementById('editCouplingQty').value = matFor('quick_coupling') ? matFor('quick_coupling').quantity : '';
-    document.getElementById('editTeethQty').value = matFor('teeth') ? matFor('teeth').quantity : '';
+    const matsFor = (cat) => mats.filter(m => m.category === cat);
+    buildEditMaterialCheckboxes('editOilsList', allNomenclatures.oils || [], 'editOils', matsFor('oil'), 'литри', '0.1');
+    buildEditMaterialCheckboxes('editAntifreezesList', allNomenclatures.antifreezes || [], 'editAntifreezes', matsFor('antifreeze'), 'литри', '0.1');
+    buildEditMaterialCheckboxes('editBulbsList', allNomenclatures.bulbs || [], 'editBulbs', matsFor('bulb'), 'брой', '1');
+    buildEditMaterialCheckboxes('editQuickCouplingsList', allNomenclatures.quick_couplings || [], 'editQuickCouplings', matsFor('quick_coupling'), 'брой', '1');
+    buildEditMaterialCheckboxes('editTeethList', allNomenclatures.teeth || [], 'editTeeth', matsFor('teeth'), 'брой', '1');
     document.getElementById('editOtherMaterials').value = c.other_materials || '';
     editToggleMaterials(!!c.has_materials);
 
@@ -732,15 +781,24 @@ function getEditCheckedValues(name) { return Array.from(document.querySelectorAl
 function collectEditMaterials() {
     const materials = [];
     const cats = [
-        { name: 'editOils', category: 'oil', qtyId: 'editOilQty', unit: 'литри' },
-        { name: 'editAntifreezes', category: 'antifreeze', qtyId: 'editAntifreezeQty', unit: 'литри' },
-        { name: 'editBulbs', category: 'bulb', qtyId: 'editBulbQty', unit: 'брой' },
-        { name: 'editQuickCouplings', category: 'quick_coupling', qtyId: 'editCouplingQty', unit: 'брой' },
-        { name: 'editTeeth', category: 'teeth', qtyId: 'editTeethQty', unit: 'брой' },
+        { name: 'editOils', category: 'oil', unit: 'литри' },
+        { name: 'editAntifreezes', category: 'antifreeze', unit: 'литри' },
+        { name: 'editBulbs', category: 'bulb', unit: 'брой' },
+        { name: 'editQuickCouplings', category: 'quick_coupling', unit: 'брой' },
+        { name: 'editTeeth', category: 'teeth', unit: 'брой' },
     ];
     cats.forEach(cat => {
-        const selected = getEditCheckedValues(cat.name);
-        if (selected.length > 0) { const qty = parseFloat(document.getElementById(cat.qtyId).value) || 0; materials.push({ category: cat.category, item_type: selected.join(', '), quantity: qty, unit: cat.unit }); }
+        const checked = document.querySelectorAll(`input[name="${cat.name}"]:checked`);
+        checked.forEach(cb => {
+            const qtyInput = cb.closest('.material-item').querySelector('.item-qty-input');
+            const qty = parseFloat(qtyInput.value) || 0;
+            materials.push({
+                category: cat.category,
+                item_type: cb.value,
+                quantity: qty,
+                unit: cat.unit
+            });
+        });
     });
     return materials;
 }
