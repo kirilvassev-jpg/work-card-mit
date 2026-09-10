@@ -201,6 +201,47 @@
             font-weight: 400;
         }
 
+        /* Multi-select dropdown (mechanics) */
+        .ms-dropdown {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 14px; border: 1px solid var(--border);
+            border-radius: 10px; font-size: 14px; color: var(--text); background: rgba(255,255,255,0.7);
+            cursor: pointer; transition: all 0.25s ease;
+        }
+        .ms-dropdown:hover { border-color: var(--primary); }
+        .ms-dropdown.open { border-color: var(--primary); background: rgba(255,255,255,0.9); box-shadow: 0 0 0 3px rgba(2,132,199,0.15); }
+        .ms-display { flex: 1; }
+        .ms-arrow { font-size: 11px; color: var(--text-muted); transition: transform 0.25s ease; margin-left: 8px; }
+        .ms-arrow.open { transform: rotate(180deg); }
+
+        .ms-options {
+            display: none; margin-top: 6px; border: 1px solid var(--border);
+            border-radius: 10px; background: #fff; max-height: 240px; overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(2,132,199,0.1);
+        }
+        .ms-options.open { display: block; }
+        .ms-option {
+            display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+            cursor: pointer; font-size: 13px; color: var(--text); transition: background 0.2s;
+        }
+        .ms-option:hover { background: #f0f9ff; }
+        .ms-option:not(:last-child) { border-bottom: 1px solid var(--border); }
+        .ms-option input[type="checkbox"] { width: 18px; height: 18px; min-width: 18px; accent-color: #1a3a8f; pointer-events: none; margin: 0; }
+        .ms-option.selected { background: rgba(26,58,143,0.06); font-weight: 500; }
+
+        .ms-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .ms-tags:empty { display: none; }
+        .ms-tag {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(26,58,143,0.08); border: 1px solid rgba(26,58,143,0.2);
+            border-radius: 20px; color: #1a3a8f; font-size: 11px; font-weight: 600;
+            padding: 4px 6px 4px 10px;
+        }
+        .ms-tag-remove {
+            border: none; background: none; color: #1a3a8f; cursor: pointer;
+            font-size: 14px; line-height: 1; padding: 0 2px; font-weight: 700;
+        }
+
         /* Toggle switch */
         .toggle-group { display: flex; gap: 8px; }
         .toggle-btn {
@@ -308,7 +349,7 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* Validation */
-        .field.invalid select, .field.invalid input { border-color: var(--danger); background: rgba(220,38,38,0.03); }
+        .field.invalid select, .field.invalid input, .field.invalid .ms-dropdown { border-color: var(--danger); background: rgba(220,38,38,0.03); }
         .field .error-msg { color: var(--danger); font-size: 12px; margin-top: 4px; display: none; }
         .field.invalid .error-msg { display: block; }
 
@@ -349,7 +390,12 @@
         <div class="section-title"><span class="icon">📋</span> Основни данни</div>
         <div class="field" id="fMechanic">
             <label>Механик <span class="required">*</span></label>
-            <div id="mechanicsList" class="checkbox-grid"></div>
+            <div id="mechanicDropdown" class="ms-dropdown" onclick="toggleMechanicDropdown(event)">
+                <div class="ms-display" id="mechanicDisplay">— Избери механик —</div>
+                <span class="ms-arrow" id="mechanicArrow">▼</span>
+            </div>
+            <div id="mechanicOptions" class="ms-options"></div>
+            <div id="mechanicTags" class="ms-tags"></div>
             <div class="error-msg">Избери механик</div>
         </div>
         <div class="field" id="fDate">
@@ -490,8 +536,8 @@ async function loadNomenclatures() {
 }
 
 function buildForm() {
-    const mechDiv = document.getElementById('mechanicsList');
-    (nomenclatures.mechanics || []).forEach(m => { mechDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="mechanics" value="${m.value}"><span>${m.label}</span></label>`; });
+    const mechOptions = document.getElementById('mechanicOptions');
+    (nomenclatures.mechanics || []).forEach(m => { mechOptions.innerHTML += `<div class="ms-option" data-value="${m.value}" onclick="toggleMechanicOption(this)"><input type="checkbox"><span>${m.label}</span></div>`; });
     document.getElementById('workDate').value = new Date().toISOString().split('T')[0];
     const actDiv = document.getElementById('activityTypes');
     (nomenclatures.activity_types || []).forEach(a => {
@@ -535,6 +581,53 @@ function toggleQtyField(checkbox) {
     }
 }
 
+function toggleMechanicDropdown(event) {
+    event.stopPropagation();
+    const dropdown = document.getElementById('mechanicDropdown');
+    const options = document.getElementById('mechanicOptions');
+    const arrow = document.getElementById('mechanicArrow');
+    const open = !options.classList.contains('open');
+    options.classList.toggle('open', open);
+    dropdown.classList.toggle('open', open);
+    arrow.classList.toggle('open', open);
+}
+function closeMechanicDropdown() {
+    document.getElementById('mechanicOptions').classList.remove('open');
+    document.getElementById('mechanicDropdown').classList.remove('open');
+    document.getElementById('mechanicArrow').classList.remove('open');
+}
+function toggleMechanicOption(optionEl) {
+    optionEl.classList.toggle('selected');
+    optionEl.querySelector('input[type="checkbox"]').checked = optionEl.classList.contains('selected');
+    updateMechanicUI();
+}
+function removeMechanicTag(value) {
+    const optionEl = document.querySelector(`#mechanicOptions .ms-option[data-value="${CSS.escape(value)}"]`);
+    if (optionEl) { optionEl.classList.remove('selected'); optionEl.querySelector('input[type="checkbox"]').checked = false; }
+    updateMechanicUI();
+}
+function updateMechanicUI() {
+    const selected = Array.from(document.querySelectorAll('#mechanicOptions .ms-option.selected'));
+    document.getElementById('mechanicDisplay').textContent = selected.length === 0 ? '— Избери механик —' : `${selected.length} избрани`;
+    const tags = document.getElementById('mechanicTags');
+    tags.innerHTML = '';
+    selected.forEach(opt => {
+        const tag = document.createElement('span');
+        tag.className = 'ms-tag';
+        const label = document.createElement('span');
+        label.textContent = opt.querySelector('span').textContent;
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button'; removeBtn.className = 'ms-tag-remove'; removeBtn.textContent = '×';
+        removeBtn.onclick = (e) => { e.stopPropagation(); removeMechanicTag(opt.dataset.value); };
+        tag.appendChild(label); tag.appendChild(removeBtn);
+        tags.appendChild(tag);
+    });
+}
+document.addEventListener('click', (e) => {
+    const dropdownField = document.getElementById('fMechanic');
+    if (dropdownField && !dropdownField.contains(e.target)) closeMechanicDropdown();
+});
+
 function onActivityChange(value) {
     document.getElementById('sectionServices').classList.toggle('visible', value === 'ОБСЛУЖВАНЕ');
     document.getElementById('sectionRepair').classList.toggle('visible', value === 'РЕМОНТ' || value === 'ГАРАНЦИОНЕН РЕМОНТ');
@@ -556,7 +649,7 @@ function toggleCategory(header) {
 function validate() {
     let valid = true;
     const checks = [
-        { id: 'fMechanic', test: () => document.querySelectorAll('input[name="mechanics"]:checked').length > 0 },
+        { id: 'fMechanic', test: () => document.querySelectorAll('.ms-option.selected').length > 0 },
         { id: 'fDate', test: () => document.getElementById('workDate').value !== '' },
         { id: 'fVehicle', test: () => document.getElementById('vehicle').value.trim() !== '' },
         { id: 'fRegNumber', test: () => document.getElementById('regNumber').value.trim() !== '' },
@@ -606,7 +699,7 @@ async function submitForm() {
     try {
         const activityType = document.querySelector('input[name="activityType"]:checked').value;
         const cardData = {
-            mechanic: Array.from(document.querySelectorAll('input[name="mechanics"]:checked')).map(cb => cb.value), work_date: document.getElementById('workDate').value,
+            mechanic: Array.from(document.querySelectorAll('.ms-option.selected')).map(el => el.dataset.value), work_date: document.getElementById('workDate').value,
             vehicle: document.getElementById('vehicle').value.trim(), reg_number: document.getElementById('regNumber').value.trim(),
             km_hours: document.getElementById('kmHours').value.trim() || null, client: document.getElementById('client').value.trim(),
             activity_type: activityType,
@@ -633,10 +726,15 @@ function showStatus(msg, type) {
     if (type === 'success') setTimeout(() => { el.className = 'status'; }, 8000);
 }
 function resetForm() {
-    const mechs = Array.from(document.querySelectorAll('input[name="mechanics"]:checked')).map(cb => cb.value); const date = document.getElementById('workDate').value;
+    const mechs = Array.from(document.querySelectorAll('.ms-option.selected')).map(el => el.dataset.value); const date = document.getElementById('workDate').value;
     document.querySelectorAll('input[type="text"], input[type="number"]').forEach(i => i.value = '');
     document.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(i => i.checked = false);
-    document.querySelectorAll('input[name="mechanics"]').forEach(cb => { if (mechs.includes(cb.value)) cb.checked = true; });
+    document.querySelectorAll('#mechanicOptions .ms-option').forEach(opt => {
+        const isSelected = mechs.includes(opt.dataset.value);
+        opt.classList.toggle('selected', isSelected);
+        opt.querySelector('input[type="checkbox"]').checked = isSelected;
+    });
+    updateMechanicUI();
     document.getElementById('workDate').value = date;
     document.getElementById('repairDescription').value = '';
     document.getElementById('otherMaterials').value = '';
