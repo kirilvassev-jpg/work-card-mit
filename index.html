@@ -6,6 +6,12 @@
     <title>Работна карта — МиТ</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a3a8f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Работна Карта">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     <style>
         :root {
             --primary: #0284c7;
@@ -441,7 +447,7 @@
     <div id="sectionRepair" class="section conditional">
         <div class="section-title"><span class="icon">🛠</span> Ремонт</div>
         <div class="field">
-            <label>Ремонтна система</label>
+            <label>Система за ремонт</label>
             <div id="repairSystemsList" class="checkbox-grid"></div>
         </div>
         <div class="field" style="margin-top:14px;">
@@ -752,6 +758,11 @@ function resetForm() {
 window.addEventListener('online', () => document.getElementById('offlineBanner').classList.remove('show'));
 window.addEventListener('offline', () => document.getElementById('offlineBanner').classList.add('show'));
 document.addEventListener('DOMContentLoaded', loadNomenclatures);
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(err => console.log('SW:', err));
+}
 </script>
 </body>
 </html>
