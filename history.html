@@ -524,10 +524,20 @@ async function supabaseDelete(table, query) {
     return res;
 }
 
-const AUTH_PASSWORD = 'mit2026';
-function checkPassword() {
+const PASS_HASH = '5a52408ada08d471e6e5dfb12e37f1042700cafc81596d1e23a9dbb8ede1b49e';
+
+async function checkPasswordHash(input) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex === PASS_HASH;
+}
+async function checkPassword() {
     const input = document.getElementById('passwordInput');
-    if (input.value === AUTH_PASSWORD) {
+    const valid = await checkPasswordHash(document.getElementById('passwordInput').value);
+    if (valid) {
         sessionStorage.setItem('workcard_auth', 'true');
         document.getElementById('authError').classList.remove('show');
         document.getElementById('authOverlay').style.display = 'none';
