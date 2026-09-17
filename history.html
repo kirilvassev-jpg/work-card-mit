@@ -252,6 +252,7 @@
         .radio-group { display: flex; flex-direction: column; gap: 8px; }
         .radio-option {
             display: flex; align-items: center; gap: 12px;
+
             padding: 12px 14px; border: 1.5px solid var(--border);
             border-radius: 10px; cursor: pointer; transition: all 0.25s ease; background: #f8fafc;
         }
@@ -260,17 +261,17 @@
             border-color: var(--accent-red); background: rgba(228,30,43,0.06);
             box-shadow: 0 0 0 3px rgba(228,30,43,0.1);
         }
-        .radio-option input[type="radio"] { width: 18px; height: 18px; accent-color: var(--accent-red); }
-        .radio-option span { font-size: 14px; font-weight: 600; }
+        .radio-option input[type="radio"] { width: 18px; height: 18px; accent-color: var(--accent-red); margin: 0; vertical-align: middle; }
+        .radio-option span { font-size: 14px; font-weight: 600; vertical-align: middle; line-height: 1.4; }
         .checkbox-grid { display: flex; flex-direction: column; gap: 6px; }
         .checkbox-item {
-            display: flex; align-items: center; gap: 10px;
+            display: flex; align-items: center; gap: 12px;
             padding: 9px 12px; border: 1px solid var(--border);
             border-radius: 8px; cursor: pointer; transition: all 0.2s; background: #f8fafc;
         }
         .checkbox-item:has(input:checked) { border-color: var(--primary); background: rgba(26,58,143,0.06); }
-        .checkbox-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); flex-shrink: 0; }
-        .checkbox-item span { font-size: 14px; }
+        .checkbox-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); flex-shrink: 0; margin: 0; vertical-align: middle; }
+        .checkbox-item span { font-size: 14px; vertical-align: middle; line-height: 1.4; }
         #editMechanicsList .checkbox-item:has(input:checked) { border-color: var(--primary); background: rgba(26,58,143,0.06); }
         #editMechanicsList .checkbox-item input[type="checkbox"] { accent-color: var(--primary); }
         .toggle-group { display: flex; gap: 8px; }
