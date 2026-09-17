@@ -640,7 +640,7 @@ document.addEventListener('click', (e) => {
 });
 
 function onActivityChange(value) {
-    document.getElementById('sectionServices').classList.toggle('visible', value === 'ОБСЛУЖВАНЕ');
+    document.getElementById('sectionServices').classList.toggle('visible', value === 'ТО / ППП');
     document.getElementById('sectionRepair').classList.toggle('visible', value === 'РЕМОНТ' || value === 'ГАРАНЦИОНЕН РЕМОНТ');
 }
 let hasMaterials = null;
@@ -714,7 +714,7 @@ async function submitForm() {
             vehicle: document.getElementById('vehicle').value.trim(), reg_number: document.getElementById('regNumber').value.trim(),
             km_hours: document.getElementById('kmHours').value.trim() || null, client: document.getElementById('client').value.trim(),
             activity_type: activityType,
-            services: activityType === 'ОБСЛУЖВАНЕ' ? getCheckedValues('services') : [],
+            services: activityType === 'ТО / ППП' ? getCheckedValues('services') : [],
             repair_systems: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? getCheckedValues('repairSystems') : [],
             repair_type: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? document.getElementById('repairType').value || null : null,
             repair_description: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? document.getElementById('repairDescription').value.trim() || null : null,

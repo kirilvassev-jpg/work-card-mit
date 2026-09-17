@@ -360,7 +360,7 @@
         <div class="filters-body open" id="filtersBody">
             <div class="filter-row">
                 <div><label>Механик</label><select id="filterMechanic"><option value="">Всички</option></select></div>
-                <div><label>Вид дейност</label><select id="filterActivity"><option value="">Всички</option><option value="ОБСЛУЖВАНЕ">Обслужване</option><option value="РЕМОНТ">Ремонт</option><option value="ГАРАНЦИОНЕН РЕМОНТ">Гаранционен ремонт</option></select></div>
+                <div><label>Вид дейност</label><select id="filterActivity"><option value="">Всички</option><option value="ТО / ППП">Обслужване</option><option value="РЕМОНТ">Ремонт</option><option value="ГАРАНЦИОНЕН РЕМОНТ">Гаранционен ремонт</option></select></div>
             </div>
             <div class="filter-row">
                 <div><label>От дата</label><input type="date" id="filterFrom"></div>
@@ -635,7 +635,7 @@ function updateStats(cards) {
     document.getElementById('statTotal').textContent = cards.length;
     const totalHours = cards.reduce((sum, c) => sum + (parseFloat(c.work_hours) || 0), 0);
     document.getElementById('statHours').textContent = totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
-    document.getElementById('statService').textContent = cards.filter(c => c.activity_type === 'ОБСЛУЖВАНЕ').length;
+    document.getElementById('statService').textContent = cards.filter(c => c.activity_type === 'ТО / ППП').length;
     document.getElementById('statRepair').textContent = cards.filter(c => c.activity_type === 'РЕМОНТ' || c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ').length;
     const totalKm = cards.reduce((sum, c) => sum + (parseInt(c.km_traveled) || 0), 0);
     document.getElementById('statKm').textContent = totalKm;
@@ -647,8 +647,8 @@ function renderCards(cards) {
     if (cards.length === 0) { emptyState.style.display = 'block'; return; }
 
     cardsList.innerHTML = cards.map((c, i) => {
-        const typeClass = c.activity_type === 'ОБСЛУЖВАНЕ' ? 'type-service' : c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'type-warranty' : 'type-repair';
-        const actBadge = c.activity_type === 'ОБСЛУЖВАНЕ' ? '<span class="badge badge-service">Обслужване</span>' : c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ' ? '<span class="badge badge-warranty">Гаранционен</span>' : '<span class="badge badge-repair">Ремонт</span>';
+        const typeClass = c.activity_type === 'ТО / ППП' ? 'type-service' : c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'type-warranty' : 'type-repair';
+        const actBadge = c.activity_type === 'ТО / ППП' ? '<span class="badge badge-service">Обслужване</span>' : c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ' ? '<span class="badge badge-warranty">Гаранционен</span>' : '<span class="badge badge-repair">Ремонт</span>';
         const matBadge = c.has_materials ? '<span class="badge badge-materials">Материали</span>' : '';
         const hoursBadge = c.work_hours ? `<span class="badge badge-hours">${c.work_hours} чч</span>` : '';
         const kmBadge = c.km_traveled ? `<span class="badge b-gray">${c.km_traveled} км</span>` : '';
@@ -699,7 +699,7 @@ function closeEditModal() {
 }
 
 function onEditActivityChange(value) {
-    document.getElementById('editSectionServices').classList.toggle('visible', value === 'ОБСЛУЖВАНЕ');
+    document.getElementById('editSectionServices').classList.toggle('visible', value === 'ТО / ППП');
     document.getElementById('editSectionRepair').classList.toggle('visible', value === 'РЕМОНТ' || value === 'ГАРАНЦИОНЕН РЕМОНТ');
 }
 
@@ -829,7 +829,7 @@ async function saveEdit() {
             km_hours: document.getElementById('editKmHours').value.trim() || null,
             client: document.getElementById('editClient').value.trim(),
             activity_type: activityType,
-            services: activityType === 'ОБСЛУЖВАНЕ' ? getEditCheckedValues('editServices') : [],
+            services: activityType === 'ТО / ППП' ? getEditCheckedValues('editServices') : [],
             repair_systems: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? getEditCheckedValues('editRepairSystems') : [],
             repair_type: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? document.getElementById('editRepairType').value || null : null,
             repair_description: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? document.getElementById('editRepairDescription').value.trim() || null : null,
