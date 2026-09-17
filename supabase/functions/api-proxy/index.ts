@@ -1,9 +1,7 @@
-// Setup type definitions for built-in Supabase Runtime APIs
 import "@supabase/functions-js/edge-runtime.d.ts";
 
-// Injected automatically by the Supabase platform for every Edge Function
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,7 +9,6 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Proxies { path, method, body } requests to the Supabase REST API, keeping the anon key server-side
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -31,8 +28,8 @@ Deno.serve(async (req) => {
     }
 
     const headers: Record<string, string> = {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
       "Content-Type": "application/json",
     };
     if (method === "POST" || method === "PATCH") {
@@ -44,6 +41,13 @@ Deno.serve(async (req) => {
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
+
+    if (upstream.status === 204) {
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders,
+      });
+    }
 
     const text = await upstream.text();
     return new Response(text, {
