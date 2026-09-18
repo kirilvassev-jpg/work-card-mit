@@ -674,7 +674,7 @@ function renderCards(cards) {
                     <div class="card-badges">${actBadge}${matBadge}${hoursBadge}${kmBadge}</div>
                 </div>
             </div></div>
-            <div class="card-details" id="details-${i}">${details}<button type="button" class="btn btn-outline" style="width:100%;margin-top:10px;" onclick="event.stopPropagation(); editCard(${i})">✏️ Редактирай</button></div>
+            <div class="card-details" id="details-${i}">${details}<button type="button" class="btn btn-outline" style="width:100%;margin-top:10px;" onclick="event.stopPropagation(); editCard(${i})">✏️ Редактирай</button><button type="button" style="width:100%;margin-top:6px;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;background:linear-gradient(135deg, #ef4444, #dc2626);color:#fff;" onclick="deleteCard('${c.id}', event)">🗑 Изтрий</button></div>
         </div>`;
     }).join('');
 }
@@ -697,6 +697,20 @@ function editCard(i) {
 function closeEditModal() {
     document.getElementById('editOverlay').classList.remove('open');
     editingCardId = null;
+}
+
+async function deleteCard(cardId, event) {
+    event.stopPropagation();
+    if (!confirm('Сигурен ли си, че искаш да изтриеш тази работна карта? Действието е необратимо!')) return;
+    try {
+        await supabaseDelete('work_card_materials', `work_card_id=eq.${cardId}`);
+        await supabaseDelete('work_cards', `id=eq.${cardId}`);
+        showStatus('✓ Картата е изтрита успешно', 'success');
+        await loadCards();
+    } catch (e) {
+        console.error('Грешка при изтриване:', e);
+        showStatus('Грешка при изтриване: ' + e.message, 'error');
+    }
 }
 
 function onEditActivityChange(value) {
