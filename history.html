@@ -690,12 +690,122 @@ function renderCards(cards) {
                     <div class="card-badges">${actBadge}${matBadge}${hoursBadge}${kmBadge}</div>
                 </div>
             </div></div>
-            <div class="card-details" id="details-${i}">${details}<button type="button" class="btn btn-outline" style="width:100%;margin-top:10px;" onclick="event.stopPropagation(); editCard(${i})">✏️ Редактирай</button><button type="button" class="btn-delete" onclick="deleteCard('${c.id}', event)">🗑 Изтрий</button></div>
+            <div class="card-details" id="details-${i}">${details}<button type="button" class="btn btn-outline" style="width:100%;margin-top:10px;" onclick="event.stopPropagation(); editCard(${i})">✏️ Редактирай</button><button type="button" class="btn-delete" onclick="deleteCard('${c.id}', event)">🗑 Изтрий</button><button type="button" style="width:100%;margin-top:6px;background:linear-gradient(135deg, #1a3a8f, #0d1f52);color:white;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 0 #0d1f52, 0 6px 16px rgba(26,58,143,0.4), 0 0 20px rgba(26,58,143,0.15);border-top:1px solid rgba(255,255,255,0.3);" onclick="exportCardPDF(${i}, event)">📄 Експорт в PDF</button></div>
         </div>`;
     }).join('');
 }
 
 function toggleDetails(i) { document.getElementById(`details-${i}`).classList.toggle('open'); }
+
+function exportCardPDF(index, event) {
+    event.stopPropagation();
+    const c = allCards[index];
+    const mats = getMaterialsForCard(c.id);
+
+    // Печат чрез HTML прозорец, за да се избегнат проблеми с кирилицата в jsPDF
+    const printWindow = window.open('', '_blank');
+    const mechanics = Array.isArray(c.mechanic) ? c.mechanic.join(', ') : c.mechanic;
+
+    let materialsHTML = '';
+    if (c.has_materials) {
+        const matItems = [];
+        if (mats['Масло']) matItems.push(`<tr><td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;">Масло</td><td style="padding:6px 12px;border:1px solid #ddd;">${mats['Масло']}</td></tr>`);
+        if (mats['Антифриз']) matItems.push(`<tr><td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;">Антифриз</td><td style="padding:6px 12px;border:1px solid #ddd;">${mats['Антифриз']}</td></tr>`);
+        if (mats['Крушки']) matItems.push(`<tr><td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;">Крушки</td><td style="padding:6px 12px;border:1px solid #ddd;">${mats['Крушки']}</td></tr>`);
+        if (mats['Бързи връзки']) matItems.push(`<tr><td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;">Бързи връзки</td><td style="padding:6px 12px;border:1px solid #ddd;">${mats['Бързи връзки']}</td></tr>`);
+        if (mats['Зъби']) matItems.push(`<tr><td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;">Зъби</td><td style="padding:6px 12px;border:1px solid #ddd;">${mats['Зъби']}</td></tr>`);
+        if (c.other_materials) matItems.push(`<tr><td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;">Друго</td><td style="padding:6px 12px;border:1px solid #ddd;">${c.other_materials}</td></tr>`);
+        if (matItems.length > 0) {
+            materialsHTML = `
+                <h3 style="color:#1a3a8f;margin:20px 0 8px;">Вложени материали</h3>
+                <table style="width:100%;border-collapse:collapse;">${matItems.join('')}</table>`;
+        }
+    }
+
+    const services = c.services && c.services.length > 0 ? c.services.join(', ') : '';
+    const repairSystems = c.repair_systems && c.repair_systems.length > 0 ? c.repair_systems.join(', ') : '';
+
+    printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Работна карта — ${mechanics}</title>
+        <style>
+            body { font-family: Arial, sans-serif; padding: 30px; color: #1a2332; }
+            .header { background: linear-gradient(135deg, #0d1f52, #1a3a8f, #2955c7); color: white; padding: 20px 24px; border-radius: 10px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; }
+            .header h1 { font-size: 22px; margin: 0; letter-spacing: 1px; }
+            .header .subtitle { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+            .info-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+            .info-table td { padding: 8px 12px; border: 1px solid #ddd; font-size: 14px; }
+            .info-table td:first-child { font-weight: 600; width: 200px; background: #f8fafc; color: #1a3a8f; }
+            h3 { font-size: 15px; margin: 0; }
+            .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-right: 6px; }
+            .badge-blue { background: rgba(26,58,143,0.1); color: #1a3a8f; }
+            .badge-red { background: rgba(228,30,43,0.1); color: #e41e2b; }
+            .badge-green { background: rgba(16,185,129,0.1); color: #059669; }
+            .footer { margin-top: 30px; padding-top: 16px; border-top: 2px solid #e8ecf0; color: #5a6577; font-size: 11px; text-align: center; }
+            @media print { body { padding: 15px; } .no-print { display: none; } }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <div>
+                <h1>РАБОТНА КАРТА</h1>
+                <div class="subtitle">Raicommerce Construction — МиТ</div>
+            </div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+            <span class="badge ${c.activity_type === 'ТО / ППП' ? 'badge-blue' : c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'badge-red' : 'badge-red'}">${c.activity_type}</span>
+            ${c.has_materials ? '<span class="badge badge-green">Вложени материали</span>' : ''}
+        </div>
+
+        <h3 style="color:#1a3a8f;margin-bottom:8px;">Основни данни</h3>
+        <table class="info-table">
+            <tr><td>Механик</td><td>${mechanics}</td></tr>
+            <tr><td>Дата</td><td>${formatDate(c.work_date)}</td></tr>
+            <tr><td>Автомобил / Бус / Машина</td><td>${c.vehicle}</td></tr>
+            <tr><td>рег№ / сер№ / Инв№</td><td>${c.reg_number}</td></tr>
+            ${c.km_hours ? `<tr><td>km / м.ч.</td><td>${c.km_hours}</td></tr>` : ''}
+            <tr><td>Клиент</td><td>${c.client}</td></tr>
+        </table>
+
+        ${services ? `
+        <h3 style="color:#1a3a8f;margin:20px 0 8px;">Обслужване</h3>
+        <table class="info-table">
+            <tr><td>Филтри</td><td>${services}</td></tr>
+        </table>` : ''}
+
+        ${repairSystems || c.repair_type || c.repair_description ? `
+        <h3 style="color:#1a3a8f;margin:20px 0 8px;">Ремонт</h3>
+        <table class="info-table">
+            ${repairSystems ? `<tr><td>Система за ремонт</td><td>${repairSystems}</td></tr>` : ''}
+            ${c.repair_type ? `<tr><td>Вид ремонт</td><td>${c.repair_type}</td></tr>` : ''}
+            ${c.repair_description ? `<tr><td>Извършен ремонт</td><td>${c.repair_description}</td></tr>` : ''}
+        </table>` : ''}
+
+        ${materialsHTML}
+
+        <h3 style="color:#1a3a8f;margin:20px 0 8px;">Време и километри</h3>
+        <table class="info-table">
+            <tr><td>Човекочасове</td><td>${c.work_hours || '-'} чч</td></tr>
+            ${c.km_traveled ? `<tr><td>Изминати км</td><td>${c.km_traveled} км</td></tr>` : ''}
+        </table>
+
+        <div class="footer">
+            Записано: ${formatDateTime(c.created_at)} | Работна карта — Raicommerce Construction
+        </div>
+
+        <div class="no-print" style="text-align:center;margin-top:20px;">
+            <button onclick="window.print()" style="padding:12px 32px;background:linear-gradient(135deg,#1a3a8f,#0d1f52);color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">
+                📄 Запази като PDF
+            </button>
+        </div>
+    </body>
+    </html>`);
+    printWindow.document.close();
+}
 
 function toggleCategory(header) {
     const body = header.nextElementSibling;
