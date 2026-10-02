@@ -505,6 +505,11 @@
 </nav>
 
 <script>
+const auth = sessionStorage.getItem('workcard_auth');
+if (auth !== 'true') {
+    window.location.href = 'login.html';
+}
+
 const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
 
 async function supabaseGet(table, query = '') {
