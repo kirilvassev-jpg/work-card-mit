@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Табло — Ар Си Техник</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a3a8f">
+    <style>
+        :root {
+            --primary: #1a3a8f; --primary-dark: #0d1f52; --primary-light: #2955c7;
+            --accent-red: #e41e2b; --accent-green: #10b981; --accent-amber: #f59e0b;
+            --accent-purple: #7c3aed; --accent-blue: #3b82f6;
+            --bg: #f0f4f8; --card: #ffffff; --text: #1a2332; --text-muted: #5a6577; --border: #d8dfe8;
+            --radius: 14px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+
+        /* Header - larger for tablet */
+        .header { background:linear-gradient(135deg,var(--primary-dark),var(--primary),var(--primary-light)); color:white; padding:16px 24px; text-align:center; position:sticky; top:0; z-index:100; box-shadow:0 4px 20px rgba(30,41,59,0.3); }
+        .header-top { display:flex; align-items:center; justify-content:center; gap:12px; }
+        .header img { width:44px; height:44px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:3px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); }
+        .header h1 { font-size:22px; font-weight:700; letter-spacing:1px; }
+        .header-sub { font-size:12px; opacity:0.7; margin-top:2px; }
+        .header-clock { font-size:14px; opacity:0.9; margin-top:4px; font-weight:600; }
+
+        .container { max-width:900px; margin:0 auto; padding:14px; }
+
+        /* Summary bar */
+        .summary { display:flex; gap:8px; margin-bottom:14px; }
+        .summary-item { flex:1; background:var(--card); border-radius:var(--radius); padding:12px 8px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06); border-top:4px solid var(--border); }
+        .summary-item:nth-child(1) { border-top-color:var(--accent-red); }
+        .summary-item:nth-child(2) { border-top-color:var(--accent-purple); }
+        .summary-item:nth-child(3) { border-top-color:var(--accent-blue); }
+        .summary-item:nth-child(4) { border-top-color:var(--accent-green); }
+        .summary-icon { font-size:20px; }
+        .summary-val { font-size:28px; font-weight:800; color:var(--primary); }
+        .summary-label { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; }
+
+        /* Task cards - large for tablet */
+        .tasks-list { display:flex; flex-direction:column; gap:12px; }
+
+        .task-card {
+            background:var(--card); border-radius:var(--radius); overflow:hidden;
+            box-shadow:0 2px 6px rgba(0,0,0,0.06); transition:all 0.25s;
+            animation:fadeInUp 0.3s ease backwards;
+        }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+        .task-main { display:flex; }
+        .task-stripe { width:6px; flex-shrink:0; }
+        .stripe-new { background:var(--accent-red); }
+        .stripe-assigned { background:var(--accent-purple); }
+        .stripe-progress { background:var(--accent-blue); }
+        .stripe-done { background:var(--accent-green); }
+
+        .task-content { flex:1; padding:16px; }
+        .task-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+        .task-client { font-size:18px; font-weight:700; color:var(--text); }
+        .task-date { font-size:13px; color:var(--text-muted); }
+        .task-vehicle { font-size:16px; color:var(--text); margin-bottom:2px; }
+        .task-reg { font-size:14px; color:var(--text-muted); }
+        .task-desc { font-size:14px; color:var(--text-muted); margin-top:8px; padding:10px; background:#f8fafc; border-radius:10px; border-left:4px solid var(--border); }
+
+        .task-badges { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+        .badge { padding:4px 12px; border-radius:20px; font-size:13px; font-weight:700; }
+        .b-new { background:rgba(228,30,43,0.1); color:#c41820; }
+        .b-assigned { background:#ede9fe; color:#5b21b6; }
+        .b-progress { background:#dbeafe; color:#1e40af; }
+        .b-done { background:#d1fae5; color:#065f46; }
+        .b-urgent { background:rgba(245,158,11,0.1); color:#92400e; border:1.5px solid var(--accent-amber); }
+        .b-act-blue { background:rgba(26,58,143,0.1); color:var(--primary); }
+        .b-act-red { background:rgba(228,30,43,0.1); color:var(--accent-red); }
+
+        /* Mechanics display */
+        .task-mechanics { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+        .mech-label { font-size:13px; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
+        .mech-tags { display:flex; flex-wrap:wrap; gap:5px; }
+        .mech-tag { padding:5px 14px; border-radius:20px; font-size:14px; font-weight:600; background:rgba(124,58,237,0.08); border:1px solid rgba(124,58,237,0.2); color:var(--accent-purple); }
+        .mech-tag.responsible { background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.3); color:var(--accent-amber); font-weight:700; }
+
+        /* Action section - large buttons for tablet */
+        .task-actions { margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+
+        /* Mechanic select for claiming */
+        .claim-section { margin-bottom:10px; }
+        .claim-label { font-size:14px; font-weight:600; color:var(--text); margin-bottom:6px; }
+        .claim-select { width:100%; padding:14px 16px; border:2px solid var(--primary-light); border-radius:10px; font-size:16px; color:var(--text); background:rgba(41,85,199,0.05); appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 16px center; padding-right:40px; }
+
+        /* Large action buttons */
+        .action-btn {
+            display:block; width:100%; padding:16px; border:none; border-radius:var(--radius);
+            font-size:18px; font-weight:700; cursor:pointer; text-align:center;
+            transition:all 0.2s; margin-bottom:8px; letter-spacing:0.5px;
+        }
+        .action-btn:active { transform:scale(0.97); }
+
+        .btn-claim {
+            background:linear-gradient(135deg,var(--accent-blue),#2563eb);
+            color:white; box-shadow:0 4px 0 #1d4ed8,0 6px 16px rgba(59,130,246,0.3);
+            border-top:1px solid rgba(255,255,255,0.3);
+        }
+        .btn-workcard {
+            background:linear-gradient(135deg,var(--accent-red),#c41820);
+            color:white; box-shadow:0 4px 0 #a11018,0 6px 16px rgba(228,30,43,0.3);
+            border-top:1px solid rgba(255,255,255,0.3);
+        }
+        .btn-workcard:disabled { background:#94a3b8; box-shadow:0 4px 0 #64748b; cursor:not-allowed; }
+
+        /* Info banner for non-responsible */
+        .info-banner { background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.2); border-radius:10px; padding:12px 16px; font-size:14px; color:#1e40af; text-align:center; margin-top:8px; }
+
+        /* Status messages */
+        .status { text-align:center; padding:16px; border-radius:var(--radius); margin-bottom:14px; font-size:16px; font-weight:600; display:none; animation:fadeInUp 0.3s ease; }
+        .status.success { display:block; background:rgba(16,185,129,0.1); color:var(--accent-green); border:1px solid rgba(16,185,129,0.2); }
+        .status.error { display:block; background:rgba(239,68,68,0.08); color:var(--accent-red); border:1px solid rgba(239,68,68,0.15); }
+
+        .loading { text-align:center; padding:50px; }
+        .spinner { width:40px; height:40px; border:3px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .empty { text-align:center; padding:50px; color:var(--text-muted); font-size:16px; }
+        .empty-icon { font-size:48px; margin-bottom:12px; opacity:0.5; }
+
+        /* Notification sound */
+        .notif-banner {
+            background:linear-gradient(135deg,var(--accent-red),#c41820);
+            color:white; margin:0 14px 14px; padding:14px 18px; border-radius:var(--radius);
+            font-size:14px; display:none; align-items:center; gap:10px;
+            animation:pulse 2s infinite; box-shadow:0 4px 16px rgba(228,30,43,0.3);
+        }
+        .notif-banner.show { display:flex; }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.85; } }
+        .notif-count { background:white; color:var(--accent-red); font-size:18px; font-weight:800; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-top">
+        <img src="Repairs.png" alt="Logo">
+        <h1>СЕРВИЗНО ТАБЛО</h1>
+    </div>
+    <div class="header-sub">Ар Си Техник ООД</div>
+    <div class="header-clock" id="clock"></div>
+</div>
+
+<div class="container">
+    <div id="statusMsg" class="status"></div>
+
+    <div id="notifBanner" class="notif-banner">
+        <span style="font-size:24px;">🔔</span>
+        <div style="flex:1;"><strong style="font-size:16px;">Нови задачи!</strong><br>Има назначени задачи за изпълнение</div>
+        <div class="notif-count" id="notifCount">0</div>
+    </div>
+
+    <div class="summary" id="summaryBar">
+        <div class="summary-item"><div class="summary-icon">🔴</div><div class="summary-val" id="sNew">0</div><div class="summary-label">Нови</div></div>
+        <div class="summary-item"><div class="summary-icon">🟣</div><div class="summary-val" id="sAssigned">0</div><div class="summary-label">Разпред.</div></div>
+        <div class="summary-item"><div class="summary-icon">🔵</div><div class="summary-val" id="sProgress">0</div><div class="summary-label">В изпълн.</div></div>
+        <div class="summary-item"><div class="summary-icon">🟢</div><div class="summary-val" id="sDone">0</div><div class="summary-label">Изпълнени</div></div>
+    </div>
+
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <div style="color:var(--text-muted);font-size:15px;">Зареждане на задачи...</div>
+    </div>
+
+    <div id="tasksList" class="tasks-list"></div>
+    <div id="emptyState" class="empty" style="display:none;">
+        <div class="empty-icon">✅</div>
+        Няма активни задачи в момента.
+    </div>
+</div>
+
+<!-- Notification sound -->
+<audio id="notifSound" preload="auto">
+    <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZeZm5qWj4N2aF5XUE9RV2BsdIGOmqSrt7q4sq2kl4d3aVxTTUtNUl1oeIWTn6q0ub27t7GpmI6CdGhcU09NTlRdaHiEl6Gqtby9u7exqpiNgHNoXFJPTU5UXmh5hpejrba9v726s6ybjoF1aF1UT05PVV5pe4iXo660vL69u7SuoZOGd2peVlBPUlhfan2KmKSutr2+vLm0raGThXdqX1ZRUE9UWmRwfouZpa+3vb+9urSwppiLfnJmXFVSUFNYX2p6h5WjrLW8vr68uLKsnpGEdmlgWFRSU1ddan2Ll6Ort72+vby3sq2hmIuAc2lhW1dUVlldZ3WDkZ6os7q9v727t7KtoJOIe3FnYFpXVVdaYGp3hZKfqbO5vr+9u7eys6yjl4t+c2pjXlpXWFxibnuIlqGrtbu+v728uLOuo5eKfnNqY15bWFldZHF+jJmkrra8v7+9urawq6CUiX1za2RfXFlaXmV0gI+cprC3vL+/vbu4tLCoo5iNgXdwa2RhXl1gZm98ipekrra8v7+/vbq3s7CrppuRhn10bmdjYF9gZW17iJajrba8v769u7m2s7CrppuRhn53cWxnZGFhZGp2g5GdqLK5vL+/vbu5tra0sKynm5KIfHZxbGdkY2RnbXmGk5+qtLq9v7+9u7m3trSxrqmflo2Ce3VwbGlmZWhscX6MmaSutbq9v7+9vLq4t7a0sq+snJOKgXt1cG1qaWlscniFlqCqtLq9v7+/vby6ubi3trWzr6aelIuCfHZyb21sbW90fIqXoaq0ur2/v7+9vLq5uLe2tbSyrqeelo2Ef3p2c3FvcHJ2fYuYoqu0ur2/v7+/vby7urm4t7a1tLKwq6OblIt/fHh1c3JydHh+i5miq7S6vb+/v7+9vLu6ubi3trW0s7GupZyTi4F7eHVzcnN1eX+Mmp+qs7m8vr+/v769vLu6ubi3trW0s7KwraaelIt/e3h2dHN0dnyBjZqiq7O5vL6/v7+/vr28u7q5uLe2tbSzsrCsp5+WjYJ+end1dHR2en+Kl5+os7m8vr+/v7+/vr28u7q5uLe2tbS0s7KwrqihmJCFf3t4dnV1dniAi5ifrba6vL6/v7+/v769vby7urm4t7a1tLS0" type="audio/wav">
+</audio>
+
+<script>
+const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
+
+let allTasks = [];
+let mechanics = [];
+let previousNewCount = 0;
+
+// API helper
+async function apiCall(path, method = 'GET', body = undefined) {
+    const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path, method, body })
+    });
+    if (!res.ok && res.status !== 204) throw new Error(`${method}: ${res.status}`);
+    if (res.status === 204) return null;
+    return res.json();
+}
+
+// Clock
+function updateClock() {
+    const now = new Date();
+    const str = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} · ${String(now.getDate()).padStart(2,'0')}.${String(now.getMonth()+1).padStart(2,'0')}.${now.getFullYear()}`;
+    document.getElementById('clock').textContent = str;
+}
+
+// Load mechanics
+async function loadMechanics() {
+    try {
+        mechanics = await apiCall('nomenclatures?group_name=eq.mechanics&is_active=eq.true&order=sort_order');
+    } catch(e) { console.error(e); }
+}
+
+// Format date
+function fmtDate(d) { const dt = new Date(d); return `${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}.${dt.getFullYear()}`; }
+
+// Load tasks
+async function loadTasks() {
+    try {
+        allTasks = await apiCall('service_requests?status=neq.Изпълнена&order=priority.desc,created_at.desc');
+        updateSummary();
+        renderTasks();
+        checkNewTasks();
+    } catch(e) {
+        console.error(e);
+    } finally {
+        document.getElementById('loading').style.display = 'none';
+    }
+}
+
+function updateSummary() {
+    const counts = { 'Нова':0, 'Разпределена':0, 'В изпълнение':0, 'Изпълнена':0 };
+    allTasks.forEach(t => { if (counts[t.status] !== undefined) counts[t.status]++; });
+
+    // Also count completed today
+    apiCall('service_requests?status=eq.Изпълнена&completed_at=gte.' + new Date().toISOString().split('T')[0]).then(done => {
+        document.getElementById('sDone').textContent = done ? done.length : 0;
+    });
+
+    document.getElementById('sNew').textContent = counts['Нова'];
+    document.getElementById('sAssigned').textContent = counts['Разпределена'];
+    document.getElementById('sProgress').textContent = counts['В изпълнение'];
+}
+
+function checkNewTasks() {
+    const assignedCount = allTasks.filter(t => t.status === 'Разпределена').length;
+    const banner = document.getElementById('notifBanner');
+    if (assignedCount > 0) {
+        document.getElementById('notifCount').textContent = assignedCount;
+        banner.classList.add('show');
+        if (assignedCount > previousNewCount) {
+            try { document.getElementById('notifSound').play(); } catch(e) {}
+        }
+    } else {
+        banner.classList.remove('show');
+    }
+    previousNewCount = assignedCount;
+}
+
+function renderTasks() {
+    const list = document.getElementById('tasksList');
+    const empty = document.getElementById('emptyState');
+
+    if (allTasks.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    list.innerHTML = allTasks.map((t, i) => {
+        const stripeClass = t.status === 'Нова' ? 'stripe-new' : t.status === 'Разпределена' ? 'stripe-assigned' : 'stripe-progress';
+        const statusBadge = t.status === 'Нова' ? '<span class="badge b-new">Нова</span>' : t.status === 'Разпределена' ? '<span class="badge b-assigned">Разпределена</span>' : '<span class="badge b-progress">В изпълнение</span>';
+        const urgentBadge = t.priority === 'Спешен' ? '<span class="badge b-urgent">🔥 Спешна</span>' : '';
+        const actBadges = (t.activity_type || []).map(a => `<span class="badge ${a === 'РЕМОНТ' || a === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'b-act-red' : 'b-act-blue'}">${a}</span>`).join('');
+
+        // Mechanics display
+        let mechSection = '';
+        if (t.assigned_mechanics && t.assigned_mechanics.length > 0) {
+            const tags = t.assigned_mechanics.map(m => `<span class="mech-tag ${m === t.responsible_mechanic ? 'responsible' : ''}">${m === t.responsible_mechanic ? '★ ' : ''}${m}</span>`).join('');
+            mechSection = `<div class="task-mechanics"><div class="mech-label">Назначени механици:</div><div class="mech-tags">${tags}</div></div>`;
+        }
+
+        // Actions based on status
+        let actionsSection = '';
+        if (t.status === 'Разпределена') {
+            const mechOptions = (t.assigned_mechanics || []).map(m => `<option value="${m}">${m}</option>`).join('');
+            actionsSection = `
+                <div class="task-actions">
+                    <div class="claim-section">
+                        <div class="claim-label">Избери името си:</div>
+                        <select class="claim-select" id="claim-${t.id}">
+                            <option value="">— Кой си ти? —</option>
+                            ${mechOptions}
+                        </select>
+                    </div>
+                    <button class="action-btn btn-claim" onclick="claimTask('${t.id}')">▶ Поемам задачата</button>
+                </div>`;
+        } else if (t.status === 'В изпълнение') {
+            actionsSection = `
+                <div class="task-actions">
+                    <button class="action-btn btn-workcard" onclick="fillWorkCard('${t.id}')">📝 Попълни работна карта</button>
+                    <div class="info-banner">★ Само отговорникът <strong>${t.responsible_mechanic}</strong> попълва работната карта</div>
+                </div>`;
+        }
+
+        return `
+        <div class="task-card" style="animation-delay:${i*0.05}s">
+            <div class="task-main">
+                <div class="task-stripe ${stripeClass}"></div>
+                <div class="task-content">
+                    <div class="task-top">
+                        <div class="task-client">${t.client_name}</div>
+                        <div class="task-date">${fmtDate(t.created_at)}</div>
+                    </div>
+                    <div class="task-vehicle">${t.vehicle} — ${t.reg_number}</div>
+                    ${t.description ? `<div class="task-desc">${t.description}</div>` : ''}
+                    <div class="task-badges">${actBadges}${statusBadge}${urgentBadge}</div>
+                    ${mechSection}
+                    ${actionsSection}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// Claim task
+async function claimTask(taskId) {
+    const select = document.getElementById(`claim-${taskId}`);
+    const mechanic = select.value;
+    if (!mechanic) { showStatus('Избери името си от списъка', 'error'); return; }
+
+    const task = allTasks.find(t => t.id === taskId);
+    if (!task.assigned_mechanics.includes(mechanic)) {
+        showStatus('Не си назначен за тази задача', 'error');
+        return;
+    }
+
+    try {
+        await apiCall(`service_requests?id=eq.${taskId}`, 'PATCH', {
+            status: 'В изпълнение',
+            started_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+
+        await apiCall('request_log', 'POST', {
+            request_id: taskId,
+            action: 'started',
+            performed_by: mechanic,
+            details: `${mechanic} пое задачата`
+        });
+
+        showStatus(`✓ ${mechanic} пое задачата!`, 'success');
+        await loadTasks();
+    } catch(e) {
+        console.error(e);
+        showStatus('Грешка: ' + e.message, 'error');
+    }
+}
+
+// Fill work card - redirect to index.html with request data
+function fillWorkCard(taskId) {
+    const task = allTasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // Store task data for index.html to pick up
+    sessionStorage.setItem('workcard_request_id', task.id);
+    sessionStorage.setItem('workcard_request_data', JSON.stringify({
+        client_name: task.client_name,
+        vehicle: task.vehicle,
+        reg_number: task.reg_number,
+        activity_type: task.activity_type,
+        description: task.description,
+        assigned_mechanics: task.assigned_mechanics,
+        responsible_mechanic: task.responsible_mechanic
+    }));
+    sessionStorage.setItem('workcard_role', 'mechanic');
+    sessionStorage.setItem('workcard_auth', 'true');
+
+    window.location.href = 'index.html';
+}
+
+function showStatus(msg, type) {
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    el.className = 'status ' + type;
+    el.scrollIntoView({ behavior:'smooth', block:'center' });
+    if (type === 'success') setTimeout(() => { el.className = 'status'; }, 5000);
+}
+
+// Auto-refresh every 15 seconds
+setInterval(() => { loadTasks(); }, 15000);
+
+// Update clock every second
+setInterval(updateClock, 1000);
+
+// Init
+document.addEventListener('DOMContentLoaded', async () => {
+    updateClock();
+    await loadMechanics();
+    await loadTasks();
+});
+</script>
+
+</body>
+</html>
