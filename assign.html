@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Разпределяне — Ар Си Техник</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a3a8f">
+    <style>
+        :root {
+            --primary: #1a3a8f; --primary-dark: #0d1f52; --primary-light: #2955c7;
+            --accent-red: #e41e2b; --accent-green: #10b981; --accent-amber: #f59e0b;
+            --accent-purple: #7c3aed; --accent-blue: #3b82f6;
+            --bg: #f0f4f8; --card: #ffffff; --text: #1a2332; --text-muted: #5a6577; --border: #d8dfe8;
+            --radius: 12px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; padding-bottom:80px; }
+
+        .header { background:linear-gradient(135deg,var(--primary-dark),var(--primary),var(--primary-light)); color:white; padding:16px 20px; text-align:center; position:sticky; top:0; z-index:100; box-shadow:0 4px 20px rgba(30,41,59,0.3); }
+        .header-top { display:flex; align-items:center; justify-content:center; gap:10px; }
+        .header img { width:36px; height:36px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:2px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); }
+        .header h1 { font-size:18px; font-weight:700; letter-spacing:1px; }
+        .header-sub { font-size:11px; opacity:0.7; margin-top:2px; }
+        .header-user { font-size:11px; opacity:0.9; margin-top:4px; background:rgba(255,255,255,0.15); display:inline-block; padding:2px 12px; border-radius:12px; }
+
+        .container { max-width:700px; margin:0 auto; padding:12px; }
+
+        /* Status tabs */
+        .status-tabs { display:flex; gap:4px; margin-bottom:12px; background:var(--card); border-radius:var(--radius); padding:4px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+        .status-tab { flex:1; padding:10px 4px; text-align:center; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; transition:all 0.2s; color:var(--text-muted); background:transparent; border:none; }
+        .status-tab.active { color:white; }
+        .status-tab[data-status="Нова"].active { background:var(--accent-red); }
+        .status-tab[data-status="Разпределена"].active { background:var(--accent-purple); }
+        .status-tab[data-status="В изпълнение"].active { background:var(--accent-blue); }
+        .status-tab[data-status="Изпълнена"].active { background:var(--accent-green); }
+        .status-tab[data-status="all"].active { background:var(--primary); }
+        .tab-count { display:inline-block; min-width:18px; height:18px; line-height:18px; border-radius:9px; font-size:10px; font-weight:800; margin-left:4px; }
+
+        /* Request cards */
+        .requests-list { display:flex; flex-direction:column; gap:10px; }
+        .request-card {
+            background:var(--card); border-radius:var(--radius); overflow:hidden;
+            box-shadow:0 1px 3px rgba(0,0,0,0.06); transition:all 0.25s;
+            animation:fadeInUp 0.3s ease backwards;
+        }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+        .card-main { display:flex; }
+        .card-stripe { width:5px; flex-shrink:0; }
+        .stripe-new { background:var(--accent-red); }
+        .stripe-assigned { background:var(--accent-purple); }
+        .stripe-progress { background:var(--accent-blue); }
+        .stripe-done { background:var(--accent-green); }
+
+        .card-content { flex:1; padding:14px; }
+        .card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+        .card-client { font-size:15px; font-weight:700; color:var(--text); }
+        .card-date { font-size:11px; color:var(--text-muted); }
+        .card-vehicle { font-size:14px; color:var(--text); margin-bottom:2px; }
+        .card-reg { font-size:13px; color:var(--text-muted); }
+        .card-desc { font-size:13px; color:var(--text-muted); margin-top:6px; padding:8px; background:#f8fafc; border-radius:8px; border-left:3px solid var(--border); }
+        .card-contact { font-size:11px; color:var(--text-muted); margin-top:6px; }
+
+        .card-badges { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+        .badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+        .b-new { background:rgba(228,30,43,0.1); color:#c41820; }
+        .b-assigned { background:#ede9fe; color:#5b21b6; }
+        .b-progress { background:#dbeafe; color:#1e40af; }
+        .b-done { background:#d1fae5; color:#065f46; }
+        .b-urgent { background:#fef3c7; color:#92400e; border:1px solid var(--accent-amber); }
+        .b-activity-blue { background:rgba(26,58,143,0.1); color:var(--primary); }
+        .b-activity-red { background:rgba(228,30,43,0.1); color:var(--accent-red); }
+
+        /* Assignment section */
+        .assign-section { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+        .assign-label { font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
+
+        /* Mechanic checkboxes */
+        .mechanic-list { display:flex; flex-direction:column; gap:4px; margin-bottom:8px; }
+        .mechanic-item { display:flex; align-items:center; gap:10px; padding:8px 12px; border:1.5px solid var(--border); border-radius:8px; cursor:pointer; transition:all 0.2s; background:#f8fafc; }
+        .mechanic-item:has(input:checked) { border-color:var(--accent-purple); background:rgba(124,58,237,0.05); }
+        .mechanic-item input[type="checkbox"] { width:18px; height:18px; accent-color:var(--accent-purple); flex-shrink:0; margin:0; vertical-align:middle; }
+        .mechanic-item span { font-size:14px; vertical-align:middle; line-height:1.4; }
+
+        /* Responsible select */
+        .responsible-select { width:100%; padding:10px 14px; border:1.5px solid var(--accent-amber); border-radius:8px; font-size:14px; color:var(--text); background:rgba(245,158,11,0.05); appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; margin-bottom:8px; }
+
+        /* Assigned mechanics display */
+        .assigned-display { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+        .assigned-tag { padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(124,58,237,0.08); border:1px solid rgba(124,58,237,0.2); color:var(--accent-purple); }
+        .assigned-tag.responsible { background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.3); color:var(--accent-amber); }
+
+        /* Action buttons */
+        .card-actions { display:flex; gap:6px; margin-top:10px; }
+        .action-btn { flex:1; padding:10px; border:none; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; text-align:center; transition:all 0.2s; }
+        .action-btn:active { transform:scale(0.97); }
+        .btn-assign { background:linear-gradient(135deg,var(--accent-purple),#5b21b6); color:white; box-shadow:0 3px 0 #4c1d95,0 4px 10px rgba(124,58,237,0.25); border-top:1px solid rgba(255,255,255,0.3); }
+        .btn-complete { background:linear-gradient(135deg,var(--accent-green),#047857); color:white; box-shadow:0 3px 0 #065f46,0 4px 10px rgba(16,185,129,0.25); border-top:1px solid rgba(255,255,255,0.3); }
+
+        /* Status messages */
+        .status { text-align:center; padding:14px; border-radius:var(--radius); margin-bottom:12px; font-size:14px; font-weight:600; display:none; animation:fadeInUp 0.3s ease; }
+        .status.success { display:block; background:rgba(16,185,129,0.1); color:var(--accent-green); border:1px solid rgba(16,185,129,0.2); }
+        .status.error { display:block; background:rgba(239,68,68,0.08); color:var(--accent-red); border:1px solid rgba(239,68,68,0.15); }
+
+        .loading { text-align:center; padding:40px; }
+        .spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 10px; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .empty { text-align:center; padding:40px; color:var(--text-muted); font-size:14px; }
+        .empty-icon { font-size:40px; margin-bottom:10px; opacity:0.5; }
+
+        /* Bottom nav */
+        .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:white; border-top:1px solid var(--border); display:flex; z-index:100; box-shadow:0 -2px 10px rgba(0,0,0,0.06); }
+        .bottom-nav a { flex:1; display:flex; flex-direction:column; align-items:center; padding:8px 0 10px; text-decoration:none; font-size:11px; font-weight:600; color:var(--text-muted); transition:all 0.2s; position:relative; }
+        .bottom-nav a.active { color:var(--primary); }
+        .bottom-nav a .nav-icon { font-size:20px; margin-bottom:2px; }
+        .bottom-nav a.active::after { content:''; display:block; width:24px; height:3px; background:var(--accent-red); border-radius:2px; margin-top:2px; }
+        .nav-badge { position:absolute; top:2px; right:calc(50% - 20px); background:var(--accent-red); color:white; font-size:9px; font-weight:800; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-top">
+        <img src="Repairs.png" alt="Logo">
+        <h1>РАЗПРЕДЕЛЯНЕ</h1>
+    </div>
+    <div class="header-sub">Ар Си Техник ООД</div>
+    <div class="header-user" id="headerUser">Ръководител сервизна дейност</div>
+</div>
+
+<div class="container">
+    <div id="statusMsg" class="status"></div>
+
+    <div class="status-tabs" id="statusTabs">
+        <button class="status-tab active" data-status="all" onclick="filterByStatus('all')">Всички</button>
+        <button class="status-tab" data-status="Нова" onclick="filterByStatus('Нова')">Нови <span class="tab-count" id="countNew">0</span></button>
+        <button class="status-tab" data-status="Разпределена" onclick="filterByStatus('Разпределена')">Разпр. <span class="tab-count" id="countAssigned">0</span></button>
+        <button class="status-tab" data-status="В изпълнение" onclick="filterByStatus('В изпълнение')">В изп. <span class="tab-count" id="countProgress">0</span></button>
+        <button class="status-tab" data-status="Изпълнена" onclick="filterByStatus('Изпълнена')">Изпълн. <span class="tab-count" id="countDone">0</span></button>
+    </div>
+
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <div style="color:var(--text-muted);font-size:13px;">Зареждане...</div>
+    </div>
+
+    <div id="requestsList" class="requests-list"></div>
+    <div id="emptyState" class="empty" style="display:none;">
+        <div class="empty-icon">📭</div>
+        Няма заявки за избрания филтър.
+    </div>
+</div>
+
+<nav class="bottom-nav">
+    <a href="requests.html"><span class="nav-icon">📝</span>Нова заявка</a>
+    <a href="assign.html" class="active"><span class="nav-icon">📋</span>Разпределяне<span class="nav-badge" id="navBadge" style="display:none;">0</span></a>
+    <a href="history.html"><span class="nav-icon">📊</span>Преглед</a>
+    <a href="dashboard.html"><span class="nav-icon">📈</span>Dashboard</a>
+</nav>
+
+<script>
+const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
+
+let allRequests = [];
+let mechanics = [];
+let currentFilter = 'all';
+
+// Check auth
+function checkAuth() {
+    const auth = sessionStorage.getItem('workcard_auth');
+    const role = sessionStorage.getItem('workcard_role');
+    if (auth !== 'true' || (role !== 'manager' && role !== 'admin')) {
+        window.location.href = 'login.html';
+        return;
+    }
+    const user = sessionStorage.getItem('workcard_user');
+    if (user) document.getElementById('headerUser').textContent = user;
+}
+
+// API helper
+async function apiCall(path, method = 'GET', body = undefined) {
+    const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path, method, body })
+    });
+    if (!res.ok && res.status !== 204) throw new Error(`${method} ${path}: ${res.status}`);
+    if (res.status === 204) return null;
+    return res.json();
+}
+
+// Load mechanics
+async function loadMechanics() {
+    try {
+        mechanics = await apiCall('nomenclatures?group_name=eq.mechanics&is_active=eq.true&order=sort_order');
+    } catch(e) { console.error(e); }
+}
+
+// Load requests
+async function loadRequests() {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('requestsList').innerHTML = '';
+    document.getElementById('emptyState').style.display = 'none';
+
+    try {
+        allRequests = await apiCall('service_requests?order=created_at.desc');
+        updateCounts();
+        renderRequests();
+    } catch(e) {
+        console.error(e);
+        showStatus('Грешка при зареждане: ' + e.message, 'error');
+    } finally {
+        document.getElementById('loading').style.display = 'none';
+    }
+}
+
+function updateCounts() {
+    const counts = { 'Нова': 0, 'Разпределена': 0, 'В изпълнение': 0, 'Изпълнена': 0 };
+    allRequests.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
+    document.getElementById('countNew').textContent = counts['Нова'];
+    document.getElementById('countAssigned').textContent = counts['Разпределена'];
+    document.getElementById('countProgress').textContent = counts['В изпълнение'];
+    document.getElementById('countDone').textContent = counts['Изпълнена'];
+
+    const badge = document.getElementById('navBadge');
+    if (counts['Нова'] > 0) { badge.textContent = counts['Нова']; badge.style.display = 'flex'; }
+    else { badge.style.display = 'none'; }
+}
+
+function filterByStatus(status) {
+    currentFilter = status;
+    document.querySelectorAll('.status-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.status-tab[data-status="${status}"]`).classList.add('active');
+    renderRequests();
+}
+
+function renderRequests() {
+    const list = document.getElementById('requestsList');
+    const empty = document.getElementById('emptyState');
+    const filtered = currentFilter === 'all' ? allRequests : allRequests.filter(r => r.status === currentFilter);
+
+    if (filtered.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    list.innerHTML = filtered.map((r, i) => {
+        const stripeClass = r.status === 'Нова' ? 'stripe-new' : r.status === 'Разпределена' ? 'stripe-assigned' : r.status === 'В изпълнение' ? 'stripe-progress' : 'stripe-done';
+        const statusBadge = r.status === 'Нова' ? '<span class="badge b-new">Нова</span>' : r.status === 'Разпределена' ? '<span class="badge b-assigned">Разпределена</span>' : r.status === 'В изпълнение' ? '<span class="badge b-progress">В изпълнение</span>' : '<span class="badge b-done">Изпълнена</span>';
+        const urgentBadge = r.priority === 'Спешен' ? '<span class="badge b-urgent">🔥 Спешна</span>' : '';
+        const activityBadges = (r.activity_type || []).map(a => `<span class="badge ${a === 'РЕМОНТ' || a === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'b-activity-red' : 'b-activity-blue'}">${a}</span>`).join('');
+
+        const date = new Date(r.created_at);
+        const dateStr = `${String(date.getDate()).padStart(2,'0')}.${String(date.getMonth()+1).padStart(2,'0')}.${date.getFullYear()}`;
+
+        let assignSection = '';
+        if (r.status === 'Нова') {
+            const mechChecks = mechanics.map(m => `<label class="mechanic-item"><input type="checkbox" name="mech-${r.id}" value="${m.value}" onchange="updateResponsibleOptions('${r.id}')"><span>${m.label}</span></label>`).join('');
+            assignSection = `
+                <div class="assign-section">
+                    <div class="assign-label">Назначи механик(ци):</div>
+                    <div class="mechanic-list">${mechChecks}</div>
+                    <div class="assign-label">★ Отговорник:</div>
+                    <select class="responsible-select" id="resp-${r.id}"><option value="">— Избери отговорник —</option></select>
+                    <div class="card-actions">
+                        <button class="action-btn btn-assign" onclick="assignRequest('${r.id}')">✓ Разпредели</button>
+                    </div>
+                </div>`;
+        } else if (r.status === 'Разпределена' || r.status === 'В изпълнение') {
+            const assignedTags = (r.assigned_mechanics || []).map(m => `<span class="assigned-tag ${m === r.responsible_mechanic ? 'responsible' : ''}">${m === r.responsible_mechanic ? '★ ' : ''}${m}</span>`).join('');
+            assignSection = `
+                <div class="assign-section">
+                    <div class="assign-label">Назначени:</div>
+                    <div class="assigned-display">${assignedTags}</div>
+                </div>`;
+        } else if (r.status === 'Изпълнена') {
+            const assignedTags = (r.assigned_mechanics || []).map(m => `<span class="assigned-tag ${m === r.responsible_mechanic ? 'responsible' : ''}">${m === r.responsible_mechanic ? '★ ' : ''}${m}</span>`).join('');
+            const completedDate = r.completed_at ? new Date(r.completed_at) : null;
+            const completedStr = completedDate ? `${String(completedDate.getDate()).padStart(2,'0')}.${String(completedDate.getMonth()+1).padStart(2,'0')}.${completedDate.getFullYear()} ${String(completedDate.getHours()).padStart(2,'0')}:${String(completedDate.getMinutes()).padStart(2,'0')}` : '';
+            assignSection = `
+                <div class="assign-section">
+                    <div class="assign-label">Изпълнена от:</div>
+                    <div class="assigned-display">${assignedTags}</div>
+                    ${completedStr ? `<div style="font-size:11px;color:var(--accent-green);margin-top:4px;font-weight:600;">✓ ${completedStr}</div>` : ''}
+                </div>`;
+        }
+
+        return `
+        <div class="request-card" style="animation-delay:${i*0.04}s">
+            <div class="card-main">
+                <div class="card-stripe ${stripeClass}"></div>
+                <div class="card-content">
+                    <div class="card-top">
+                        <div class="card-client">${r.client_name}</div>
+                        <div class="card-date">${dateStr}</div>
+                    </div>
+                    <div class="card-vehicle">${r.vehicle} — ${r.reg_number}</div>
+                    ${r.description ? `<div class="card-desc">${r.description}</div>` : ''}
+                    <div class="card-contact">📞 ${r.client_phone || '—'} ${r.client_email ? '· 📧 ' + r.client_email : ''}</div>
+                    <div class="card-badges">${activityBadges}${statusBadge}${urgentBadge}</div>
+                    ${assignSection}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function updateResponsibleOptions(requestId) {
+    const checked = Array.from(document.querySelectorAll(`input[name="mech-${requestId}"]:checked`)).map(cb => cb.value);
+    const select = document.getElementById(`resp-${requestId}`);
+    select.innerHTML = '<option value="">— Избери отговорник —</option>';
+    checked.forEach(m => { select.innerHTML += `<option value="${m}">★ ${m}</option>`; });
+    if (checked.length === 1) select.value = checked[0];
+}
+
+async function assignRequest(requestId) {
+    const checked = Array.from(document.querySelectorAll(`input[name="mech-${requestId}"]:checked`)).map(cb => cb.value);
+    const responsible = document.getElementById(`resp-${requestId}`).value;
+
+    if (checked.length === 0) { showStatus('Избери поне един механик', 'error'); return; }
+    if (!responsible) { showStatus('Избери отговорник', 'error'); return; }
+
+    try {
+        await apiCall(`service_requests?id=eq.${requestId}`, 'PATCH', {
+            assigned_mechanics: checked,
+            responsible_mechanic: responsible,
+            status: 'Разпределена',
+            assigned_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+
+        await apiCall('request_log', 'POST', {
+            request_id: requestId,
+            action: 'assigned',
+            performed_by: sessionStorage.getItem('workcard_user') || 'Ръководител',
+            details: `Назначени: ${checked.join(', ')}. Отговорник: ${responsible}`
+        });
+
+        showStatus(`✓ Заявката е разпределена → ${checked.join(', ')} (★ ${responsible})`, 'success');
+        await loadRequests();
+    } catch(e) {
+        console.error(e);
+        showStatus('Грешка при разпределяне: ' + e.message, 'error');
+    }
+}
+
+function showStatus(msg, type) {
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    el.className = 'status ' + type;
+    el.scrollIntoView({ behavior:'smooth', block:'center' });
+    if (type === 'success') setTimeout(() => { el.className = 'status'; }, 6000);
+}
+
+// Auto-refresh every 30 seconds
+let refreshInterval;
+function startAutoRefresh() {
+    refreshInterval = setInterval(() => { loadRequests(); }, 30000);
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', async () => {
+    checkAuth();
+    await loadMechanics();
+    await loadRequests();
+    startAutoRefresh();
+});
+</script>
+
+</body>
+</html>
