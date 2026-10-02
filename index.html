@@ -540,10 +540,69 @@ async function loadNomenclatures() {
         document.getElementById('loading').classList.remove('show');
         document.getElementById('workCardForm').style.display = 'block';
         document.getElementById('submitSection').style.display = 'block';
+        checkForRequest();
     } catch (e) {
         console.error('Грешка при зареждане:', e);
         document.getElementById('loading').innerHTML = '<div style="color:var(--danger);font-size:14px;">Грешка при зареждане. Провери интернет връзката.</div>';
     }
+}
+
+function checkForRequest() {
+    const requestId = sessionStorage.getItem('workcard_request_id');
+    const requestDataStr = sessionStorage.getItem('workcard_request_data');
+    if (requestId && requestDataStr) {
+        try {
+            const data = JSON.parse(requestDataStr);
+            prefillFromRequest(data, requestId);
+        } catch(e) { console.error('Request parse error:', e); }
+    }
+}
+
+function prefillFromRequest(data, requestId) {
+    const banner = document.createElement('div');
+    banner.id = 'requestBanner';
+    banner.style.cssText = 'background:rgba(124,58,237,0.08);border:1.5px solid rgba(124,58,237,0.2);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;color:#5b21b6;font-weight:600;display:flex;align-items:center;gap:8px;';
+    banner.innerHTML = '📋 Заявка от <strong>' + data.client_name + '</strong> — ' + data.vehicle + ' (' + data.reg_number + ')';
+    const form = document.getElementById('workCardForm');
+    form.insertBefore(banner, form.firstChild);
+
+    window._currentRequestId = requestId;
+
+    const clientField = document.getElementById('client');
+    if (clientField && data.client_name) clientField.value = data.client_name;
+
+    const vehicleField = document.getElementById('vehicle');
+    if (vehicleField && data.vehicle) vehicleField.value = data.vehicle;
+
+    const regField = document.getElementById('regNumber');
+    if (regField && data.reg_number) regField.value = data.reg_number;
+
+    if (data.activity_type && data.activity_type.length > 0) {
+        const firstActivity = data.activity_type[0];
+        const radio = document.querySelector('input[name="activityType"][value="' + firstActivity + '"]');
+        if (radio) {
+            radio.checked = true;
+            onActivityChange(firstActivity);
+        }
+    }
+
+    if (data.assigned_mechanics && data.assigned_mechanics.length > 0) {
+        data.assigned_mechanics.forEach(mechName => {
+            const optionEl = document.querySelector('#mechanicOptions .ms-option[data-value="' + CSS.escape(mechName) + '"]');
+            if (optionEl) {
+                optionEl.classList.add('selected');
+                optionEl.querySelector('input[type="checkbox"]').checked = true;
+            }
+        });
+        updateMechanicUI();
+    }
+
+    [clientField, vehicleField, regField].forEach(f => {
+        if (f && f.value) {
+            f.style.borderColor = '#7c3aed';
+            f.style.background = 'rgba(124,58,237,0.03)';
+        }
+    });
 }
 
 function buildForm() {
@@ -720,12 +779,54 @@ async function submitForm() {
             repair_description: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? document.getElementById('repairDescription').value.trim() || null : null,
             has_materials: hasMaterials, work_hours: parseFloat(document.getElementById('workHours').value),
             other_materials: hasMaterials ? document.getElementById('otherMaterials').value.trim() || null : null,
-            km_traveled: document.getElementById('kmTraveled').value ? parseInt(document.getElementById('kmTraveled').value) : null
+            km_traveled: document.getElementById('kmTraveled').value ? parseInt(document.getElementById('kmTraveled').value) : null,
+            request_id: window._currentRequestId || null
         };
         const result = await supabaseInsert('work_cards', cardData);
         const cardId = result[0].id;
         if (hasMaterials) { const materials = collectMaterials(); if (materials.length > 0) { await supabaseInsert('work_card_materials', materials.map(m => ({ ...m, work_card_id: cardId }))); } }
         showStatus(`✓ Записана: ${cardData.mechanic.join(', ')} — ${cardData.vehicle} (${cardData.reg_number}) — ${cardData.activity_type}`, 'success');
+
+        if (window._currentRequestId) {
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        path: 'service_requests?id=eq.' + window._currentRequestId,
+                        method: 'PATCH',
+                        body: {
+                            status: 'Изпълнена',
+                            work_card_id: cardId,
+                            completed_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        }
+                    })
+                });
+
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        path: 'request_log',
+                        method: 'POST',
+                        body: {
+                            request_id: window._currentRequestId,
+                            action: 'completed',
+                            performed_by: cardData.mechanic.join(', '),
+                            details: 'Работна карта попълнена. ID: ' + cardId
+                        }
+                    })
+                });
+
+                sessionStorage.removeItem('workcard_request_id');
+                sessionStorage.removeItem('workcard_request_data');
+                window._currentRequestId = null;
+            } catch(e) {
+                console.error('Error updating request:', e);
+            }
+        }
+
         resetForm();
     } catch (e) { console.error('Грешка при запис:', e); showStatus('Грешка при запис: ' + e.message, 'error'); }
     finally { btn.disabled = false; btn.textContent = '✓ Запиши работна карта'; }
@@ -758,6 +859,9 @@ function resetForm() {
     document.querySelectorAll('.material-body').forEach(b => b.classList.remove('open'));
     document.querySelectorAll('.material-header .arrow').forEach(a => a.classList.remove('open'));
     document.querySelectorAll('.item-qty').forEach(el => { el.style.display = 'none'; el.querySelector('input').value = ''; });
+    const banner = document.getElementById('requestBanner');
+    if (banner) banner.remove();
+    window._currentRequestId = null;
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 window.addEventListener('online', () => document.getElementById('offlineBanner').classList.remove('show'));
