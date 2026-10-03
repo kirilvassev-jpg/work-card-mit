@@ -827,6 +827,11 @@ async function submitForm() {
                 sessionStorage.removeItem('workcard_request_id');
                 sessionStorage.removeItem('workcard_request_data');
                 window._currentRequestId = null;
+
+                // Redirect back to tablet after 2 seconds
+                setTimeout(() => {
+                    window.location.href = 'tablet.html';
+                }, 2000);
             } catch(e) {
                 console.error('Error updating request:', e);
             }
