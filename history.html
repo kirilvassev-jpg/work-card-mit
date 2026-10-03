@@ -70,6 +70,23 @@
 
         .container { max-width: 900px; margin: 0 auto; padding: 12px; }
 
+        /* Main tabs */
+        .main-tab {
+            flex:1; padding:12px; text-align:center; border:none; background:transparent;
+            font-size:14px; font-weight:700; color:var(--text-muted); cursor:pointer;
+            border-bottom:3px solid transparent; transition:all 0.2s;
+        }
+        .main-tab.active { color:var(--primary); border-bottom-color:var(--accent-red); }
+
+        /* Request status tabs */
+        .req-status-tab {
+            flex:1; padding:10px 4px; text-align:center; border-radius:8px;
+            font-size:11px; font-weight:700; cursor:pointer; border:none;
+            background:transparent; color:var(--text-muted); transition:all 0.2s;
+        }
+        .req-status-tab.active { color:white; background:var(--primary); }
+        .req-details.open { display: block !important; }
+
         /* Filters */
         .filters {
             background: var(--card); border-radius: var(--radius);
@@ -218,7 +235,7 @@
         .status.error { display: block; background: rgba(228,30,43,0.08); color: var(--danger); border: 1px solid rgba(228,30,43,0.15); }
 
         /* Auth modal */
-        #container, #bottomNav { display: none; }
+        #container, #bottomNav, #mainTabs { display: none; }
         .auth-overlay {
             display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
             align-items: center; justify-content: center; z-index: 1000; padding: 20px;
@@ -367,7 +384,13 @@
     </div>
 </div>
 
+<div style="display:flex;background:var(--card);border-bottom:2px solid var(--border);margin-bottom:0;" id="mainTabs">
+    <button class="main-tab active" data-tab="workCards" onclick="switchTab('workCards')">📋 Работни карти</button>
+    <button class="main-tab" data-tab="requests" onclick="switchTab('requests')">📝 Заявки <span id="requestsTabCount" style="background:var(--accent-red);color:white;font-size:10px;font-weight:800;padding:1px 6px;border-radius:10px;margin-left:4px;display:none;"></span></button>
+</div>
+
 <div id="container" class="container">
+<div id="tabWorkCards">
     <div id="statusMsg" class="status"></div>
     <div class="filters">
         <div class="filters-toggle" onclick="toggleFilters()">
@@ -409,6 +432,38 @@
     <div id="cardsList" class="cards-list"></div>
     <div id="emptyState" class="empty" style="display:none;"><div class="empty-icon">📭</div>Няма намерени записи за избрания период.</div>
     <div id="errorState" class="error-msg" style="display:none;"></div>
+</div>
+
+<div id="tabRequests" style="display:none;">
+    <!-- Филтри и търсене -->
+    <div style="background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+            <span style="font-size:12px;font-weight:600;color:var(--text-muted);">Период:</span>
+            <input type="date" id="reqFilterFrom" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;">
+            <span style="font-size:12px;color:var(--text-muted);">—</span>
+            <input type="date" id="reqFilterTo" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input type="text" id="reqSearchField" placeholder="Търси по клиент или машина..." oninput="filterServiceRequests()" style="flex:1;min-width:200px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;">
+            <button onclick="loadServiceRequests()" style="padding:8px 16px;background:linear-gradient(135deg,#1a3a8f,#0d1f52);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 0 #0d1f52;">🔍 Покажи</button>
+            <button onclick="clearReqFilters()" style="padding:8px 16px;background:white;color:var(--text-muted);border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✕ Изчисти</button>
+            <button onclick="exportRequestsExcel()" style="padding:8px 16px;background:linear-gradient(135deg,#10b981,#047857);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 0 #065f46;">📥 Excel</button>
+        </div>
+    </div>
+
+    <!-- Статус табове -->
+    <div style="display:flex;gap:4px;margin-bottom:12px;background:var(--card);border-radius:var(--radius);padding:4px;box-shadow:0 1px 3px rgba(0,0,0,0.06);" id="reqStatusTabs">
+        <button class="req-status-tab active" data-status="all" onclick="filterReqByStatus('all')">Всички</button>
+        <button class="req-status-tab" data-status="Нова" onclick="filterReqByStatus('Нова')">Нови <span id="rcNew">0</span></button>
+        <button class="req-status-tab" data-status="Разпределена" onclick="filterReqByStatus('Разпределена')">Разпр. <span id="rcAssigned">0</span></button>
+        <button class="req-status-tab" data-status="В изпълнение" onclick="filterReqByStatus('В изпълнение')">В изп. <span id="rcProgress">0</span></button>
+        <button class="req-status-tab" data-status="Изпълнена" onclick="filterReqByStatus('Изпълнена')">Изпълн. <span id="rcDone">0</span></button>
+    </div>
+
+    <!-- Списък с заявки -->
+    <div id="reqList" class="cards-list"></div>
+    <div id="reqEmpty" class="empty" style="display:none;"><div class="empty-icon">📭</div>Няма заявки за избрания филтър.</div>
+</div>
 </div>
 
 <nav id="bottomNav" class="bottom-nav">
@@ -497,6 +552,8 @@ let allMaterials = [];
 let allNomenclatures = {};
 let editingCardId = null;
 let editHasMaterials = null;
+let allServiceRequests = [];
+let currentReqFilter = 'all';
 
 async function supabaseGet(table, query = '') {
     const path = query ? `${table}?${query}` : table;
@@ -565,6 +622,7 @@ async function checkPassword() {
 function showApp() {
     document.getElementById('container').style.display = 'block';
     document.getElementById('bottomNav').style.display = 'flex';
+    document.getElementById('mainTabs').style.display = 'flex';
     updateNav();
     loadMechanics();
     loadAllNomenclatures();
@@ -1041,6 +1099,191 @@ function exportExcel() {
     const from = document.getElementById('filterFrom').value || 'all';
     const to = document.getElementById('filterTo').value || 'all';
     a.download = `Работни_Карти_${from}_${to}.csv`; a.click();
+}
+
+function switchTab(tab) {
+    document.getElementById('tabWorkCards').style.display = tab === 'workCards' ? 'block' : 'none';
+    document.getElementById('tabRequests').style.display = tab === 'requests' ? 'block' : 'none';
+    document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.main-tab[data-tab="' + tab + '"]').classList.add('active');
+    if (tab === 'requests') loadServiceRequests();
+}
+
+async function loadServiceRequests() {
+    const reqList = document.getElementById('reqList');
+    const reqEmpty = document.getElementById('reqEmpty');
+    reqList.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+    reqEmpty.style.display = 'none';
+
+    try {
+        let query = 'order=created_at.desc';
+        const from = document.getElementById('reqFilterFrom').value;
+        const to = document.getElementById('reqFilterTo').value;
+        if (from) query += '&created_at=gte.' + from + 'T00:00:00';
+        if (to) query += '&created_at=lte.' + to + 'T23:59:59';
+
+        allServiceRequests = await supabaseGet('service_requests', query);
+        updateReqCounts();
+        filterServiceRequests();
+    } catch(e) {
+        console.error(e);
+        reqList.innerHTML = '<div class="error-msg">Грешка при зареждане: ' + e.message + '</div>';
+    }
+}
+
+function updateReqCounts() {
+    const counts = { 'Нова':0, 'Разпределена':0, 'В изпълнение':0, 'Изпълнена':0 };
+    allServiceRequests.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
+    document.getElementById('rcNew').textContent = counts['Нова'];
+    document.getElementById('rcAssigned').textContent = counts['Разпределена'];
+    document.getElementById('rcProgress').textContent = counts['В изпълнение'];
+    document.getElementById('rcDone').textContent = counts['Изпълнена'];
+
+    // Update tab badge
+    const total = counts['Нова'] + counts['Разпределена'] + counts['В изпълнение'];
+    const badge = document.getElementById('requestsTabCount');
+    if (total > 0) { badge.textContent = total; badge.style.display = 'inline'; }
+    else { badge.style.display = 'none'; }
+}
+
+function filterReqByStatus(status) {
+    currentReqFilter = status;
+    document.querySelectorAll('.req-status-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.req-status-tab[data-status="' + status + '"]').classList.add('active');
+    filterServiceRequests();
+}
+
+function filterServiceRequests() {
+    const query = (document.getElementById('reqSearchField').value || '').toLowerCase().trim();
+    let filtered = currentReqFilter === 'all' ? allServiceRequests : allServiceRequests.filter(r => r.status === currentReqFilter);
+    if (query) {
+        filtered = filtered.filter(r =>
+            (r.client_name || '').toLowerCase().includes(query) ||
+            (r.vehicle || '').toLowerCase().includes(query) ||
+            (r.reg_number || '').toLowerCase().includes(query)
+        );
+    }
+    renderServiceRequests(filtered);
+}
+
+function clearReqFilters() {
+    document.getElementById('reqFilterFrom').value = '';
+    document.getElementById('reqFilterTo').value = '';
+    document.getElementById('reqSearchField').value = '';
+    currentReqFilter = 'all';
+    document.querySelectorAll('.req-status-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.req-status-tab[data-status="all"]').classList.add('active');
+    loadServiceRequests();
+}
+
+function renderServiceRequests(requests) {
+    const reqList = document.getElementById('reqList');
+    const reqEmpty = document.getElementById('reqEmpty');
+
+    if (requests.length === 0) { reqList.innerHTML = ''; reqEmpty.style.display = 'block'; return; }
+    reqEmpty.style.display = 'none';
+
+    reqList.innerHTML = requests.map((r, i) => {
+        const statusColors = { 'Нова':'#e41e2b', 'Разпределена':'#7c3aed', 'В изпълнение':'#3b82f6', 'Изпълнена':'#10b981' };
+        const statusBadges = { 'Нова':'background:rgba(228,30,43,0.1);color:#c41820', 'Разпределена':'background:#ede9fe;color:#5b21b6', 'В изпълнение':'background:#dbeafe;color:#1e40af', 'Изпълнена':'background:#d1fae5;color:#065f46' };
+        const stripeColor = statusColors[r.status] || '#d8dfe8';
+        const badgeStyle = statusBadges[r.status] || '';
+        const urgentBadge = r.priority === 'Спешен' ? '<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(245,158,11,0.1);color:#92400e;border:1px solid #f59e0b;">🔥 Спешна</span>' : '';
+        const actBadges = (r.activity_type || []).map(a => '<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;' + (a === 'РЕМОНТ' || a === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'background:rgba(228,30,43,0.1);color:#e41e2b' : 'background:rgba(26,58,143,0.1);color:#1a3a8f') + ';">' + a + '</span>').join('');
+
+        const date = new Date(r.created_at);
+        const dateStr = String(date.getDate()).padStart(2,'0') + '.' + String(date.getMonth()+1).padStart(2,'0') + '.' + date.getFullYear();
+
+        // Assigned mechanics
+        let mechHtml = '';
+        if (r.assigned_mechanics && r.assigned_mechanics.length > 0) {
+            const tags = r.assigned_mechanics.map(m => '<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;' + (m === r.responsible_mechanic ? 'background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#b45309;' : 'background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);color:#7c3aed;') + '">' + (m === r.responsible_mechanic ? '★ ' : '') + m + '</span>').join(' ');
+            mechHtml = '<div style="margin-top:6px;"><span style="font-size:11px;color:var(--text-muted);font-weight:600;">Механици: </span>' + tags + '</div>';
+        }
+
+        // Notes/comments
+        const notesHtml = r.notes ? r.notes.replace(/\n/g, '<br>') : '<span style="color:var(--text-muted);font-style:italic;font-size:11px;">Няма бележки</span>';
+
+        // Completed date
+        let completedHtml = '';
+        if (r.completed_at) {
+            const cd = new Date(r.completed_at);
+            completedHtml = '<div style="font-size:11px;color:#059669;font-weight:600;margin-top:4px;">✓ Изпълнена: ' + String(cd.getDate()).padStart(2,'0') + '.' + String(cd.getMonth()+1).padStart(2,'0') + '.' + cd.getFullYear() + ' ' + String(cd.getHours()).padStart(2,'0') + ':' + String(cd.getMinutes()).padStart(2,'0') + '</div>';
+        }
+
+        return '<div style="background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);margin-bottom:10px;animation:fadeInUp 0.3s ease backwards;animation-delay:' + (i*0.04) + 's;" onclick="this.querySelector(\'.req-details\').classList.toggle(\'open\')">' +
+            '<div style="display:flex;">' +
+                '<div style="width:5px;background:' + stripeColor + ';"></div>' +
+                '<div style="flex:1;padding:14px;">' +
+                    '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><div style="font-size:15px;font-weight:700;">' + r.client_name + '</div><div style="font-size:12px;color:var(--text-muted);">' + dateStr + '</div></div>' +
+                    '<div style="font-size:14px;">' + r.vehicle + ' — ' + r.reg_number + '</div>' +
+                    (r.description ? '<div style="font-size:13px;color:var(--text-muted);margin-top:4px;padding:6px 8px;background:#f8fafc;border-radius:6px;border-left:3px solid var(--border);">' + r.description + '</div>' : '') +
+                    '<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">📞 ' + (r.client_phone || '—') + (r.client_email ? ' · 📧 ' + r.client_email : '') + '</div>' +
+                    '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;">' + actBadges + '<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;' + badgeStyle + ';">' + r.status + '</span>' + urgentBadge + '</div>' +
+                    mechHtml +
+                    completedHtml +
+                    '<div class="req-details" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">' +
+                        '<div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;">💬 Бележки:</div>' +
+                        '<div style="font-size:12px;margin-bottom:6px;">' + notesHtml + '</div>' +
+                        '<div style="display:flex;gap:4px;">' +
+                            '<input type="text" id="comment-' + r.id + '" placeholder="Добави бележка..." onclick="event.stopPropagation()" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;">' +
+                            '<button onclick="event.stopPropagation();addRequestComment(\'' + r.id + '\')" style="padding:7px 12px;background:#1a3a8f;color:white;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">💬</button>' +
+                        '</div>' +
+                        (r.created_by ? '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Регистрирал: ' + r.created_by + '</div>' : '') +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+}
+
+async function addRequestComment(requestId) {
+    const input = document.getElementById('comment-' + requestId);
+    const text = input.value.trim();
+    if (!text) return;
+
+    const request = allServiceRequests.find(r => r.id === requestId);
+    const currentNotes = request.notes || '';
+    const timestamp = new Date().toLocaleString('bg-BG', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+    const user = sessionStorage.getItem('workcard_user') || 'Неизвестен';
+    const newNote = (currentNotes ? currentNotes + '\n' : '') + '[' + timestamp + '] ' + user + ': ' + text;
+
+    try {
+        await supabasePatch('service_requests', 'id=eq.' + requestId, { notes: newNote, updated_at: new Date().toISOString() });
+        input.value = '';
+        await loadServiceRequests();
+    } catch(e) {
+        alert('Грешка: ' + e.message);
+    }
+}
+
+function exportRequestsExcel() {
+    if (allServiceRequests.length === 0) { alert('Няма данни за експорт.'); return; }
+
+    const headers = ['Клиент','Телефон','Имейл','Машина','Рег.номер','Вид дейност','Описание','Приоритет','Статус','Назначени механици','Отговорник','Бележки','Регистрирана','Разпределена','Започната','Изпълнена','Регистрирал'];
+
+    const csvContent = '\uFEFF' + headers.join(';') + '\n' + allServiceRequests.map(r => {
+        const row = [
+            r.client_name || '', r.client_phone || '', r.client_email || '',
+            r.vehicle || '', r.reg_number || '',
+            (r.activity_type || []).join(', '), r.description || '',
+            r.priority || '', r.status || '',
+            (r.assigned_mechanics || []).join(', '), r.responsible_mechanic || '',
+            (r.notes || '').replace(/\n/g, ' | '),
+            r.created_at ? new Date(r.created_at).toLocaleString('bg-BG') : '',
+            r.assigned_at ? new Date(r.assigned_at).toLocaleString('bg-BG') : '',
+            r.started_at ? new Date(r.started_at).toLocaleString('bg-BG') : '',
+            r.completed_at ? new Date(r.completed_at).toLocaleString('bg-BG') : '',
+            r.created_by || ''
+        ];
+        return row.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(';');
+    }).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'Заявки_' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
