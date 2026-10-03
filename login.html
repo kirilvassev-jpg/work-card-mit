@@ -331,58 +331,12 @@ async function loginMSAL() {
     loading.classList.add('show');
 
     try {
-        const loginResponse = await msalInstance.loginPopup({
+        sessionStorage.setItem('workcard_pending_role', selectedRole);
+        msalInstance.loginRedirect({
             scopes: ['User.Read'],
             prompt: 'select_account'
         });
-
-        const email = loginResponse.account.username.toLowerCase();
-        const displayName = loginResponse.account.name;
-
-        // Verify role in database
-        const res = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: `user_roles?email=eq.${encodeURIComponent(email)}&is_active=eq.true`, method: 'GET' })
-        });
-        const roles = await res.json();
-
-        if (roles.length === 0) {
-            showError(`Акаунтът ${email} няма зададена роля в системата. Обърни се към администратор.`);
-            loading.classList.remove('show');
-            return;
-        }
-
-        const userRole = roles[0].role;
-
-        // Verify selected role matches
-        if (selectedRole !== 'admin' && userRole !== selectedRole && userRole !== 'admin') {
-            showError(`Акаунтът ${email} е с роля "${getRoleName(userRole)}", не "${getRoleName(selectedRole)}".`);
-            loading.classList.remove('show');
-            return;
-        }
-
-        // Save session
-        sessionStorage.setItem('workcard_role', userRole);
-        sessionStorage.setItem('workcard_user', displayName);
-        sessionStorage.setItem('workcard_email', email);
-        sessionStorage.setItem('workcard_auth', 'true');
-        sessionStorage.setItem('workcard_token', loginResponse.accessToken);
-
-        // Redirect based on role
-        switch(userRole) {
-            case 'coordinator':
-                window.location.href = 'requests.html';
-                break;
-            case 'manager':
-                window.location.href = 'assign.html';
-                break;
-            case 'admin':
-                window.location.href = 'dashboard.html';
-                break;
-            default:
-                window.location.href = 'index.html';
-        }
+        return;
 
     } catch(e) {
         console.error('MSAL error:', e);
@@ -412,31 +366,57 @@ function getRoleName(role) {
     return names[role] || role;
 }
 
-// Check if already logged in
-function checkExistingSession() {
-    const auth = sessionStorage.getItem('workcard_auth');
-    const role = sessionStorage.getItem('workcard_role');
-    if (auth === 'true' && role) {
-        switch(role) {
-            case 'mechanic': window.location.href = 'index.html'; break;
-            case 'coordinator': window.location.href = 'requests.html'; break;
-            case 'manager': window.location.href = 'assign.html'; break;
-            case 'admin': window.location.href = 'dashboard.html'; break;
+// Handle MSAL redirect and existing session
+async function handleRedirect() {
+    if (!msalInstance) return;
+    try {
+        const response = await msalInstance.handleRedirectPromise();
+        if (response) {
+            const email = response.account.username.toLowerCase();
+            const displayName = response.account.name;
+            const selectedRole = sessionStorage.getItem('workcard_pending_role');
+
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: 'user_roles?email=eq.' + encodeURIComponent(email) + '&is_active=eq.true', method: 'GET' })
+            });
+            const roles = await res.json();
+
+            if (roles.length === 0) {
+                showError('Акаунтът ' + email + ' няма зададена роля в системата.');
+                return;
+            }
+
+            const userRole = roles[0].role;
+            sessionStorage.setItem('workcard_role', userRole);
+            sessionStorage.setItem('workcard_user', displayName);
+            sessionStorage.setItem('workcard_email', email);
+            sessionStorage.setItem('workcard_auth', 'true');
+            sessionStorage.removeItem('workcard_pending_role');
+
+            switch(userRole) {
+                case 'coordinator': window.location.href = 'requests.html'; break;
+                case 'manager': window.location.href = 'assign.html'; break;
+                case 'admin': window.location.href = 'dashboard.html'; break;
+                default: window.location.href = 'index.html'; break;
+            }
+        } else {
+            const auth = sessionStorage.getItem('workcard_auth');
+            const role = sessionStorage.getItem('workcard_role');
+            if (auth === 'true' && role) {
+                switch(role) {
+                    case 'mechanic': window.location.href = 'index.html'; break;
+                    case 'coordinator': window.location.href = 'requests.html'; break;
+                    case 'manager': window.location.href = 'assign.html'; break;
+                    case 'admin': window.location.href = 'dashboard.html'; break;
+                }
+            }
         }
-    }
+    } catch(err) { console.error('Redirect error:', err); }
 }
 
-// Handle MSAL redirect (if using redirect flow)
-document.addEventListener('DOMContentLoaded', () => {
-    if (msalInstance) {
-        msalInstance.handleRedirectPromise().then(response => {
-            if (response) {
-                // Handle redirect response
-            }
-        }).catch(err => console.error(err));
-    }
-    checkExistingSession();
-});
+document.addEventListener('DOMContentLoaded', handleRedirect);
 </script>
 
 </body>
