@@ -152,7 +152,7 @@
     </div>
 </div>
 
-<nav class="bottom-nav">
+<nav class="bottom-nav" id="bottomNav">
     <a href="requests.html"><span class="nav-icon">📝</span>Нова заявка</a>
     <a href="assign.html" class="active"><span class="nav-icon">📋</span>Разпределяне<span class="nav-badge" id="navBadge" style="display:none;">0</span></a>
     <a href="history.html"><span class="nav-icon">📊</span>Преглед</a>
@@ -170,12 +170,36 @@ let currentFilter = 'all';
 function checkAuth() {
     const auth = sessionStorage.getItem('workcard_auth');
     const role = sessionStorage.getItem('workcard_role');
-    if (auth !== 'true' || (role !== 'manager' && role !== 'admin')) {
+    if (auth !== 'true') {
         window.location.href = 'login.html';
+        return;
+    }
+    if (role !== 'manager' && role !== 'admin') {
+        window.location.href = 'requests.html';
         return;
     }
     const user = sessionStorage.getItem('workcard_user');
     if (user) document.getElementById('headerUser').textContent = user;
+}
+
+function updateNav() {
+    const role = sessionStorage.getItem('workcard_role');
+    const nav = document.getElementById('bottomNav');
+    if (!nav) return;
+    const links = nav.querySelectorAll('a');
+    links.forEach(link => {
+        const href = link.getAttribute('href');
+        if (role === 'coordinator') {
+            // Координатор вижда само: Нова заявка
+            link.style.display = (href === 'requests.html') ? 'flex' : 'none';
+        } else if (role === 'manager') {
+            // Ръководител вижда: Разпределяне + Преглед + Dashboard
+            link.style.display = (href === 'assign.html' || href === 'history.html' || href === 'dashboard.html') ? 'flex' : 'none';
+        } else if (role === 'admin') {
+            // Управител вижда всичко
+            link.style.display = 'flex';
+        }
+    });
 }
 
 // API helper
@@ -360,6 +384,7 @@ function startAutoRefresh() {
 // Init
 document.addEventListener('DOMContentLoaded', async () => {
     checkAuth();
+    updateNav();
     await loadMechanics();
     await loadRequests();
     startAutoRefresh();

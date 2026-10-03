@@ -120,26 +120,14 @@
     <!-- Charts row 1 -->
     <div class="chart-row">
         <div class="chart-card">
-            <div class="chart-title">📊 Разпределение по статус</div>
-            <div class="chart-container"><canvas id="pieChart"></canvas></div>
-        </div>
-        <div class="chart-card">
             <div class="chart-title">👷 Натовареност по механик</div>
             <div class="chart-container"><canvas id="barChart"></canvas></div>
         </div>
-    </div>
-
-    <!-- Charts row 2 -->
-    <div class="chart-row">
         <div class="kpi-card">
             <div class="chart-title" style="justify-content:center;">⏱ Средно време за изпълнение</div>
             <div class="kpi-value" id="avgTime">-</div>
             <div class="kpi-unit">часа / заявка</div>
             <div class="kpi-trend" id="avgTrend"></div>
-        </div>
-        <div class="chart-card">
-            <div class="chart-title">📈 Тренд на изпълнени заявки</div>
-            <div class="chart-container"><canvas id="trendChart"></canvas></div>
         </div>
     </div>
 
@@ -173,23 +161,42 @@ const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy
 let allRequests = [];
 let allLogs = [];
 let currentPeriod = 'week';
-let pieChart, barChart, trendChart, typeChart;
+let barChart, typeChart;
 
 // Check auth
 function checkAuth() {
     const auth = sessionStorage.getItem('workcard_auth');
     const role = sessionStorage.getItem('workcard_role');
-    if (auth !== 'true' || (role !== 'coordinator' && role !== 'manager' && role !== 'admin')) {
+    if (auth !== 'true') {
+        window.location.href = 'login.html';
+        return;
+    }
+    if (role !== 'manager' && role !== 'admin') {
         window.location.href = 'login.html';
         return;
     }
     const user = sessionStorage.getItem('workcard_user');
     if (user) document.getElementById('headerUser').textContent = user;
+}
 
-    // Adjust nav based on role
-    if (role === 'coordinator') {
-        // coordinator sees: Нова заявка, Заявки, Dashboard
-    }
+function updateNav() {
+    const role = sessionStorage.getItem('workcard_role');
+    const nav = document.getElementById('bottomNav');
+    if (!nav) return;
+    const links = nav.querySelectorAll('a');
+    links.forEach(link => {
+        const href = link.getAttribute('href');
+        if (role === 'coordinator') {
+            // Координатор вижда само: Нова заявка
+            link.style.display = (href === 'requests.html') ? 'flex' : 'none';
+        } else if (role === 'manager') {
+            // Ръководител вижда: Разпределяне + Преглед + Dashboard
+            link.style.display = (href === 'assign.html' || href === 'history.html' || href === 'dashboard.html') ? 'flex' : 'none';
+        } else if (role === 'admin') {
+            // Управител вижда всичко
+            link.style.display = 'flex';
+        }
+    });
 }
 
 // API helper
@@ -228,9 +235,7 @@ async function loadDashboard() {
         allRequests = await apiCall(`service_requests?created_at=gte.${since}&order=created_at.desc`);
         allLogs = await apiCall(`request_log?created_at=gte.${since}&order=created_at.desc&limit=20`);
         updateStats();
-        updatePieChart();
         updateBarChart();
-        updateTrendChart();
         updateTypeChart();
         updateAvgTime();
         updateTimeline();
@@ -247,27 +252,6 @@ function updateStats() {
     document.getElementById('stAssigned').textContent = counts['Разпределена'];
     document.getElementById('stProgress').textContent = counts['В изпълнение'];
     document.getElementById('stDone').textContent = counts['Изпълнена'];
-}
-
-// Pie chart
-function updatePieChart() {
-    const counts = { 'Нови':0, 'Разпределени':0, 'В изпълнение':0, 'Изпълнени':0 };
-    allRequests.forEach(r => {
-        if (r.status === 'Нова') counts['Нови']++;
-        else if (r.status === 'Разпределена') counts['Разпределени']++;
-        else if (r.status === 'В изпълнение') counts['В изпълнение']++;
-        else if (r.status === 'Изпълнена') counts['Изпълнени']++;
-    });
-
-    const data = { labels: Object.keys(counts), datasets: [{ data: Object.values(counts), backgroundColor: ['#e41e2b','#7c3aed','#3b82f6','#10b981'], borderWidth: 0, borderRadius: 4 }] };
-
-    if (pieChart) { pieChart.data = data; pieChart.update(); }
-    else {
-        pieChart = new Chart(document.getElementById('pieChart'), {
-            type: 'doughnut', data,
-            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position:'bottom', labels: { font: { size:11, weight:'bold' }, padding:12, usePointStyle:true, pointStyleWidth:8 } } }, cutout:'65%' }
-        });
-    }
 }
 
 // Bar chart - mechanic workload
@@ -298,48 +282,6 @@ function updateBarChart() {
         barChart = new Chart(document.getElementById('barChart'), {
             type: 'bar', data,
             options: { responsive:true, maintainAspectRatio:true, plugins: { legend: { position:'bottom', labels: { font: { size:10, weight:'bold' }, padding:8, usePointStyle:true } } }, scales: { x: { grid: { display:false } }, y: { beginAtZero:true, ticks: { stepSize:1 } } } }
-        });
-    }
-}
-
-// Trend chart - completed over time
-function updateTrendChart() {
-    const completed = allRequests.filter(r => r.status === 'Изпълнена' && r.completed_at);
-    const days = {};
-
-    completed.forEach(r => {
-        const d = new Date(r.completed_at);
-        const key = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`;
-        days[key] = (days[key] || 0) + 1;
-    });
-
-    // Sort by date
-    const sortedKeys = Object.keys(days).sort((a,b) => {
-        const [dA,mA] = a.split('.').map(Number);
-        const [dB,mB] = b.split('.').map(Number);
-        return mA !== mB ? mA - mB : dA - dB;
-    });
-
-    const data = {
-        labels: sortedKeys.length > 0 ? sortedKeys : ['Няма данни'],
-        datasets: [{
-            label: 'Изпълнени',
-            data: sortedKeys.length > 0 ? sortedKeys.map(k => days[k]) : [0],
-            borderColor: '#1a3a8f',
-            backgroundColor: 'rgba(26,58,143,0.1)',
-            fill: true,
-            tension: 0.4,
-            pointBackgroundColor: '#1a3a8f',
-            pointRadius: 4,
-            borderWidth: 2
-        }]
-    };
-
-    if (trendChart) { trendChart.data = data; trendChart.update(); }
-    else {
-        trendChart = new Chart(document.getElementById('trendChart'), {
-            type: 'line', data,
-            options: { responsive:true, maintainAspectRatio:true, plugins: { legend: { display:false } }, scales: { x: { grid: { display:false } }, y: { beginAtZero:true, ticks: { stepSize:1 } } } }
         });
     }
 }
@@ -438,6 +380,7 @@ setInterval(loadDashboard, 30000);
 // Init
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
+    updateNav();
     loadDashboard();
 });
 </script>

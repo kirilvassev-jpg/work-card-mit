@@ -233,6 +233,26 @@ function checkAuth() {
     if (user) document.getElementById('headerUser').textContent = user;
 }
 
+function updateNav() {
+    const role = sessionStorage.getItem('workcard_role');
+    const nav = document.getElementById('bottomNav');
+    if (!nav) return;
+    const links = nav.querySelectorAll('a');
+    links.forEach(link => {
+        const href = link.getAttribute('href');
+        if (role === 'coordinator') {
+            // Координатор вижда само: Нова заявка
+            link.style.display = (href === 'requests.html') ? 'flex' : 'none';
+        } else if (role === 'manager') {
+            // Ръководител вижда: Разпределяне + Преглед + Dashboard
+            link.style.display = (href === 'assign.html' || href === 'history.html' || href === 'dashboard.html') ? 'flex' : 'none';
+        } else if (role === 'admin') {
+            // Управител вижда всичко
+            link.style.display = 'flex';
+        }
+    });
+}
+
 // Activity type multi-select
 let selectedActivities = [];
 
@@ -411,7 +431,7 @@ function logout() {
 }
 
 // Init
-document.addEventListener('DOMContentLoaded', checkAuth);
+document.addEventListener('DOMContentLoaded', () => { checkAuth(); updateNav(); });
 </script>
 
 </body>
