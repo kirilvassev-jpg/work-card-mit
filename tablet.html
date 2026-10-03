@@ -173,11 +173,6 @@
     </div>
 </div>
 
-<!-- Notification sound -->
-<audio id="notifSound" preload="auto">
-    <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZeZm5qWj4N2aF5XUE9RV2BsdIGOmqSrt7q4sq2kl4d3aVxTTUtNUl1oeIWTn6q0ub27t7GpmI6CdGhcU09NTlRdaHiEl6Gqtby9u7exqpiNgHNoXFJPTU5UXmh5hpejrba9v726s6ybjoF1aF1UT05PVV5pe4iXo660vL69u7SuoZOGd2peVlBPUlhfan2KmKSutr2+vLm0raGThXdqX1ZRUE9UWmRwfouZpa+3vb+9urSwppiLfnJmXFVSUFNYX2p6h5WjrLW8vr68uLKsnpGEdmlgWFRSU1ddan2Ll6Ort72+vby3sq2hmIuAc2lhW1dUVlldZ3WDkZ6os7q9v727t7KtoJOIe3FnYFpXVVdaYGp3hZKfqbO5vr+9u7eys6yjl4t+c2pjXlpXWFxibnuIlqGrtbu+v728uLOuo5eKfnNqY15bWFldZHF+jJmkrra8v7+9urawq6CUiX1za2RfXFlaXmV0gI+cprC3vL+/vbu4tLCoo5iNgXdwa2RhXl1gZm98ipekrra8v7+/vbq3s7CrppuRhn10bmdjYF9gZW17iJajrba8v769u7m2s7CrppuRhn53cWxnZGFhZGp2g5GdqLK5vL+/vbu5tra0sKynm5KIfHZxbGdkY2RnbXmGk5+qtLq9v7+9u7m3trSxrqmflo2Ce3VwbGlmZWhscX6MmaSutbq9v7+9vLq4t7a0sq+snJOKgXt1cG1qaWlscniFlqCqtLq9v7+/vby6ubi3trWzr6aelIuCfHZyb21sbW90fIqXoaq0ur2/v7+9vLq5uLe2tbSyrqeelo2Ef3p2c3FvcHJ2fYuYoqu0ur2/v7+/vby7urm4t7a1tLKwq6OblIt/fHh1c3JydHh+i5miq7S6vb+/v7+9vLu6ubi3trW0s7GupZyTi4F7eHVzcnN1eX+Mmp+qs7m8vr+/v769vLu6ubi3trW0s7KwraaelIt/e3h2dHN0dnyBjZqiq7O5vL6/v7+/vr28u7q5uLe2tbSzsrCsp5+WjYJ+end1dHR2en+Kl5+os7m8vr+/v7+/vr28u7q5uLe2tbS0s7KwrqihmJCFf3t4dnV1dniAi5ifrba6vL6/v7+/v769vby7urm4t7a1tLS0" type="audio/wav">
-</audio>
-
 <script>
 const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
 
@@ -214,6 +209,31 @@ async function loadMechanics() {
 // Format date
 function fmtDate(d) { const dt = new Date(d); return `${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}.${dt.getFullYear()}`; }
 
+// Notification sound
+function playNotificationSound() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function beep(startTime) {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, startTime); // A5 note
+            gainNode.gain.setValueAtTime(0.5, startTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+            oscillator.start(startTime);
+            oscillator.stop(startTime + 0.3);
+        }
+
+        const now = audioCtx.currentTime;
+        beep(now);
+        beep(now + 0.4);
+        beep(now + 0.8);
+    } catch(e) { console.log('Audio error:', e); }
+}
+
 // Load tasks
 async function loadTasks() {
     try {
@@ -249,7 +269,7 @@ function checkNewTasks() {
         document.getElementById('notifCount').textContent = assignedCount;
         banner.classList.add('show');
         if (assignedCount > previousNewCount) {
-            try { document.getElementById('notifSound').play(); } catch(e) {}
+            playNotificationSound();
         }
     } else {
         banner.classList.remove('show');

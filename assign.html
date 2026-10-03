@@ -343,6 +343,10 @@ async function assignRequest(requestId) {
     if (checked.length === 0) { showStatus('Избери поне един механик', 'error'); return; }
     if (!responsible) { showStatus('Избери отговорник', 'error'); return; }
 
+    const mechNames = checked.join(', ');
+    const confirmed = confirm('Сигурен ли си?\n\nНазначаване към: ' + mechNames + '\nОтговорник: ' + responsible);
+    if (!confirmed) return;
+
     try {
         await apiCall(`service_requests?id=eq.${requestId}`, 'PATCH', {
             assigned_mechanics: checked,
