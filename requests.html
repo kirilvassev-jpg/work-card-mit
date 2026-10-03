@@ -343,6 +343,31 @@ function validate() {
     return valid;
 }
 
+// Generate unique request number: СП-ПН_ДД_ММ_ГГ_Фамилия
+async function generateRequestNumber(clientName) {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2,'0');
+    const mm = String(now.getMonth()+1).padStart(2,'0');
+    const yy = String(now.getFullYear()).slice(-2);
+    const nameParts = clientName.trim().split(' ');
+    const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : nameParts[0];
+
+    // Count today's requests for sequential number
+    const todayStart = now.toISOString().split('T')[0] + 'T00:00:00';
+    try {
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'service_requests?created_at=gte.' + todayStart + '&select=id', method: 'GET' })
+        });
+        const todayRequests = await res.json();
+        const seqNum = String(todayRequests.length + 1).padStart(3, '0');
+        return 'СП-' + seqNum + '_' + dd + '_' + mm + '_' + yy + '_' + lastName;
+    } catch(e) {
+        return 'СП-001_' + dd + '_' + mm + '_' + yy + '_' + lastName;
+    }
+}
+
 // Submit
 async function submitRequest() {
     if (!validate()) return;
@@ -352,7 +377,9 @@ async function submitRequest() {
     btn.textContent = 'Регистриране...';
 
     try {
+        const requestNumber = await generateRequestNumber(document.getElementById('clientName').value.trim());
         const requestData = {
+            request_number: requestNumber,
             client_name: document.getElementById('clientName').value.trim(),
             client_email: document.getElementById('clientEmail').value.trim() || null,
             client_phone: document.getElementById('clientPhone').value.trim(),
@@ -390,7 +417,7 @@ async function submitRequest() {
             })
         });
 
-        showStatus(`✓ Заявка регистрирана: ${requestData.client_name} — ${requestData.vehicle} (${requestData.reg_number})`, 'success');
+        showStatus('✓ Заявка ' + requestNumber + ' регистрирана успешно — ' + requestData.client_name + ' — ' + requestData.vehicle, 'success');
         resetForm();
     } catch(e) {
         console.error(e);

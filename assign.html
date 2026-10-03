@@ -252,6 +252,13 @@ function updateCounts() {
     else { badge.style.display = 'none'; }
 }
 
+function getWaitingTime(createdAt) {
+    const diff = (Date.now() - new Date(createdAt).getTime()) / 1000;
+    if (diff < 3600) return Math.floor(diff / 60) + ' мин.';
+    if (diff < 86400) return Math.floor(diff / 3600) + ' ч.';
+    return Math.floor(diff / 86400) + ' дни';
+}
+
 function filterByStatus(status) {
     currentFilter = status;
     document.querySelectorAll('.status-tab').forEach(t => t.classList.remove('active'));
@@ -275,6 +282,8 @@ function renderRequests() {
 
         const date = new Date(r.created_at);
         const dateStr = `${String(date.getDate()).padStart(2,'0')}.${String(date.getMonth()+1).padStart(2,'0')}.${date.getFullYear()}`;
+        const waitTime = getWaitingTime(r.created_at);
+        const waitColor = waitTime.includes('дни') ? 'var(--accent-red)' : waitTime.includes('ч.') && parseInt(waitTime) > 4 ? 'var(--accent-amber)' : 'var(--text-muted)';
 
         let assignSection = '';
         if (r.status === 'Нова') {
@@ -317,6 +326,7 @@ function renderRequests() {
                         <div class="card-client">${r.client_name}</div>
                         <div class="card-date">${dateStr}</div>
                     </div>
+                    <div style="font-size:10px;color:${waitColor};font-weight:600;">⏱ Чака ${waitTime}</div>
                     <div class="card-vehicle">${r.vehicle} — ${r.reg_number}</div>
                     ${r.description ? `<div class="card-desc">${r.description}</div>` : ''}
                     <div class="card-contact">📞 ${r.client_phone || '—'} ${r.client_email ? '· 📧 ' + r.client_email : ''}</div>
