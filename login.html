@@ -177,32 +177,12 @@
             </div>
         </div>
 
-        <div class="role-group">
-            <div class="role-group-label">Без акаунт</div>
-            <div class="role-btn" onclick="selectRole('mechanic')" id="role-mechanic">
-                <span class="role-icon">🔧</span>
-                <div class="role-info">
-                    <div class="role-name">Механик</div>
-                    <div class="role-desc">Изпълнение на назначени задачи</div>
-                </div>
-                <span class="role-badge badge-free">Без парола</span>
-            </div>
-        </div>
-
         <!-- MSAL login section -->
         <div class="msal-section" id="msalSection">
             <button class="btn-microsoft" onclick="loginMSAL()">
                 <svg width="20" height="20" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
                 Вход с Microsoft
             </button>
-        </div>
-
-        <!-- Mechanic selection section -->
-        <div class="mechanic-section" id="mechanicSection">
-            <select class="mechanic-select" id="mechanicSelect">
-                <option value="">— Избери име —</option>
-            </select>
-            <button class="btn-continue" id="btnContinue" onclick="loginMechanic()" disabled>✓ Продължи</button>
         </div>
 
         <div class="error-msg" id="errorMsg"></div>
@@ -274,48 +254,6 @@ function selectRole(role) {
 
     // Hide error
     document.getElementById('errorMsg').classList.remove('show');
-}
-
-// ============================================
-// ЗАРЕЖДАНЕ НА МЕХАНИЦИ
-// ============================================
-async function loadMechanics() {
-    try {
-        const res = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: 'nomenclatures?group_name=eq.mechanics&is_active=eq.true&order=sort_order', method: 'GET' })
-        });
-        const data = await res.json();
-        const select = document.getElementById('mechanicSelect');
-        select.innerHTML = '<option value="">— Избери име —</option>';
-        data.forEach(m => {
-            select.innerHTML += `<option value="${m.value}">${m.label}</option>`;
-        });
-    } catch(e) {
-        console.error('Error loading mechanics:', e);
-    }
-}
-
-// Enable/disable continue button
-document.getElementById('mechanicSelect')?.addEventListener('change', function() {
-    document.getElementById('btnContinue').disabled = this.value === '';
-});
-
-// ============================================
-// МЕХАНИК ВХОД
-// ============================================
-function loginMechanic() {
-    const name = document.getElementById('mechanicSelect').value;
-    if (!name) return;
-
-    // Save to sessionStorage
-    sessionStorage.setItem('workcard_role', 'mechanic');
-    sessionStorage.setItem('workcard_user', name);
-    sessionStorage.setItem('workcard_auth', 'true');
-
-    // Redirect to tablet board
-    window.location.href = 'index.html';
 }
 
 // ============================================
