@@ -479,6 +479,13 @@
         </div>
     </div>
 
+    <div class="section" style="border-left:4px solid var(--accent-amber, #f59e0b);">
+        <div class="section-title"><span class="icon">💬</span> Забележка</div>
+        <div class="field" id="fWorkNotes">
+            <textarea id="workNotes" rows="3" placeholder="Забележка, коментар..." style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;resize:vertical;background:#f8fafc;"></textarea>
+        </div>
+    </div>
+
     <div class="section">
         <div class="section-title"><span class="icon">⏱</span> Време за работа</div>
         <div class="field" id="fWorkHours">
@@ -790,6 +797,7 @@ async function submitForm() {
             has_materials: hasMaterials, work_hours: parseFloat(document.getElementById('workHours').value),
             other_materials: hasMaterials ? document.getElementById('otherMaterials').value.trim() || null : null,
             km_traveled: document.getElementById('kmTraveled').value ? parseInt(document.getElementById('kmTraveled').value) : null,
+            notes: document.getElementById('workNotes').value.trim() || null,
             request_id: window._currentRequestId || null
         };
         const result = await supabaseInsert('work_cards', cardData);
@@ -865,6 +873,7 @@ function resetForm() {
     document.getElementById('workDate').value = date;
     document.getElementById('repairDescription').value = '';
     document.getElementById('otherMaterials').value = '';
+    document.getElementById('workNotes').value = '';
     document.getElementById('kmTraveled').value = '';
     document.getElementById('sectionServices').classList.remove('visible');
     document.getElementById('sectionRepair').classList.remove('visible');
