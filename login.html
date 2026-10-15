@@ -356,6 +356,13 @@ document.getElementById('mechanicSelect').addEventListener('change', function() 
 
 // Handle MSAL redirect and existing session
 async function handleRedirect() {
+    // Warm up Edge Function
+    fetch('https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: 'nomenclatures?limit=1', method: 'GET' })
+    }).catch(() => {});
+
     if (!msalInstance) return;
     try {
         const response = await msalInstance.handleRedirectPromise();
