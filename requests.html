@@ -156,6 +156,14 @@
             <input type="text" id="regNumber" placeholder="напр. СА 9876 ВМ">
             <div class="error-msg">Въведи номер</div>
         </div>
+        <div class="field" id="fFrameNumber">
+            <label>рама №</label>
+            <input type="text" id="frameNumber" placeholder="напр. WVWZZZ3CZWE123456">
+        </div>
+        <div class="field" id="fReqKmHours">
+            <label>изминати км / мч</label>
+            <input type="text" id="reqKmHours" placeholder="напр. 125000 км или 3200 мч">
+        </div>
     </div>
 
     <!-- ВИД ДЕЙНОСТ -->
@@ -386,6 +394,8 @@ async function submitRequest() {
             client_phone: document.getElementById('clientPhone').value.trim(),
             vehicle: document.getElementById('vehicle').value.trim(),
             reg_number: document.getElementById('regNumber').value.trim(),
+            frame_number: document.getElementById('frameNumber').value.trim() || null,
+            km_hours: document.getElementById('reqKmHours').value.trim() || null,
             activity_type: selectedActivities,
             description: document.getElementById('description').value.trim() || null,
             priority: priority,
@@ -443,6 +453,8 @@ function resetForm() {
     document.getElementById('clientPhone').value = '';
     document.getElementById('vehicle').value = '';
     document.getElementById('regNumber').value = '';
+    document.getElementById('frameNumber').value = '';
+    document.getElementById('reqKmHours').value = '';
     document.getElementById('description').value = '';
     selectedActivities = [];
     document.querySelectorAll('.ms-option').forEach(opt => opt.classList.remove('selected'));
