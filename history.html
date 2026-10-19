@@ -205,6 +205,12 @@
         .badge-hours { background: rgba(100,116,139,0.1); color: #475569; }
         .b-gray { background: rgba(100,116,139,0.1); color: #475569; }
 
+        .is-new { animation: newRequestPulse 1.5s ease-in-out infinite; border: 2px solid #e41e2b !important; }
+        @keyframes newRequestPulse {
+            0%,100% { background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+            50% { background:rgba(228,30,43,0.05); box-shadow:0 4px 16px rgba(228,30,43,0.15); }
+        }
+
         .card-details {
             display: none; padding: 0 14px 14px 70px;
             animation: fadeIn 0.3s ease;
@@ -633,6 +639,7 @@ function showApp() {
     loadAllNomenclatures();
     setDefaultDates();
     loadCards();
+    loadServiceRequests();
 }
 
 function isCoordinator() {
@@ -1151,10 +1158,10 @@ function updateReqCounts() {
     document.getElementById('rcProgress').textContent = counts['В изпълнение'];
     document.getElementById('rcDone').textContent = counts['Изпълнена'];
 
-    // Update tab badge
-    const total = counts['Нова'] + counts['Разпределена'] + counts['В изпълнение'];
+    // Update tab badge with count of unassigned (неразпределени) requests
+    const unassigned = counts['Нова'];
     const badge = document.getElementById('requestsTabCount');
-    if (total > 0) { badge.textContent = total; badge.style.display = 'inline'; }
+    if (unassigned > 0) { badge.textContent = unassigned; badge.style.display = 'inline'; }
     else { badge.style.display = 'none'; }
 }
 
@@ -1223,7 +1230,9 @@ function renderServiceRequests(requests) {
             completedHtml = '<div style="font-size:11px;color:#059669;font-weight:600;margin-top:4px;">✓ Изпълнена: ' + String(cd.getDate()).padStart(2,'0') + '.' + String(cd.getMonth()+1).padStart(2,'0') + '.' + cd.getFullYear() + ' ' + String(cd.getHours()).padStart(2,'0') + ':' + String(cd.getMinutes()).padStart(2,'0') + '</div>';
         }
 
-        return '<div style="background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);margin-bottom:10px;animation:fadeInUp 0.3s ease backwards;animation-delay:' + (i*0.04) + 's;" onclick="this.querySelector(\'.req-details\').classList.toggle(\'open\')">' +
+        const newClass = r.status === 'Нова' ? ' is-new' : '';
+
+        return '<div class="req-card' + newClass + '" style="background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);margin-bottom:10px;animation:fadeInUp 0.3s ease backwards;animation-delay:' + (i*0.04) + 's;" onclick="this.querySelector(\'.req-details\').classList.toggle(\'open\')">' +
             '<div style="display:flex;">' +
                 '<div style="width:5px;background:' + stripeColor + ';"></div>' +
                 '<div style="flex:1;padding:14px;">' +

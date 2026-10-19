@@ -78,6 +78,15 @@
             50% { background: #ff4757; box-shadow: 0 0 10px rgba(228,30,43,0.4); }
         }
 
+        .task-new-pulse {
+            animation: newRequestPulse 1.5s ease-in-out infinite;
+            border: 2px solid #e41e2b;
+        }
+        @keyframes newRequestPulse {
+            0%, 100% { background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+            50% { background:rgba(228,30,43,0.05); box-shadow:0 4px 16px rgba(228,30,43,0.15); }
+        }
+
         .task-main { display:flex; }
         .task-stripe { width:6px; flex-shrink:0; }
         .stripe-new { background:var(--accent-red); }
@@ -403,6 +412,7 @@ function renderTasks() {
         const statusBadge = t.status === 'Нова' ? '<span class="badge b-new">Нова</span>' : t.status === 'Разпределена' ? '<span class="badge b-assigned">Разпределена</span>' : '<span class="badge b-progress">В изпълнение</span>';
         const urgentBadge = t.priority === 'Спешен' ? '<span class="badge b-urgent">🔥 Спешна</span>' : '';
         const urgentClass = t.priority === 'Спешен' ? 'task-urgent' : '';
+        const newClass = t.status === 'Нова' ? 'task-new-pulse' : '';
         const actBadges = (t.activity_type || []).map(a => `<span class="badge ${a === 'РЕМОНТ' || a === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'b-act-red' : 'b-act-blue'}">${a}</span>`).join('');
 
         // Mechanics display
@@ -428,7 +438,7 @@ function renderTasks() {
         }
 
         return `
-        <div class="task-card ${urgentClass}" style="animation-delay:${i*0.05}s">
+        <div class="task-card ${urgentClass} ${newClass}" style="animation-delay:${i*0.05}s">
             <div class="task-main">
                 <div class="task-stripe ${stripeClass}"></div>
                 <div class="task-content">
