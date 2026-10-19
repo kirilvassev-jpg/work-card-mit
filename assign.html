@@ -46,6 +46,16 @@
             animation:fadeInUp 0.3s ease backwards;
         }
         @keyframes fadeInUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        .request-card.is-new {
+            animation: newRequestPulse 1.5s ease-in-out infinite;
+            border: 2px solid var(--accent-red);
+        }
+        @keyframes newRequestPulse {
+            0%, 100% { background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+            50% { background: rgba(228, 30, 43, 0.05); box-shadow: 0 4px 16px rgba(228,30,43,0.15); }
+        }
+        @keyframes popupIn { from { transform:translate(-50%,-50%) scale(0.8); opacity:0; } to { transform:translate(-50%,-50%) scale(1); opacity:1; } }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 
         .card-main { display:flex; }
         .card-stripe { width:5px; flex-shrink:0; }
@@ -217,6 +227,28 @@ function showBrowserNotification(count) {
     }
 }
 
+function showNewRequestPopup(count) {
+    const existing = document.getElementById('newReqPopup');
+    if (existing) existing.remove();
+
+    const popup = document.createElement('div');
+    popup.id = 'newReqPopup';
+    popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border-radius:16px;padding:30px 40px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);z-index:1000;animation:popupIn 0.3s ease;';
+    popup.innerHTML = '<div style="font-size:48px;margin-bottom:10px;">🔔</div>' +
+        '<div style="font-size:22px;font-weight:800;color:#e41e2b;margin-bottom:6px;">Нова заявка!</div>' +
+        '<div style="font-size:15px;color:#5a6577;">' + count + (count === 1 ? ' заявка чака' : ' заявки чакат') + ' за разпределяне</div>';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'newReqOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:999;animation:fadeIn 0.3s ease;';
+    overlay.onclick = function() { popup.remove(); overlay.remove(); };
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(popup);
+
+    setTimeout(() => { if (document.getElementById('newReqPopup')) { popup.remove(); overlay.remove(); } }, 4000);
+}
+
 function checkForNewRequests() {
     const newCount = allRequests.filter(r => r.status === 'Нова').length;
     const banner = document.getElementById('newRequestBanner');
@@ -232,6 +264,7 @@ function checkForNewRequests() {
         if (newCount > previousNewCount) {
             playAlertSound();
             showBrowserNotification(newCount);
+            showNewRequestPopup(newCount);
         }
     } else {
         banner.style.display = 'none';
@@ -359,6 +392,7 @@ function renderRequests() {
         const statusBadge = r.status === 'Нова' ? '<span class="badge b-new">Нова</span>' : r.status === 'Разпределена' ? '<span class="badge b-assigned">Разпределена</span>' : r.status === 'В изпълнение' ? '<span class="badge b-progress">В изпълнение</span>' : '<span class="badge b-done">Изпълнена</span>';
         const urgentBadge = r.priority === 'Спешен' ? '<span class="badge b-urgent">🔥 Спешна</span>' : '';
         const activityBadges = (r.activity_type || []).map(a => `<span class="badge ${a === 'РЕМОНТ' || a === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'b-activity-red' : 'b-activity-blue'}">${a}</span>`).join('');
+        const newClass = r.status === 'Нова' ? 'is-new' : '';
 
         const date = new Date(r.created_at);
         const dateStr = `${String(date.getDate()).padStart(2,'0')}.${String(date.getMonth()+1).padStart(2,'0')}.${date.getFullYear()}`;
@@ -398,7 +432,7 @@ function renderRequests() {
         }
 
         return `
-        <div class="request-card" style="animation-delay:${i*0.04}s">
+        <div class="request-card ${newClass}" style="animation-delay:${i*0.04}s">
             <div class="card-main">
                 <div class="card-stripe ${stripeClass}"></div>
                 <div class="card-content">
