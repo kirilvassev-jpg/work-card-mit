@@ -24,6 +24,7 @@
         .header-sub { font-size:11px; opacity:0.7; margin-top:2px; }
         .header-user { font-size:11px; opacity:0.9; margin-top:4px; background:rgba(255,255,255,0.15); display:inline-block; padding:2px 12px; border-radius:12px; }
 
+        body.read-only .mechanic-list, body.read-only .responsible-select, body.read-only .action-btn.btn-assign { display:none !important; }
         .container { max-width:700px; margin:0 auto; padding:12px; }
 
         /* Status tabs */
@@ -132,6 +133,7 @@
 </div>
 
 <div class="container">
+    <div id="readOnlyBanner" style="display:none;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:var(--radius);padding:10px 14px;text-align:center;font-size:13px;color:#1e40af;font-weight:600;margin-bottom:12px;">👁 Режим за преглед — само за наблюдение</div>
     <div id="statusMsg" class="status"></div>
 
     <div id="newRequestBanner" style="display:none;background:linear-gradient(135deg,#e41e2b,#c41820);color:white;padding:14px 18px;border-radius:var(--radius);margin-bottom:12px;align-items:center;gap:10px;animation:pulse 2s infinite;box-shadow:0 4px 16px rgba(228,30,43,0.3);">
@@ -250,7 +252,7 @@ function checkAuth() {
         window.location.href = 'login.html';
         return;
     }
-    if (role !== 'manager' && role !== 'admin') {
+    if (role !== 'manager' && role !== 'admin' && role !== 'coordinator') {
         window.location.href = 'requests.html';
         return;
     }
@@ -266,8 +268,8 @@ function updateNav() {
     links.forEach(link => {
         const href = link.getAttribute('href');
         if (role === 'coordinator') {
-            // Координатор вижда само: Нова заявка
-            link.style.display = (href === 'requests.html') ? 'flex' : 'none';
+            // Координатор вижда: Нова заявка + Разпределяне + Преглед + Dashboard
+            link.style.display = (href === 'requests.html' || href === 'assign.html' || href === 'history.html' || href === 'dashboard.html') ? 'flex' : 'none';
         } else if (role === 'manager') {
             // Ръководител вижда: Разпределяне + Преглед + Dashboard
             link.style.display = (href === 'assign.html' || href === 'history.html' || href === 'dashboard.html') ? 'flex' : 'none';
@@ -477,6 +479,10 @@ function startAutoRefresh() {
 document.addEventListener('DOMContentLoaded', async () => {
     checkAuth();
     updateNav();
+    if (sessionStorage.getItem('workcard_role') === 'coordinator') {
+        document.body.classList.add('read-only');
+        document.getElementById('readOnlyBanner').style.display = 'block';
+    }
     await loadMechanics();
     await loadRequests();
     startAutoRefresh();

@@ -172,7 +172,7 @@ function checkAuth() {
         window.location.href = 'login.html';
         return;
     }
-    if (role !== 'manager' && role !== 'admin') {
+    if (role !== 'manager' && role !== 'admin' && role !== 'coordinator') {
         window.location.href = 'login.html';
         return;
     }
@@ -188,8 +188,8 @@ function updateNav() {
     links.forEach(link => {
         const href = link.getAttribute('href');
         if (role === 'coordinator') {
-            // Координатор вижда само: Нова заявка
-            link.style.display = (href === 'requests.html') ? 'flex' : 'none';
+            // Координатор вижда: Нова заявка + Разпределяне + Преглед + Dashboard
+            link.style.display = (href === 'requests.html' || href === 'assign.html' || href === 'history.html' || href === 'dashboard.html') ? 'flex' : 'none';
         } else if (role === 'manager') {
             // Ръководител вижда: Разпределяне + Преглед + Dashboard
             link.style.display = (href === 'assign.html' || href === 'history.html' || href === 'dashboard.html') ? 'flex' : 'none';

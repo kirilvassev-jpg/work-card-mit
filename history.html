@@ -635,6 +635,10 @@ function showApp() {
     loadCards();
 }
 
+function isCoordinator() {
+    return sessionStorage.getItem('workcard_role') === 'coordinator';
+}
+
 function updateNav() {
     const role = sessionStorage.getItem('workcard_role');
     const nav = document.getElementById('bottomNav');
@@ -643,8 +647,8 @@ function updateNav() {
     links.forEach(link => {
         const href = link.getAttribute('href');
         if (role === 'coordinator') {
-            // Координатор вижда само: Нова заявка
-            link.style.display = (href === 'requests.html') ? 'flex' : 'none';
+            // Координатор вижда: Нова заявка + Разпределяне + Преглед + Dashboard
+            link.style.display = (href === 'requests.html' || href === 'assign.html' || href === 'history.html' || href === 'dashboard.html') ? 'flex' : 'none';
         } else if (role === 'manager') {
             // Ръководител вижда: Разпределяне + Преглед + Dashboard
             link.style.display = (href === 'assign.html' || href === 'history.html' || href === 'dashboard.html') ? 'flex' : 'none';
@@ -775,7 +779,7 @@ function renderCards(cards) {
                     <div class="card-badges">${actBadge}${matBadge}${hoursBadge}${kmBadge}</div>
                 </div>
             </div></div>
-            <div class="card-details" id="details-${i}">${details}<button type="button" class="btn btn-outline" style="width:100%;margin-top:10px;" onclick="event.stopPropagation(); editCard(${i})">✏️ Редактирай</button><button type="button" class="btn-delete" onclick="deleteCard('${c.id}', event)">🗑 Изтрий</button><button type="button" style="width:100%;margin-top:6px;background:linear-gradient(135deg, #1a3a8f, #0d1f52);color:white;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 0 #0d1f52, 0 6px 16px rgba(26,58,143,0.4), 0 0 20px rgba(26,58,143,0.15);border-top:1px solid rgba(255,255,255,0.3);" onclick="exportCardPDF(${i}, event)">📄 Експорт в PDF</button></div>
+            <div class="card-details" id="details-${i}">${details}${isCoordinator() ? '' : `<button type="button" class="btn btn-outline" style="width:100%;margin-top:10px;" onclick="event.stopPropagation(); editCard(${i})">✏️ Редактирай</button><button type="button" class="btn-delete" onclick="deleteCard('${c.id}', event)">🗑 Изтрий</button>`}<button type="button" style="width:100%;margin-top:6px;background:linear-gradient(135deg, #1a3a8f, #0d1f52);color:white;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 0 #0d1f52, 0 6px 16px rgba(26,58,143,0.4), 0 0 20px rgba(26,58,143,0.15);border-top:1px solid rgba(255,255,255,0.3);" onclick="exportCardPDF(${i}, event)">📄 Експорт в PDF</button></div>
         </div>`;
     }).join('');
 }
@@ -1233,10 +1237,10 @@ function renderServiceRequests(requests) {
                     '<div class="req-details" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">' +
                         '<div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;">💬 Бележки:</div>' +
                         '<div style="font-size:12px;margin-bottom:6px;">' + notesHtml + '</div>' +
-                        '<div style="display:flex;gap:4px;">' +
+                        (isCoordinator() ? '' : '<div style="display:flex;gap:4px;">' +
                             '<input type="text" id="comment-' + r.id + '" placeholder="Добави бележка..." onclick="event.stopPropagation()" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;">' +
                             '<button onclick="event.stopPropagation();addRequestComment(\'' + r.id + '\')" style="padding:7px 12px;background:#1a3a8f;color:white;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">💬</button>' +
-                        '</div>' +
+                        '</div>') +
                         (r.created_by ? '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Регистрирал: ' + r.created_by + '</div>' : '') +
                     '</div>' +
                 '</div>' +
