@@ -25,6 +25,21 @@
         .header-sub { font-size:12px; opacity:0.7; margin-top:2px; }
         .header-clock { font-size:18px; opacity:0.9; margin-top:4px; font-weight:600; }
 
+        .mechanic-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; padding:0 14px 14px; }
+        .mechanic-card { background:var(--card); border-radius:16px; padding:24px 16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.06); cursor:pointer; transition:all 0.25s; border:3px solid transparent; position:relative; }
+        .mechanic-card:hover { transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,0.1); }
+        .mechanic-card:active { transform:scale(0.97); }
+        .mechanic-avatar { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:800; color:white; margin:0 auto 10px; background:linear-gradient(135deg,var(--primary),var(--primary-light)); }
+        .mechanic-card-name { font-size:18px; font-weight:700; color:var(--text); }
+        .mechanic-card.has-tasks { border-color:var(--accent-red); animation:mechanicPulse 1.5s ease-in-out infinite; }
+        .mechanic-card.has-tasks .mechanic-avatar { background:linear-gradient(135deg,var(--accent-red),#c41820); }
+        @keyframes mechanicPulse {
+            0%, 100% { background:var(--card); box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+            50% { background:rgba(228,30,43,0.04); box-shadow:0 4px 16px rgba(228,30,43,0.15); }
+        }
+        .task-count-badge { position:absolute; top:10px; right:10px; background:var(--accent-red); color:white; font-size:16px; font-weight:800; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(228,30,43,0.3); }
+        .mechanic-card.no-tasks { opacity:0.6; }
+        .mechanic-card.no-tasks .mechanic-avatar { background:linear-gradient(135deg,#94a3b8,#64748b); }
         .container { max-width:900px; margin:0 auto; padding:14px; }
 
         /* Summary bar */
@@ -163,6 +178,25 @@
 <div class="container">
     <div id="statusMsg" class="status"></div>
 
+    <!-- Екран 1: Избор на механик -->
+    <div id="screenMechanics" class="screen-active">
+        <div style="text-align:center;padding:20px;">
+            <div style="font-size:28px;font-weight:800;color:var(--primary);margin-bottom:4px;">Избери механик</div>
+            <div style="font-size:16px;color:var(--text-muted);">Натисни своето име за да видиш задачите си</div>
+        </div>
+        <div id="mechanicGrid" class="mechanic-grid"></div>
+    </div>
+
+    <!-- Екран 2: Задачи на механика -->
+    <div id="screenTasks" style="display:none;">
+    <div id="selectedMechanicBar" style="background:var(--primary);color:white;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;margin:0 0 14px;border-radius:var(--radius);">
+        <div>
+            <div style="font-size:20px;font-weight:700;" id="selectedMechanicName"></div>
+            <div style="font-size:13px;opacity:0.8;">Назначени задачи</div>
+        </div>
+        <button onclick="backToMechanics()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:8px 18px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">← Назад</button>
+    </div>
+
     <div id="notifBanner" class="notif-banner">
         <span style="font-size:24px;">🔔</span>
         <div style="flex:1;"><strong style="font-size:16px;">Нови задачи!</strong><br>Има назначени задачи за изпълнение</div>
@@ -186,6 +220,7 @@
         <div class="empty-icon">✅</div>
         Няма активни задачи в момента.
     </div>
+    </div>
 </div>
 
 <script>
@@ -194,6 +229,9 @@ const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy
 let allTasks = [];
 let mechanics = [];
 let previousNewCount = 0;
+let selectedMechanic = null;
+let mechanicTaskCounts = {};
+let previousTotalMechTasks = null;
 
 // API helper
 async function apiCall(path, method = 'GET', body = undefined) {
@@ -249,10 +287,71 @@ function playNotificationSound() {
     } catch(e) { console.log('Audio error:', e); }
 }
 
-// Load tasks
-async function loadTasks() {
+// Load mechanics screen
+async function loadMechanicScreen() {
     try {
-        allTasks = await apiCall('service_requests?status=neq.Изпълнена&order=priority.desc,created_at.desc');
+        const mechs = await apiCall('nomenclatures?group_name=eq.mechanics&is_active=eq.true&order=sort_order');
+        const requests = await apiCall('service_requests?status=in.(Разпределена,В изпълнение)');
+
+        mechanicTaskCounts = {};
+        requests.forEach(r => {
+            (r.assigned_mechanics || []).forEach(m => {
+                mechanicTaskCounts[m] = (mechanicTaskCounts[m] || 0) + 1;
+            });
+        });
+
+        // Sound only when the total number of tasks increases
+        const total = Object.values(mechanicTaskCounts).reduce((a, b) => a + b, 0);
+        if (previousTotalMechTasks !== null && total > previousTotalMechTasks) playNotificationSound();
+        previousTotalMechTasks = total;
+
+        // Ignore the result if a mechanic was selected while loading
+        if (selectedMechanic) return;
+
+        const grid = document.getElementById('mechanicGrid');
+        grid.innerHTML = mechs.map(m => {
+            const count = mechanicTaskCounts[m.value] || 0;
+            const hasTasksClass = count > 0 ? 'has-tasks' : 'no-tasks';
+            const initials = m.value.split(' ').map(n => n[0]).join('').substring(0, 2);
+            const badge = count > 0 ? '<div class="task-count-badge">' + count + '</div>' : '';
+            return '<div class="mechanic-card ' + hasTasksClass + '" data-name="' + m.value.replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '" onclick="selectMechanic(this.dataset.name)">' +
+                badge +
+                '<div class="mechanic-avatar">' + initials + '</div>' +
+                '<div class="mechanic-card-name">' + m.value + '</div>' +
+                (count > 0 ? '<div style="font-size:14px;color:var(--accent-red);font-weight:600;margin-top:4px;">' + count + ' задачи</div>' : '<div style="font-size:14px;color:var(--text-muted);margin-top:4px;">Няма задачи</div>') +
+            '</div>';
+        }).join('');
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+function selectMechanic(name) {
+    selectedMechanic = name;
+    previousNewCount = Infinity; // no sound on first load after selection
+    allTasks = [];
+    document.getElementById('tasksList').innerHTML = '';
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('screenMechanics').style.display = 'none';
+    document.getElementById('screenTasks').style.display = 'block';
+    document.getElementById('selectedMechanicName').textContent = name;
+    loadTasksForMechanic(name);
+}
+
+function backToMechanics() {
+    selectedMechanic = null;
+    document.getElementById('screenTasks').style.display = 'none';
+    document.getElementById('screenMechanics').style.display = 'block';
+    loadMechanicScreen();
+}
+
+// Load tasks assigned to the selected mechanic
+async function loadTasksForMechanic(mechanicName) {
+    try {
+        const tasks = await apiCall('service_requests?status=in.(Разпределена,В изпълнение)&order=priority.desc,created_at.desc');
+        if (selectedMechanic !== mechanicName) return;
+        allTasks = tasks.filter(t => (t.assigned_mechanics || []).includes(mechanicName));
         updateSummary();
         renderTasks();
         checkNewTasks();
@@ -316,22 +415,14 @@ function renderTasks() {
         // Actions based on status
         let actionsSection = '';
         if (t.status === 'Разпределена') {
-            const mechOptions = (t.assigned_mechanics || []).map(m => `<option value="${m}">${m}</option>`).join('');
             actionsSection = `
                 <div class="task-actions">
-                    <div class="claim-section">
-                        <div class="claim-label">Избери името си:</div>
-                        <select class="claim-select" id="claim-${t.id}">
-                            <option value="">— Кой си ти? —</option>
-                            ${mechOptions}
-                        </select>
-                    </div>
                     <button class="action-btn btn-claim" onclick="claimTask('${t.id}')">▶ Поемам задачата</button>
                 </div>`;
         } else if (t.status === 'В изпълнение') {
             actionsSection = `
                 <div class="task-actions">
-                    <button class="action-btn btn-workcard" onclick="fillWorkCard('${t.id}')">📝 Попълни работна карта</button>
+                    ${selectedMechanic === t.responsible_mechanic ? `<button class="action-btn btn-workcard" onclick="fillWorkCard('${t.id}')">📝 Попълни работна карта</button>` : ''}
                     <div class="info-banner">★ Само отговорникът <strong>${t.responsible_mechanic}</strong> попълва работната карта</div>
                 </div>`;
         }
@@ -358,9 +449,8 @@ function renderTasks() {
 
 // Claim task
 async function claimTask(taskId) {
-    const select = document.getElementById(`claim-${taskId}`);
-    const mechanic = select.value;
-    if (!mechanic) { showStatus('Избери името си от списъка', 'error'); return; }
+    const mechanic = selectedMechanic;
+    if (!mechanic) return;
 
     const task = allTasks.find(t => t.id === taskId);
     if (!task.assigned_mechanics.includes(mechanic)) {
@@ -383,7 +473,7 @@ async function claimTask(taskId) {
         });
 
         showStatus(`✓ ${mechanic} пое задачата!`, 'success');
-        await loadTasks();
+        await loadTasksForMechanic(mechanic);
     } catch(e) {
         console.error(e);
         showStatus('Грешка: ' + e.message, 'error');
@@ -421,7 +511,13 @@ function showStatus(msg, type) {
 }
 
 // Auto-refresh every 15 seconds
-setInterval(() => { loadTasks(); }, 15000);
+setInterval(() => {
+    if (selectedMechanic) {
+        loadTasksForMechanic(selectedMechanic);
+    } else {
+        loadMechanicScreen();
+    }
+}, 15000);
 
 // Update clock every second
 setInterval(updateClock, 1000);
@@ -430,7 +526,7 @@ setInterval(updateClock, 1000);
 document.addEventListener('DOMContentLoaded', async () => {
     updateClock();
     await loadMechanics();
-    await loadTasks();
+    await loadMechanicScreen();
 });
 </script>
 
