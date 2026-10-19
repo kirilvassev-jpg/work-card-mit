@@ -105,6 +105,7 @@
 
         .loading { text-align:center; padding:40px; }
         .spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 10px; }
+        @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.015); } }
         @keyframes spin { to { transform:rotate(360deg); } }
         .empty { text-align:center; padding:40px; color:var(--text-muted); font-size:14px; }
         .empty-icon { font-size:40px; margin-bottom:10px; opacity:0.5; }
@@ -132,6 +133,15 @@
 
 <div class="container">
     <div id="statusMsg" class="status"></div>
+
+    <div id="newRequestBanner" style="display:none;background:linear-gradient(135deg,#e41e2b,#c41820);color:white;padding:14px 18px;border-radius:var(--radius);margin-bottom:12px;align-items:center;gap:10px;animation:pulse 2s infinite;box-shadow:0 4px 16px rgba(228,30,43,0.3);">
+        <span style="font-size:24px;">🔔</span>
+        <div style="flex:1;">
+            <strong style="font-size:15px;">Нови заявки за разпределяне!</strong><br>
+            <span style="font-size:13px;opacity:0.9;" id="newRequestText">Има нови заявки от Сервизен координатор</span>
+        </div>
+        <div id="newRequestCount" style="background:white;color:#e41e2b;font-size:18px;font-weight:800;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;"></div>
+    </div>
 
     <div class="status-tabs" id="statusTabs">
         <button class="status-tab active" data-status="all" onclick="filterByStatus('all')">Всички</button>
@@ -166,6 +176,71 @@ const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy
 let allRequests = [];
 let mechanics = [];
 let currentFilter = 'all';
+let previousNewCount = 0;
+
+if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+}
+
+function playAlertSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        function beep(time, freq) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, time);
+            gain.gain.setValueAtTime(0.5, time);
+            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+            osc.start(time);
+            osc.stop(time + 0.3);
+        }
+        const now = ctx.currentTime;
+        beep(now, 880);
+        beep(now + 0.35, 1100);
+        beep(now + 0.7, 880);
+    } catch(e) {}
+}
+
+function showBrowserNotification(count) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Нови заявки за разпределяне', {
+            body: count + ' нови заявки чакат от Сервизен координатор',
+            icon: 'Repairs.png',
+            tag: 'new-requests',
+            requireInteraction: true
+        });
+    }
+}
+
+function checkForNewRequests() {
+    const newCount = allRequests.filter(r => r.status === 'Нова').length;
+    const banner = document.getElementById('newRequestBanner');
+
+    if (newCount > 0) {
+        banner.style.display = 'flex';
+        document.getElementById('newRequestCount').textContent = newCount;
+        document.getElementById('newRequestText').textContent = newCount === 1
+            ? 'Има 1 нова заявка от Сервизен координатор'
+            : 'Има ' + newCount + ' нови заявки от Сервизен координатор';
+
+        // Sound + browser notification only when count increases
+        if (newCount > previousNewCount) {
+            playAlertSound();
+            showBrowserNotification(newCount);
+        }
+    } else {
+        banner.style.display = 'none';
+    }
+    previousNewCount = newCount;
+}
+
+function updatePageTitle() {
+    const newCount = allRequests.filter(r => r.status === 'Нова').length;
+    document.title = newCount > 0 ? '(' + newCount + ') Разпределяне — Ар Си Техник' : 'Разпределяне — Ар Си Техник';
+}
 
 // Check auth
 function checkAuth() {
@@ -232,6 +307,8 @@ async function loadRequests() {
         allRequests = await apiCall('service_requests?order=created_at.desc');
         updateCounts();
         renderRequests();
+        checkForNewRequests();
+        updatePageTitle();
     } catch(e) {
         console.error(e);
         showStatus('Грешка при зареждане: ' + e.message, 'error');
