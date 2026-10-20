@@ -133,6 +133,7 @@
 <body>
 
 <div class="header">
+    <button onclick="window.history.back()" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">← Назад</button>
     <button onclick="sessionStorage.clear(); localStorage.clear(); if (window.caches) { caches.keys().then(names => names.forEach(name => caches.delete(name))); } window.location.href = 'login.html';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Изход</button>
     <div class="header-top">
         <img src="Repairs.png" alt="Logo">
@@ -443,6 +444,10 @@ function renderRequests() {
                     <div style="font-size:10px;color:${waitColor};font-weight:600;">⏱ Чака ${waitTime}</div>
                     <div class="card-vehicle">${r.vehicle} — ${r.reg_number}</div>
                     ${r.description ? `<div class="card-desc">${r.description}</div>` : ''}
+                    ${r.photo_data ? `<div style="margin-top:8px;">
+                        <img src="${r.photo_data}" alt="Талон" style="max-width:100%;max-height:200px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;" onclick="event.stopPropagation();window.open(this.src,'_blank')">
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">📷 Снимка на талон — натисни за увеличаване</div>
+                    </div>` : ''}
                     <div class="card-contact">📞 ${r.client_phone || '—'} ${r.client_email ? '· 📧 ' + r.client_email : ''}</div>
                     <div class="card-badges">${activityBadges}${statusBadge}${urgentBadge}</div>
                     ${assignSection}

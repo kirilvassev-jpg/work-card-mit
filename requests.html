@@ -79,6 +79,10 @@
         .priority-btn.active-normal { border-color:var(--primary); background:rgba(26,58,143,0.06); color:var(--primary); }
         .priority-btn.active-urgent { border-color:var(--accent-amber); background:rgba(245,158,11,0.08); color:var(--accent-amber); }
 
+        /* Client type toggle */
+        .ct-btn { flex:1; padding:11px; border:1.5px solid var(--border); border-radius:10px; background:#f8fafc; font-size:14px; font-weight:700; cursor:pointer; text-align:center; transition:all 0.3s; }
+        .ct-btn.active { border-color:var(--accent-green); background:rgba(16,185,129,0.08); color:var(--accent-green); }
+
         /* Submit */
         .submit-btn { display:block; width:100%; padding:15px; background:linear-gradient(135deg,var(--accent-green),#047857); color:white; border:none; border-radius:var(--radius); font-size:16px; font-weight:700; cursor:pointer; letter-spacing:0.5px; box-shadow:0 4px 0 #065f46,0 6px 16px rgba(16,185,129,0.3); border-top:1px solid rgba(255,255,255,0.3); transition:all 0.2s; }
         .submit-btn:hover { transform:translateY(-1px); }
@@ -102,15 +106,12 @@
         .bottom-nav a.active { color:var(--primary); }
         .bottom-nav a .nav-icon { font-size:20px; margin-bottom:2px; }
         .bottom-nav a.active::after { content:''; display:block; width:24px; height:3px; background:var(--accent-red); border-radius:2px; margin-top:2px; }
-
-        /* Description conditional */
-        .desc-hint { font-size:11px; color:var(--accent-amber); font-weight:500; font-style:italic; margin-bottom:4px; display:none; }
-        .desc-hint.show { display:block; }
     </style>
 </head>
 <body>
 
 <div class="header">
+    <button onclick="window.history.back()" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">← Назад</button>
     <button onclick="sessionStorage.clear(); localStorage.clear(); if (window.caches) { caches.keys().then(names => names.forEach(name => caches.delete(name))); } window.location.href = 'login.html';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Изход</button>
     <div class="header-top">
         <img src="Repairs.png" alt="Logo">
@@ -124,52 +125,21 @@
 
 <form class="form-container" id="requestForm" onsubmit="return false;">
 
-    <!-- КЛИЕНТ -->
-    <div class="section s-green" style="animation-delay:0.05s;">
-        <div class="section-title">👤 Данни на клиента</div>
-        <div class="field" id="fClientName">
-            <label>Име, Фамилия <span class="required">*</span></label>
-            <input type="text" id="clientName" placeholder="напр. Петър Георгиев">
-            <div class="error-msg">Въведи име на клиента</div>
-        </div>
-        <div class="field">
-            <label>Имейл <span class="optional">(по избор)</span></label>
-            <input type="email" id="clientEmail" placeholder="напр. p.georgiev@company.bg">
-        </div>
-        <div class="field" id="fClientPhone">
-            <label>Телефон <span class="required">*</span></label>
-            <input type="tel" id="clientPhone" placeholder="напр. 0888 123 456">
-            <div class="error-msg">Въведи телефон</div>
-        </div>
-    </div>
-
-    <!-- МАШИНА -->
-    <div class="section s-blue" style="animation-delay:0.1s;">
-        <div class="section-title">🚗 Данни за машината</div>
-        <div class="field" id="fVehicle">
-            <label>Автомобил / Бус / Машина <span class="required">*</span></label>
-            <input type="text" id="vehicle" placeholder="напр. JCB 4CX, Iveco Daily...">
-            <div class="error-msg">Въведи машина</div>
-        </div>
-        <div class="field" id="fRegNumber">
-            <label>рег № / сер № / Инв № <span class="required">*</span></label>
-            <input type="text" id="regNumber" placeholder="напр. СА 9876 ВМ">
-            <div class="error-msg">Въведи номер</div>
-        </div>
-        <div class="field" id="fFrameNumber">
-            <label>рама №</label>
-            <input type="text" id="frameNumber" placeholder="напр. WVWZZZ3CZWE123456">
-        </div>
-        <div class="field" id="fReqKmHours">
-            <label>изминати км / мч</label>
-            <input type="text" id="reqKmHours" placeholder="напр. 125000 км или 3200 мч">
+    <!-- ОПИСАНИЕ -->
+    <div class="section s-amber" style="animation-delay:0.05s;">
+        <div class="section-title">📝 Описание на проблема</div>
+        <div class="field" id="fDescription">
+            <label>Описание на проблема <span class="required">*</span></label>
+            <textarea id="description" placeholder="Опиши проблема или исканата дейност..." rows="4"></textarea>
+            <div class="error-msg">Въведи описание на проблема</div>
         </div>
     </div>
 
     <!-- ВИД ДЕЙНОСТ -->
-    <div class="section s-red" style="animation-delay:0.15s;">
-        <div class="section-title">⚡ Вид дейност</div>
+    <div class="section s-red" style="animation-delay:0.1s;">
+        <div class="section-title">⚡ Вид дейност + Желана дата</div>
         <div class="field" id="fActivity">
+            <label>Вид дейност <span class="required">*</span></label>
             <div class="ms-dropdown" id="activityDropdown">
                 <div class="ms-display" id="activityDisplay" onclick="toggleActivityDropdown()">
                     <span class="placeholder">— Избери вид дейност —</span>
@@ -197,21 +167,90 @@
             <div class="ms-tags" id="activityTags"></div>
             <div class="error-msg">Избери поне един вид дейност</div>
         </div>
-    </div>
-
-    <!-- ОПИСАНИЕ -->
-    <div class="section s-amber" style="animation-delay:0.2s;">
-        <div class="section-title">📝 Описание на проблема</div>
-        <div class="desc-hint" id="descHint">⚠ Задължително при избор на „ДРУГО"</div>
-        <div class="field" id="fDescription">
-            <textarea id="description" placeholder="Опиши проблема или исканата дейност..."></textarea>
-            <div class="error-msg">Въведи описание (задължително при „ДРУГО")</div>
+        <div class="field">
+            <label>Желана дата за ремонт / ТО <span class="optional">(по избор)</span></label>
+            <input type="date" id="desiredDate">
         </div>
         <div class="field">
             <label>Приоритет</label>
             <div class="priority-group">
                 <button type="button" class="priority-btn active-normal" id="btnNormal" onclick="setPriority('Нормален')">Нормален</button>
                 <button type="button" class="priority-btn" id="btnUrgent" onclick="setPriority('Спешен')">🔥 Спешен</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- КЛИЕНТ -->
+    <div class="section s-green" style="animation-delay:0.15s;">
+        <div class="section-title">👤 Данни на клиента</div>
+        <div class="client-type-toggle" style="display:flex;gap:8px;margin-bottom:14px;">
+            <button type="button" class="ct-btn active" id="btnFL" onclick="setClientType('ФЛ')">Физическо лице</button>
+            <button type="button" class="ct-btn" id="btnUL" onclick="setClientType('ЮЛ')">Юридическо лице</button>
+        </div>
+        <div class="field" id="fClientName">
+            <label>Име, Фамилия <span class="required">*</span></label>
+            <input type="text" id="clientName" placeholder="напр. Петър Георгиев">
+            <div class="error-msg">Въведи име на клиента</div>
+        </div>
+        <div id="ulFields" style="display:none;">
+            <div class="field" id="fCompanyName">
+                <label>Име на фирма <span class="required">*</span></label>
+                <input type="text" id="companyName" placeholder="напр. Ар Си Техник ООД">
+                <div class="error-msg">Въведи име на фирма</div>
+            </div>
+            <div class="field" id="fBulstat">
+                <label>Булстат <span class="required">*</span></label>
+                <input type="text" id="bulstat" placeholder="напр. 123456789">
+                <div class="error-msg">Въведи булстат</div>
+            </div>
+            <div class="field">
+                <label>Контактно лице (Име, Фамилия) <span class="optional">(по избор)</span></label>
+                <input type="text" id="contactPerson" placeholder="напр. Иван Иванов">
+            </div>
+        </div>
+        <div class="field">
+            <label>Имейл <span class="optional">(по избор)</span></label>
+            <input type="email" id="clientEmail" placeholder="напр. p.georgiev@company.bg">
+        </div>
+        <div class="field" id="fClientPhone">
+            <label>Телефон <span class="required">*</span></label>
+            <input type="tel" id="clientPhone" placeholder="напр. 0888 123 456">
+            <div class="error-msg">Въведи телефон</div>
+        </div>
+    </div>
+
+    <!-- МАШИНА -->
+    <div class="section s-blue" style="animation-delay:0.2s;">
+        <div class="section-title">🚗 Данни за машината</div>
+        <div class="field" id="fBrand">
+            <label>Марка <span class="required">*</span></label>
+            <input type="text" id="brand" placeholder="напр. JCB, Iveco, Peugeot...">
+            <div class="error-msg">Въведи марка</div>
+        </div>
+        <div class="field" id="fModel">
+            <label>Модел <span class="required">*</span></label>
+            <input type="text" id="model" placeholder="напр. 3CX, Daily, Partner...">
+            <div class="error-msg">Въведи модел</div>
+        </div>
+        <div class="field" id="fRegNumber">
+            <label>рег № / сер № / Инв № <span class="required">*</span></label>
+            <input type="text" id="regNumber" placeholder="напр. СА 9876 ВМ">
+            <div class="error-msg">Въведи номер</div>
+        </div>
+        <div class="field" id="fFrameNumber">
+            <label>рама №</label>
+            <input type="text" id="frameNumber" placeholder="напр. WVWZZZ3CZWE123456">
+        </div>
+        <div class="field" id="fReqKmHours">
+            <label>изминати км / мч</label>
+            <input type="text" id="reqKmHours" placeholder="напр. 125000 км или 3200 мч">
+        </div>
+        <div class="field">
+            <label>📷 Снимка на талон</label>
+            <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="previewPhoto(this)" style="width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:10px;background:#f8fafc;font-size:14px;cursor:pointer;">
+            <div id="photoPreview" style="display:none;margin-top:8px;">
+                <img id="photoImg" style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                <button type="button" onclick="removePhoto()" style="display:block;margin-top:6px;background:none;border:none;color:var(--accent-red);font-size:12px;font-weight:600;cursor:pointer;">✕ Премахни снимката</button>
             </div>
         </div>
     </div>
@@ -283,7 +322,6 @@ function toggleActivityOption(el) {
         selectedActivities = selectedActivities.filter(v => v !== value);
     }
     updateActivityDisplay();
-    updateDescriptionHint();
 }
 
 function removeActivity(value) {
@@ -292,7 +330,6 @@ function removeActivity(value) {
         if (opt.dataset.value === value) opt.classList.remove('selected');
     });
     updateActivityDisplay();
-    updateDescriptionHint();
 }
 
 function updateActivityDisplay() {
@@ -304,11 +341,6 @@ function updateActivityDisplay() {
         display.innerHTML = `<span>${selectedActivities.length} избрани</span><span class="ms-arrow" id="activityArrow">▼</span>`;
     }
     tags.innerHTML = selectedActivities.map(v => `<div class="ms-tag">${v} <span class="remove" onclick="removeActivity('${v}')">×</span></div>`).join('');
-}
-
-function updateDescriptionHint() {
-    const hint = document.getElementById('descHint');
-    hint.classList.toggle('show', selectedActivities.includes('ДРУГО'));
 }
 
 // Close dropdown when clicking outside
@@ -329,16 +361,70 @@ function setPriority(val) {
     document.getElementById('btnUrgent').className = 'priority-btn' + (val === 'Спешен' ? ' active-urgent' : '');
 }
 
+// Client type (ФЛ / ЮЛ)
+let clientType = 'ФЛ';
+function setClientType(type) {
+    clientType = type;
+    document.getElementById('btnFL').classList.toggle('active', type === 'ФЛ');
+    document.getElementById('btnUL').classList.toggle('active', type === 'ЮЛ');
+    document.getElementById('ulFields').style.display = type === 'ЮЛ' ? 'block' : 'none';
+}
+
+// Photo attachment
+let photoBase64 = null;
+
+function previewPhoto(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Снимката е прекалено голяма (макс. 5MB)');
+            input.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Compress image
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const maxSize = 1200;
+                let w = img.width, h = img.height;
+                if (w > maxSize || h > maxSize) {
+                    if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+                    else { w = Math.round(w * maxSize / h); h = maxSize; }
+                }
+                canvas.width = w;
+                canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                photoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                document.getElementById('photoImg').src = photoBase64;
+                document.getElementById('photoPreview').style.display = 'block';
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function removePhoto() {
+    photoBase64 = null;
+    document.getElementById('photoInput').value = '';
+    document.getElementById('photoPreview').style.display = 'none';
+}
+
 // Validation
 function validate() {
     let valid = true;
     const checks = [
+        { id: 'fDescription', test: () => document.getElementById('description').value.trim() !== '' },
+        { id: 'fActivity', test: () => selectedActivities.length > 0 },
         { id: 'fClientName', test: () => document.getElementById('clientName').value.trim() !== '' },
         { id: 'fClientPhone', test: () => document.getElementById('clientPhone').value.trim() !== '' },
-        { id: 'fVehicle', test: () => document.getElementById('vehicle').value.trim() !== '' },
+        { id: 'fCompanyName', test: () => clientType !== 'ЮЛ' || document.getElementById('companyName').value.trim() !== '' },
+        { id: 'fBulstat', test: () => clientType !== 'ЮЛ' || document.getElementById('bulstat').value.trim() !== '' },
+        { id: 'fBrand', test: () => document.getElementById('brand').value.trim() !== '' },
+        { id: 'fModel', test: () => document.getElementById('model').value.trim() !== '' },
         { id: 'fRegNumber', test: () => document.getElementById('regNumber').value.trim() !== '' },
-        { id: 'fActivity', test: () => selectedActivities.length > 0 },
-        { id: 'fDescription', test: () => !selectedActivities.includes('ДРУГО') || document.getElementById('description').value.trim() !== '' },
     ];
     checks.forEach(c => {
         const el = document.getElementById(c.id);
@@ -389,16 +475,24 @@ async function submitRequest() {
         const requestNumber = await generateRequestNumber(document.getElementById('clientName').value.trim());
         const requestData = {
             request_number: requestNumber,
+            description: document.getElementById('description').value.trim(),
+            activity_type: selectedActivities,
+            desired_date: document.getElementById('desiredDate').value || null,
+            priority: priority,
+            client_type: clientType,
             client_name: document.getElementById('clientName').value.trim(),
             client_email: document.getElementById('clientEmail').value.trim() || null,
             client_phone: document.getElementById('clientPhone').value.trim(),
-            vehicle: document.getElementById('vehicle').value.trim(),
+            company_name: clientType === 'ЮЛ' ? document.getElementById('companyName').value.trim() : null,
+            bulstat: clientType === 'ЮЛ' ? document.getElementById('bulstat').value.trim() : null,
+            contact_person: clientType === 'ЮЛ' ? document.getElementById('contactPerson').value.trim() || null : null,
+            brand: document.getElementById('brand').value.trim(),
+            model: document.getElementById('model').value.trim(),
+            vehicle: document.getElementById('brand').value.trim() + ' ' + document.getElementById('model').value.trim(),
             reg_number: document.getElementById('regNumber').value.trim(),
             frame_number: document.getElementById('frameNumber').value.trim() || null,
             km_hours: document.getElementById('reqKmHours').value.trim() || null,
-            activity_type: selectedActivities,
-            description: document.getElementById('description').value.trim() || null,
-            priority: priority,
+            photo_data: photoBase64 || null,
             status: 'Нова',
             created_by: sessionStorage.getItem('workcard_user') || 'Координатор'
         };
@@ -448,19 +542,25 @@ function showStatus(msg, type) {
 }
 
 function resetForm() {
+    document.getElementById('description').value = '';
+    document.getElementById('desiredDate').value = '';
     document.getElementById('clientName').value = '';
     document.getElementById('clientEmail').value = '';
     document.getElementById('clientPhone').value = '';
-    document.getElementById('vehicle').value = '';
+    document.getElementById('companyName').value = '';
+    document.getElementById('bulstat').value = '';
+    document.getElementById('contactPerson').value = '';
+    document.getElementById('brand').value = '';
+    document.getElementById('model').value = '';
     document.getElementById('regNumber').value = '';
     document.getElementById('frameNumber').value = '';
     document.getElementById('reqKmHours').value = '';
-    document.getElementById('description').value = '';
+    removePhoto();
     selectedActivities = [];
     document.querySelectorAll('.ms-option').forEach(opt => opt.classList.remove('selected'));
     updateActivityDisplay();
-    updateDescriptionHint();
     setPriority('Нормален');
+    setClientType('ФЛ');
     window.scrollTo({ top:0, behavior:'smooth' });
 }
 

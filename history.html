@@ -384,6 +384,7 @@
 </div>
 
 <div class="header">
+    <button onclick="window.history.back()" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">← Назад</button>
     <button onclick="sessionStorage.clear(); localStorage.clear(); if (window.caches) { caches.keys().then(names => names.forEach(name => caches.delete(name))); } window.location.href = 'login.html';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Изход</button>
     <div class="header-top">
         <img src="Repairs.png" alt="Logo" style="width:42px; height:42px; border-radius:10px; box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 0 15px rgba(255,255,255,0.2); padding:3px; background: rgba(255,255,255,0.15); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.25);">
@@ -1239,6 +1240,10 @@ function renderServiceRequests(requests) {
                     '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><div style="font-size:15px;font-weight:700;">' + r.client_name + '</div><div style="font-size:12px;color:var(--text-muted);">' + dateStr + '</div></div>' +
                     '<div style="font-size:14px;">' + r.vehicle + ' — ' + r.reg_number + '</div>' +
                     (r.description ? '<div style="font-size:13px;color:var(--text-muted);margin-top:4px;padding:6px 8px;background:#f8fafc;border-radius:6px;border-left:3px solid var(--border);">' + r.description + '</div>' : '') +
+                    (r.photo_data ? '<div style="margin-top:8px;">' +
+                        '<img src="' + r.photo_data + '" alt="Талон" style="max-width:100%;max-height:200px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;" onclick="event.stopPropagation();window.open(this.src,\'_blank\')">' +
+                        '<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">📷 Снимка на талон — натисни за увеличаване</div>' +
+                    '</div>' : '') +
                     '<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">📞 ' + (r.client_phone || '—') + (r.client_email ? ' · 📧 ' + r.client_email : '') + '</div>' +
                     '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;">' + actBadges + '<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;' + badgeStyle + ';">' + r.status + '</span>' + urgentBadge + '</div>' +
                     mechHtml +
