@@ -268,6 +268,7 @@
 <nav class="bottom-nav" id="bottomNav">
     <a href="requests.html" class="active"><span class="nav-icon">📝</span>Нова заявка</a>
     <a href="history.html"><span class="nav-icon">📋</span>Заявки</a>
+    <a href="schedule.html"><span class="nav-icon">📅</span>График</a>
     <a href="dashboard.html"><span class="nav-icon">📊</span>Dashboard</a>
 </nav>
 
@@ -295,10 +296,10 @@ function updateNav() {
         const href = link.getAttribute('href');
         if (role === 'coordinator') {
             // Координатор вижда: Нова заявка + Разпределяне + Преглед + Dashboard
-            link.style.display = (href === 'requests.html' || href === 'assign.html' || href === 'history.html' || href === 'dashboard.html') ? 'flex' : 'none';
+            link.style.display = (href === 'requests.html' || href === 'assign.html' || href === 'history.html' || href === 'schedule.html' || href === 'dashboard.html') ? 'flex' : 'none';
         } else if (role === 'manager') {
             // Ръководител вижда: Разпределяне + Преглед + Dashboard
-            link.style.display = (href === 'assign.html' || href === 'history.html' || href === 'dashboard.html') ? 'flex' : 'none';
+            link.style.display = (href === 'assign.html' || href === 'history.html' || href === 'schedule.html' || href === 'dashboard.html') ? 'flex' : 'none';
         } else if (role === 'admin') {
             // Управител вижда всичко
             link.style.display = 'flex';

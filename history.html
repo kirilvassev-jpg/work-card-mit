@@ -477,6 +477,7 @@
 <nav id="bottomNav" class="bottom-nav">
     <a href="index.html"><span class="nav-icon">📝</span>Нова карта</a>
     <a href="history.html" class="active"><span class="nav-icon">📊</span>Преглед</a>
+    <a href="schedule.html"><span class="nav-icon">📅</span>График</a>
 </nav>
 
 <div id="editOverlay" class="edit-overlay">
@@ -656,10 +657,10 @@ function updateNav() {
         const href = link.getAttribute('href');
         if (role === 'coordinator') {
             // Координатор вижда: Нова заявка + Разпределяне + Преглед + Dashboard
-            link.style.display = (href === 'requests.html' || href === 'assign.html' || href === 'history.html' || href === 'dashboard.html') ? 'flex' : 'none';
+            link.style.display = (href === 'requests.html' || href === 'assign.html' || href === 'history.html' || href === 'schedule.html' || href === 'dashboard.html') ? 'flex' : 'none';
         } else if (role === 'manager') {
             // Ръководител вижда: Разпределяне + Преглед + Dashboard
-            link.style.display = (href === 'assign.html' || href === 'history.html' || href === 'dashboard.html') ? 'flex' : 'none';
+            link.style.display = (href === 'assign.html' || href === 'history.html' || href === 'schedule.html' || href === 'dashboard.html') ? 'flex' : 'none';
         } else if (role === 'admin') {
             // Управител вижда всичко
             link.style.display = 'flex';

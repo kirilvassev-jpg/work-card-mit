@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>График за изпълнение — Ар Си Техник</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a3a8f">
+    <style>
+        :root {
+            --primary: #1a3a8f; --primary-dark: #0d1f52; --primary-light: #2955c7;
+            --accent-red: #e41e2b; --accent-green: #10b981; --accent-amber: #f59e0b;
+            --accent-purple: #7c3aed; --accent-blue: #3b82f6;
+            --bg: #f0f4f8; --card: #ffffff; --text: #1a2332; --text-muted: #5a6577; --border: #d8dfe8;
+            --radius: 12px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; padding-bottom:80px; }
+
+        .header { background:linear-gradient(135deg,var(--primary-dark),var(--primary),var(--primary-light)); color:white; padding:16px 20px; text-align:center; position:sticky; top:0; z-index:100; box-shadow:0 4px 20px rgba(30,41,59,0.3); }
+        .header-top { display:flex; align-items:center; justify-content:center; gap:10px; }
+        .header img { width:36px; height:36px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:2px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); }
+        .header h1 { font-size:18px; font-weight:700; letter-spacing:1px; }
+        .header-sub { font-size:11px; opacity:0.7; margin-top:2px; }
+        .header-user { font-size:11px; opacity:0.9; margin-top:4px; background:rgba(255,255,255,0.15); display:inline-block; padding:2px 12px; border-radius:12px; }
+
+        body.read-only .cal-cell { cursor:default; }
+        body.read-only [draggable="true"] { -webkit-user-drag:none; cursor:default; }
+        body.read-only .assign-btn { display:none !important; }
+
+        /* Layout */
+        .schedule-container {
+            display:grid;
+            grid-template-columns: 1fr 350px;
+            gap:12px;
+            max-width:1200px;
+            margin:0 auto;
+            padding:12px;
+        }
+        @media (max-width: 900px) {
+            .schedule-container { grid-template-columns: 1fr; }
+        }
+
+        #readOnlyBanner { background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.2); border-radius:var(--radius); padding:10px 14px; text-align:center; font-size:13px; color:#1e40af; font-weight:600; margin:0 auto 0; max-width:1200px; }
+
+        /* Calendar section */
+        .calendar-section { background:var(--card); border-radius:var(--radius); padding:14px; box-shadow:0 1px 3px rgba(0,0,0,0.06); height:fit-content; }
+        .cal-nav { display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:14px; }
+        .cal-nav button { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 14px; font-size:14px; font-weight:700; cursor:pointer; color:var(--primary); transition:all 0.2s; }
+        .cal-nav button:hover { background:var(--primary); color:white; }
+        .cal-nav span { font-size:16px; font-weight:700; min-width:150px; text-align:center; }
+        .cal-nav .today-btn { font-size:12px; color:var(--text-muted); }
+
+        .cal-grid {
+            display:grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap:2px;
+            background:var(--border);
+            border-radius:var(--radius);
+            overflow:hidden;
+        }
+        .cal-header-cell {
+            background:var(--primary);
+            color:white;
+            text-align:center;
+            padding:8px 4px;
+            font-size:12px;
+            font-weight:700;
+        }
+        .cal-cell {
+            background:var(--card);
+            min-height:80px;
+            padding:6px;
+            cursor:pointer;
+            transition:background 0.2s;
+            position:relative;
+        }
+        .cal-cell:hover { background:#f8fafc; }
+        .cal-cell.today { background:rgba(245,158,11,0.08); }
+        .cal-cell.selected { background:rgba(26,58,143,0.06); box-shadow:inset 0 0 0 2px var(--primary); }
+        .cal-cell.overloaded { box-shadow:inset 0 0 0 2px var(--accent-red); }
+        .cal-cell.today.overloaded { box-shadow:inset 0 0 0 2px var(--accent-red); }
+        .cal-cell.other-month { opacity:0.4; }
+        .cal-day-num { font-size:13px; font-weight:700; color:var(--text); margin-bottom:4px; }
+        .cal-dots { display:flex; flex-wrap:wrap; gap:3px; }
+        .cal-dot { width:8px; height:8px; border-radius:50%; }
+        .dot-new { background:var(--accent-red); }
+        .dot-assigned { background:#7c3aed; }
+        .dot-progress { background:#3b82f6; }
+        .dot-done { background:#10b981; }
+        .cal-count { font-size:10px; color:var(--text-muted); font-weight:600; }
+        .cal-warning { position:absolute; top:4px; right:4px; font-size:12px; }
+
+        .legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); font-size:11px; color:var(--text-muted); }
+        .legend-item { display:flex; align-items:center; gap:5px; }
+
+        @media (max-width: 900px) {
+            .cal-cell { min-height:56px; padding:4px; }
+            .cal-day-num { font-size:11px; }
+            .cal-dot { width:6px; height:6px; }
+        }
+
+        /* Sidebar */
+        .sidebar-section { display:flex; flex-direction:column; gap:12px; }
+        .sidebar-card { background:var(--card); border-radius:var(--radius); padding:14px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+        .sidebar-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--primary); }
+
+        .mini-card {
+            background:#f8fafc; border-radius:10px; padding:10px 12px; margin-bottom:8px;
+            border-left:4px solid var(--border); cursor:pointer; transition:all 0.2s;
+        }
+        .mini-card:hover { box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+        .mini-card.stripe-new { border-left-color:var(--accent-red); }
+        .mini-card.stripe-assigned { border-left-color:var(--accent-purple); }
+        .mini-card.stripe-progress { border-left-color:var(--accent-blue); }
+        .mini-card.stripe-done { border-left-color:var(--accent-green); }
+        .mini-card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:6px; margin-bottom:4px; }
+        .mini-card-client { font-size:13px; font-weight:700; }
+        .mini-card-vehicle { font-size:12px; color:var(--text-muted); }
+        .mini-card-badges { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+
+        .badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+        .b-new { background:rgba(228,30,43,0.1); color:#c41820; }
+        .b-assigned { background:#ede9fe; color:#5b21b6; }
+        .b-progress { background:#dbeafe; color:#1e40af; }
+        .b-done { background:#d1fae5; color:#065f46; }
+        .b-urgent { background:#fef3c7; color:#92400e; border:1px solid var(--accent-amber); }
+
+        .empty-mini { text-align:center; padding:16px; color:var(--text-muted); font-size:12px; }
+
+        /* Workload bars */
+        .workload-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+        .workload-name { font-size:12px; font-weight:600; width:110px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .workload-bar-track { flex:1; height:10px; background:var(--bg); border-radius:6px; overflow:hidden; }
+        .workload-bar-fill { height:100%; border-radius:6px; transition:width 0.3s; }
+        .wl-green { background:var(--accent-green); }
+        .wl-amber { background:var(--accent-amber); }
+        .wl-red { background:var(--accent-red); }
+        .workload-count { font-size:11px; font-weight:700; width:18px; text-align:right; flex-shrink:0; }
+
+        /* Popup */
+        .schedule-popup-overlay {
+            position:fixed; inset:0; background:rgba(0,0,0,0.4);
+            z-index:1000; display:flex; align-items:center; justify-content:center; padding:16px;
+        }
+        .schedule-popup {
+            background:white; border-radius:16px; padding:0;
+            max-width:500px; width:100%; max-height:85vh; overflow-y:auto;
+            box-shadow:0 20px 60px rgba(0,0,0,0.2); animation:popupIn 0.2s ease;
+        }
+        @keyframes popupIn { from { transform:scale(0.92); opacity:0; } to { transform:scale(1); opacity:1; } }
+        .popup-header {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:16px 20px; border-bottom:1px solid var(--border);
+            font-size:16px; font-weight:700; position:sticky; top:0; background:white; border-radius:16px 16px 0 0;
+        }
+        .popup-header button { background:var(--bg); border:none; width:28px; height:28px; border-radius:8px; font-size:14px; cursor:pointer; color:var(--text-muted); }
+        .popup-body { padding:20px; }
+        .popup-row { margin-bottom:12px; }
+        .popup-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin-bottom:4px; }
+        .popup-value { font-size:14px; color:var(--text); }
+        .popup-desc { font-size:13px; color:var(--text-muted); padding:8px; background:#f8fafc; border-radius:8px; border-left:3px solid var(--border); }
+
+        .mechanic-list { display:flex; flex-direction:column; gap:4px; margin-bottom:8px; }
+        .mechanic-item { display:flex; align-items:center; gap:10px; padding:8px 12px; border:1.5px solid var(--border); border-radius:8px; cursor:pointer; transition:all 0.2s; background:#f8fafc; }
+        .mechanic-item:has(input:checked) { border-color:var(--accent-purple); background:rgba(124,58,237,0.05); }
+        .mechanic-item input[type="checkbox"] { width:18px; height:18px; accent-color:var(--accent-purple); flex-shrink:0; margin:0; vertical-align:middle; }
+        .mechanic-item span { font-size:14px; vertical-align:middle; line-height:1.4; }
+        .responsible-select { width:100%; padding:10px 14px; border:1.5px solid var(--accent-amber); border-radius:8px; font-size:14px; color:var(--text); background:rgba(245,158,11,0.05); appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; margin-bottom:8px; }
+        .assigned-display { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+        .assigned-tag { padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(124,58,237,0.08); border:1px solid rgba(124,58,237,0.2); color:var(--accent-purple); }
+        .assigned-tag.responsible { background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.3); color:var(--accent-amber); }
+        .assign-btn { width:100%; padding:12px; border:none; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; background:linear-gradient(135deg,var(--primary),var(--primary-light)); color:white; margin-top:6px; }
+        .assign-btn:active { transform:scale(0.98); }
+
+        .status { display:none; }
+        .status.show { display:block; padding:10px 14px; border-radius:8px; font-size:13px; font-weight:600; margin-bottom:12px; }
+        .status.success { display:block; background:rgba(16,185,129,0.1); color:#065f46; }
+        .status.error { display:block; background:rgba(228,30,43,0.1); color:#c41820; }
+
+        /* Bottom nav */
+        .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:white; border-top:1px solid var(--border); display:flex; z-index:100; box-shadow:0 -2px 10px rgba(0,0,0,0.06); }
+        .bottom-nav a { flex:1; display:flex; flex-direction:column; align-items:center; padding:8px 0 10px; text-decoration:none; font-size:11px; font-weight:600; color:var(--text-muted); transition:all 0.2s; position:relative; }
+        .bottom-nav a.active { color:var(--primary); }
+        .bottom-nav a .nav-icon { font-size:20px; margin-bottom:2px; }
+        .bottom-nav a.active::after { content:''; display:block; width:24px; height:3px; background:var(--accent-red); border-radius:2px; margin-top:2px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <button onclick="window.history.back()" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">← Назад</button>
+    <button onclick="sessionStorage.clear(); localStorage.clear(); if (window.caches) { caches.keys().then(names => names.forEach(name => caches.delete(name))); } window.location.href = 'login.html';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Изход</button>
+    <div class="header-top">
+        <img src="Repairs.png" alt="Logo">
+        <h1>ГРАФИК ЗА ИЗПЪЛНЕНИЕ</h1>
+    </div>
+    <div class="header-sub">Ар Си Техник ООД</div>
+    <div class="header-user" id="headerUser">Ръководител сервизна дейност</div>
+</div>
+
+<div style="padding:12px 12px 0;">
+    <div id="readOnlyBanner" style="display:none;">👁 Режим за преглед — само за наблюдение</div>
+</div>
+
+<div class="schedule-container">
+    <div class="calendar-section">
+        <div class="cal-nav">
+            <button onclick="prevMonth()">◀</button>
+            <span id="calMonthYear">—</span>
+            <button onclick="nextMonth()">▶</button>
+            <button class="today-btn" onclick="goToday()">Днес</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="legend">
+            <div class="legend-item"><span class="cal-dot dot-new"></span> Нова</div>
+            <div class="legend-item"><span class="cal-dot dot-assigned"></span> Разпределена</div>
+            <div class="legend-item"><span class="cal-dot dot-progress"></span> В изпълнение</div>
+            <div class="legend-item"><span class="cal-dot dot-done"></span> Изпълнена</div>
+            <div class="legend-item">⚠ Претоварен ден (5+ задачи)</div>
+        </div>
+    </div>
+
+    <div class="sidebar-section">
+        <div class="sidebar-card">
+            <div class="sidebar-title"><span id="selectedDateTitle">Избери ден от календара</span></div>
+            <div id="dayRequests"><div class="empty-mini">Няма избран ден</div></div>
+        </div>
+
+        <div class="sidebar-card">
+            <div class="sidebar-title">📌 Непланирани <span id="unplannedCount" style="background:var(--accent-red);color:white;padding:1px 8px;border-radius:10px;font-size:11px;">0</span></div>
+            <div id="unplannedRequests"><div class="empty-mini">Зареждане...</div></div>
+        </div>
+
+        <div class="sidebar-card">
+            <div class="sidebar-title">👷 Натовареност (избран ден)</div>
+            <div id="mechanicWorkload"><div class="empty-mini">Избери ден, за да видиш натовареността</div></div>
+        </div>
+    </div>
+</div>
+
+<div id="popupContainer"></div>
+
+<nav class="bottom-nav" id="bottomNav">
+    <a href="requests.html"><span class="nav-icon">📝</span>Нова заявка</a>
+    <a href="assign.html"><span class="nav-icon">📋</span>Разпределяне</a>
+    <a href="history.html"><span class="nav-icon">📊</span>Преглед</a>
+    <a href="schedule.html" class="active"><span class="nav-icon">📅</span>График</a>
+    <a href="dashboard.html"><span class="nav-icon">📈</span>Dashboard</a>
+</nav>
+
+<script>
+const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
+
+let allRequests = [];
+let mechanics = [];
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
+let selectedDate = null;
+
+const MONTH_NAMES = ['Януари','Февруари','Март','Април','Май','Юни','Юли','Август','Септември','Октомври','Ноември','Декември'];
+const DAY_NAMES = ['Пн','Вт','Ср','Чт','Пт','Сб','Нд'];
+
+// --- Auth ---
+function checkAuth() {
+    const auth = sessionStorage.getItem('workcard_auth');
+    const role = sessionStorage.getItem('workcard_role');
+    if (auth !== 'true' || !['coordinator','manager','admin'].includes(role)) {
+        window.location.href = 'login.html';
+        return;
+    }
+    const user = sessionStorage.getItem('workcard_user');
+    if (user) document.getElementById('headerUser').textContent = user;
+    if (role === 'coordinator') {
+        document.body.classList.add('read-only');
+        document.getElementById('readOnlyBanner').style.display = 'block';
+    }
+}
+
+function canEdit() {
+    const role = sessionStorage.getItem('workcard_role');
+    return role === 'manager' || role === 'admin';
+}
+
+function updateNav() {
+    const role = sessionStorage.getItem('workcard_role');
+    const nav = document.getElementById('bottomNav');
+    if (!nav) return;
+    const links = nav.querySelectorAll('a');
+    links.forEach(link => {
+        const href = link.getAttribute('href');
+        if (role === 'coordinator') {
+            link.style.display = (href === 'requests.html' || href === 'assign.html' || href === 'history.html' || href === 'schedule.html' || href === 'dashboard.html') ? 'flex' : 'none';
+        } else if (role === 'manager') {
+            link.style.display = (href === 'assign.html' || href === 'history.html' || href === 'schedule.html' || href === 'dashboard.html') ? 'flex' : 'none';
+        } else if (role === 'admin') {
+            link.style.display = 'flex';
+        }
+    });
+}
+
+// --- API ---
+async function apiCall(path, method = 'GET', body = undefined) {
+    const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path, method, body })
+    });
+    if (!res.ok && res.status !== 204) throw new Error(`${method} ${path}: ${res.status}`);
+    if (res.status === 204) return null;
+    return res.json();
+}
+
+async function loadMechanics() {
+    try {
+        mechanics = await apiCall('nomenclatures?group_name=eq.mechanics&is_active=eq.true&order=sort_order');
+    } catch(e) { console.error(e); }
+}
+
+async function loadSchedule() {
+    try {
+        allRequests = await apiCall('service_requests?order=created_at.desc');
+        renderCalendar();
+        renderUnplanned();
+        if (selectedDate) {
+            renderDayRequests(selectedDate);
+            renderMechanicWorkload(selectedDate);
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+// --- Date helpers ---
+function pad(n) { return String(n).padStart(2, '0'); }
+function dateToStr(y, m, d) { return `${y}-${pad(m+1)}-${pad(d)}`; }
+function todayStr() { const t = new Date(); return dateToStr(t.getFullYear(), t.getMonth(), t.getDate()); }
+
+function requestsForDate(dateStr) {
+    return allRequests.filter(r => r.desired_date === dateStr);
+}
+
+function checkOverloaded(dateStr) {
+    return requestsForDate(dateStr).length >= 5;
+}
+
+// --- Calendar rendering ---
+function renderCalendar() {
+    document.getElementById('calMonthYear').textContent = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
+    const grid = document.getElementById('calGrid');
+
+    let html = DAY_NAMES.map(d => `<div class="cal-header-cell">${d}</div>`).join('');
+
+    const firstOfMonth = new Date(currentYear, currentMonth, 1);
+    // Monday = 0 ... Sunday = 6
+    let startOffset = (firstOfMonth.getDay() + 6) % 7;
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
+
+    const todayS = todayStr();
+    const cells = [];
+
+    // Leading days from previous month
+    for (let i = startOffset - 1; i >= 0; i--) {
+        const d = daysInPrevMonth - i;
+        const m = currentMonth === 0 ? 11 : currentMonth - 1;
+        const y = currentMonth === 0 ? currentYear - 1 : currentYear;
+        cells.push({ d, m, y, otherMonth: true });
+    }
+    // Current month days
+    for (let d = 1; d <= daysInMonth; d++) {
+        cells.push({ d, m: currentMonth, y: currentYear, otherMonth: false });
+    }
+    // Trailing days to complete the grid (multiple of 7)
+    let trailing = 1;
+    while (cells.length % 7 !== 0) {
+        const m = currentMonth === 11 ? 0 : currentMonth + 1;
+        const y = currentMonth === 11 ? currentYear + 1 : currentYear;
+        cells.push({ d: trailing++, m, y, otherMonth: true });
+    }
+
+    cells.forEach(c => {
+        const dateStr = dateToStr(c.y, c.m, c.d);
+        const dayReqs = requestsForDate(dateStr);
+        const isToday = dateStr === todayS;
+        const isSelected = dateStr === selectedDate;
+        const overloaded = dayReqs.length >= 5;
+
+        let classes = 'cal-cell';
+        if (c.otherMonth) classes += ' other-month';
+        if (isToday) classes += ' today';
+        if (isSelected) classes += ' selected';
+        if (overloaded) classes += ' overloaded';
+
+        const dots = dayReqs.slice(0, 3).map(r => {
+            const cls = r.status === 'Нова' ? 'dot-new' : r.status === 'Разпределена' ? 'dot-assigned' : r.status === 'В изпълнение' ? 'dot-progress' : 'dot-done';
+            return `<span class="cal-dot ${cls}"></span>`;
+        }).join('');
+        const countBadge = dayReqs.length > 3 ? `<span class="cal-count">+${dayReqs.length - 3}</span>` : '';
+        const warning = overloaded ? '<span class="cal-warning">⚠</span>' : '';
+
+        html += `<div class="${classes}" data-date="${dateStr}" onclick="selectDay('${dateStr}')" ondragover="event.preventDefault()" ondrop="dropRequest(event, '${dateStr}')">
+            ${warning}
+            <div class="cal-day-num">${c.d}</div>
+            <div class="cal-dots">${dots}${countBadge}</div>
+        </div>`;
+    });
+
+    grid.innerHTML = html;
+}
+
+function prevMonth() {
+    currentMonth--;
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    renderCalendar();
+}
+function nextMonth() {
+    currentMonth++;
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    renderCalendar();
+}
+function goToday() {
+    const t = new Date();
+    currentMonth = t.getMonth();
+    currentYear = t.getFullYear();
+    selectDay(todayStr());
+}
+
+function selectDay(dateStr) {
+    selectedDate = dateStr;
+    renderCalendar();
+    renderDayRequests(dateStr);
+    renderMechanicWorkload(dateStr);
+}
+
+// --- Sidebar: day requests ---
+function formatDateHuman(dateStr) {
+    const [y,m,d] = dateStr.split('-');
+    return `${d}.${m}.${y}`;
+}
+
+function miniCardHtml(r, draggable) {
+    const stripeClass = r.status === 'Нова' ? 'stripe-new' : r.status === 'Разпределена' ? 'stripe-assigned' : r.status === 'В изпълнение' ? 'stripe-progress' : 'stripe-done';
+    const statusBadge = r.status === 'Нова' ? '<span class="badge b-new">Нова</span>' : r.status === 'Разпределена' ? '<span class="badge b-assigned">Разпределена</span>' : r.status === 'В изпълнение' ? '<span class="badge b-progress">В изпълнение</span>' : '<span class="badge b-done">Изпълнена</span>';
+    const urgentBadge = r.priority === 'Спешен' ? '<span class="badge b-urgent">🔥</span>' : '';
+    const dragAttr = draggable && canEdit() ? `draggable="true" ondragstart="dragRequest(event, '${r.id}')"` : '';
+    return `<div class="mini-card ${stripeClass}" ${dragAttr} onclick="openPopup('${r.id}')">
+        <div class="mini-card-top">
+            <div class="mini-card-client">${r.client_name || '—'}</div>
+        </div>
+        <div class="mini-card-vehicle">${r.vehicle || ''} ${r.reg_number ? '— ' + r.reg_number : ''}</div>
+        <div class="mini-card-badges">${statusBadge}${urgentBadge}</div>
+    </div>`;
+}
+
+function renderDayRequests(dateStr) {
+    document.getElementById('selectedDateTitle').textContent = '📅 ' + formatDateHuman(dateStr);
+    const list = requestsForDate(dateStr);
+    const el = document.getElementById('dayRequests');
+    if (list.length === 0) {
+        el.innerHTML = '<div class="empty-mini">Няма заявки за този ден</div>';
+        return;
+    }
+    el.innerHTML = list.map(r => miniCardHtml(r, true)).join('');
+}
+
+function renderUnplanned() {
+    const list = allRequests.filter(r => !r.desired_date);
+    document.getElementById('unplannedCount').textContent = list.length;
+    const el = document.getElementById('unplannedRequests');
+    if (list.length === 0) {
+        el.innerHTML = '<div class="empty-mini">Няма непланирани заявки</div>';
+        return;
+    }
+    el.innerHTML = list.map(r => miniCardHtml(r, true)).join('');
+}
+
+function renderMechanicWorkload(dateStr) {
+    const dayReqs = requestsForDate(dateStr);
+    const mechCounts = {};
+    dayReqs.forEach(r => {
+        (r.assigned_mechanics || []).forEach(m => {
+            mechCounts[m] = (mechCounts[m] || 0) + 1;
+        });
+    });
+
+    const el = document.getElementById('mechanicWorkload');
+    const names = mechanics.length ? mechanics.map(m => m.label) : Object.keys(mechCounts);
+    const activeNames = names.filter(n => mechCounts[n] || mechanics.length);
+
+    if (activeNames.length === 0) {
+        el.innerHTML = '<div class="empty-mini">Няма данни за избрания ден</div>';
+        return;
+    }
+
+    const maxForWidth = 6;
+    el.innerHTML = activeNames.map(name => {
+        const count = mechCounts[name] || 0;
+        const barClass = count >= 5 ? 'wl-red' : count >= 3 ? 'wl-amber' : count >= 1 ? 'wl-green' : '';
+        const width = Math.min(100, (count / maxForWidth) * 100);
+        return `<div class="workload-row">
+            <div class="workload-name" title="${name}">${name}</div>
+            <div class="workload-bar-track"><div class="workload-bar-fill ${barClass}" style="width:${width}%"></div></div>
+            <div class="workload-count">${count}</div>
+        </div>`;
+    }).join('');
+}
+
+// --- Drag & drop ---
+function dragRequest(e, id) {
+    e.dataTransfer.setData('requestId', id);
+}
+
+async function dropRequest(e, date) {
+    e.preventDefault();
+    if (!canEdit()) return;
+
+    const id = e.dataTransfer.getData('requestId');
+    if (!id) return;
+    const dateStr = formatDateHuman(date);
+
+    const existingCount = requestsForDate(date).length;
+    if (existingCount >= 5) {
+        if (!confirm('Внимание! Този ден вече има ' + existingCount + ' задачи. Продължаваш ли?')) return;
+    }
+    if (!confirm('Сигурен ли си, че искаш да преместиш заявката на ' + dateStr + '?')) return;
+
+    try {
+        await apiCall('service_requests?id=eq.' + id, 'PATCH', {
+            desired_date: date,
+            updated_at: new Date().toISOString()
+        });
+        await apiCall('request_log', 'POST', {
+            request_id: id,
+            action: 'rescheduled',
+            performed_by: sessionStorage.getItem('workcard_user') || 'Ръководител',
+            details: 'Преместена на ' + dateStr
+        });
+        await loadSchedule();
+    } catch(err) {
+        alert('Грешка: ' + err.message);
+    }
+}
+
+// --- Popup ---
+function updateResponsibleOptionsPopup(requestId) {
+    const checked = Array.from(document.querySelectorAll(`input[name="pmech-${requestId}"]:checked`)).map(cb => cb.value);
+    const select = document.getElementById(`presp-${requestId}`);
+    if (!select) return;
+    select.innerHTML = '<option value="">— Избери отговорник —</option>';
+    checked.forEach(m => { select.innerHTML += `<option value="${m}">★ ${m}</option>`; });
+    if (checked.length === 1) select.value = checked[0];
+}
+
+function openPopup(requestId) {
+    const r = allRequests.find(x => x.id === requestId);
+    if (!r) return;
+
+    const statusBadge = r.status === 'Нова' ? '<span class="badge b-new">Нова</span>' : r.status === 'Разпределена' ? '<span class="badge b-assigned">Разпределена</span>' : r.status === 'В изпълнение' ? '<span class="badge b-progress">В изпълнение</span>' : '<span class="badge b-done">Изпълнена</span>';
+    const urgentBadge = r.priority === 'Спешен' ? '<span class="badge b-urgent">🔥 Спешна</span>' : '';
+    const activityBadges = (r.activity_type || []).map(a => `<span class="badge ${a === 'РЕМОНТ' || a === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'b-new' : 'b-progress'}">${a}</span>`).join('');
+
+    let assignSection = '';
+    if (r.status === 'Нова' && canEdit()) {
+        const mechChecks = mechanics.map(m => `<label class="mechanic-item"><input type="checkbox" name="pmech-${r.id}" value="${m.value}" onchange="updateResponsibleOptionsPopup('${r.id}')"><span>${m.label}</span></label>`).join('');
+        assignSection = `
+            <div class="popup-row">
+                <div class="popup-label">Назначи механик(ци)</div>
+                <div class="mechanic-list">${mechChecks}</div>
+                <div class="popup-label">★ Отговорник</div>
+                <select class="responsible-select" id="presp-${r.id}"><option value="">— Избери отговорник —</option></select>
+                <button class="assign-btn" onclick="assignFromPopup('${r.id}')">✓ Разпредели</button>
+            </div>`;
+    } else if (r.status === 'Разпределена' || r.status === 'В изпълнение' || r.status === 'Изпълнена') {
+        const assignedTags = (r.assigned_mechanics || []).map(m => `<span class="assigned-tag ${m === r.responsible_mechanic ? 'responsible' : ''}">${m === r.responsible_mechanic ? '★ ' : ''}${m}</span>`).join('');
+        assignSection = `
+            <div class="popup-row">
+                <div class="popup-label">Назначени</div>
+                <div class="assigned-display">${assignedTags || '—'}</div>
+            </div>`;
+    }
+
+    const photoHtml = r.photo_data ? `<div class="popup-row">
+        <div class="popup-label">📷 Снимка на талон</div>
+        <img src="${r.photo_data}" alt="Талон" style="max-width:100%;max-height:220px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;" onclick="window.open(this.src,'_blank')">
+    </div>` : '';
+
+    const clientTypeLabel = r.client_type === 'ЮЛ' ? `ЮЛ — ${r.company_name || ''} (ЕИК: ${r.bulstat || '—'})` : 'ФЛ';
+
+    const html = `
+    <div class="schedule-popup-overlay" onclick="closePopup()">
+        <div class="schedule-popup" onclick="event.stopPropagation()">
+            <div class="popup-header">
+                <span>📋 Детайли на заявка</span>
+                <button onclick="closePopup()">✕</button>
+            </div>
+            <div class="popup-body">
+                <div class="popup-row">
+                    <div class="popup-label">Клиент</div>
+                    <div class="popup-value">${r.client_name || '—'} <span style="color:var(--text-muted);font-size:12px;">(${clientTypeLabel})</span></div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">📞 ${r.client_phone || '—'} ${r.client_email ? '· 📧 ' + r.client_email : ''}</div>
+                </div>
+                <div class="popup-row">
+                    <div class="popup-label">Машина</div>
+                    <div class="popup-value">${r.vehicle || '—'} — ${r.reg_number || '—'}</div>
+                </div>
+                ${r.description ? `<div class="popup-row">
+                    <div class="popup-label">Описание на проблема</div>
+                    <div class="popup-desc">${r.description}</div>
+                </div>` : ''}
+                <div class="popup-row">
+                    <div class="popup-label">Вид дейност / Приоритет / Статус</div>
+                    <div class="mini-card-badges">${activityBadges}${statusBadge}${urgentBadge}</div>
+                </div>
+                ${photoHtml}
+                ${assignSection}
+            </div>
+        </div>
+    </div>`;
+
+    document.getElementById('popupContainer').innerHTML = html;
+}
+
+function closePopup() {
+    document.getElementById('popupContainer').innerHTML = '';
+}
+
+async function assignFromPopup(requestId) {
+    const checked = Array.from(document.querySelectorAll(`input[name="pmech-${requestId}"]:checked`)).map(cb => cb.value);
+    const respSelect = document.getElementById(`presp-${requestId}`);
+    const responsible = respSelect ? respSelect.value : '';
+
+    if (checked.length === 0) { alert('Избери поне един механик'); return; }
+    if (!responsible) { alert('Избери отговорник'); return; }
+
+    const mechNames = checked.join(', ');
+    if (!confirm('Сигурен ли си?\n\nНазначаване към: ' + mechNames + '\nОтговорник: ' + responsible)) return;
+
+    try {
+        await apiCall(`service_requests?id=eq.${requestId}`, 'PATCH', {
+            assigned_mechanics: checked,
+            responsible_mechanic: responsible,
+            status: 'Разпределена',
+            assigned_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+        await apiCall('request_log', 'POST', {
+            request_id: requestId,
+            action: 'assigned',
+            performed_by: sessionStorage.getItem('workcard_user') || 'Ръководител',
+            details: `Назначени: ${checked.join(', ')}. Отговорник: ${responsible}`
+        });
+        closePopup();
+        await loadSchedule();
+    } catch(e) {
+        console.error(e);
+        alert('Грешка при разпределяне: ' + e.message);
+    }
+}
+
+// --- Auto refresh ---
+let refreshInterval;
+function startAutoRefresh() {
+    refreshInterval = setInterval(() => { loadSchedule(); }, 30000);
+}
+
+// --- Init ---
+document.addEventListener('DOMContentLoaded', async () => {
+    checkAuth();
+    updateNav();
+    await loadMechanics();
+    await loadSchedule();
+    selectDay(todayStr());
+    startAutoRefresh();
+});
+</script>
+
+</body>
+</html>
