@@ -83,6 +83,39 @@
         .b-activity-blue { background:rgba(26,58,143,0.1); color:var(--primary); }
         .b-activity-red { background:rgba(228,30,43,0.1); color:var(--accent-red); }
 
+        /* Overdue requests */
+        .request-card.is-overdue {
+            animation: overduePulse 2s ease-in-out infinite;
+            border: 2px solid #e41e2b;
+        }
+        .request-card.is-overdue::before {
+            content: '⚠ ПРОСРОЧЕНА';
+            display: block;
+            background: #e41e2b;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+        @keyframes overduePulse {
+            0%, 100% { background: var(--card); }
+            50% { background: rgba(228, 30, 43, 0.04); }
+        }
+
+        /* Request timeline */
+        .request-timeline { font-size:12px; }
+        .tl-entry { display:flex; gap:8px; padding:4px 0; }
+        .tl-dot { width:8px; height:8px; border-radius:50%; margin-top:4px; flex-shrink:0; }
+        .tl-dot-created { background:#e41e2b; }
+        .tl-dot-assigned { background:#7c3aed; }
+        .tl-dot-started { background:#3b82f6; }
+        .tl-dot-completed { background:#10b981; }
+        .tl-dot-rescheduled { background:#f59e0b; }
+        .tl-time { color:var(--text-muted); font-size:10px; }
+
         /* Assignment section */
         .assign-section { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
         .assign-label { font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
@@ -395,6 +428,9 @@ function renderRequests() {
         const urgentBadge = r.priority === 'Спешен' ? '<span class="badge b-urgent">🔥 Спешна</span>' : '';
         const activityBadges = (r.activity_type || []).map(a => `<span class="badge ${a === 'РЕМОНТ' || a === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'b-activity-red' : 'b-activity-blue'}">${a}</span>`).join('');
         const newClass = r.status === 'Нова' ? 'is-new' : '';
+        const today = new Date().toISOString().split('T')[0];
+        const isOverdue = r.desired_date && r.desired_date < today && r.status !== 'Изпълнена';
+        const overdueClass = isOverdue ? 'is-overdue' : '';
 
         const date = new Date(r.created_at);
         const dateStr = `${String(date.getDate()).padStart(2,'0')}.${String(date.getMonth()+1).padStart(2,'0')}.${date.getFullYear()}`;
@@ -434,7 +470,7 @@ function renderRequests() {
         }
 
         return `
-        <div class="request-card ${newClass}" style="animation-delay:${i*0.04}s">
+        <div class="request-card ${newClass} ${overdueClass}" data-request-id="${r.id}" style="animation-delay:${i*0.04}s">
             <div class="card-main">
                 <div class="card-stripe ${stripeClass}"></div>
                 <div class="card-content">
@@ -452,10 +488,55 @@ function renderRequests() {
                     <div class="card-contact">📞 ${r.client_phone || '—'} ${r.client_email ? '· 📧 ' + r.client_email : ''}</div>
                     <div class="card-badges">${activityBadges}${statusBadge}${urgentBadge}</div>
                     ${assignSection}
+                    <div style="margin-top:8px;cursor:pointer;color:var(--primary);font-size:11px;font-weight:600;" onclick="toggleRequestTimeline('${r.id}', this)">📜 История ▾</div>
+                    <div id="timeline-${r.id}" class="request-timeline" style="display:none;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);"></div>
                 </div>
             </div>
         </div>`;
     }).join('');
+}
+
+function toggleRequestTimeline(requestId, el) {
+    const container = document.getElementById('timeline-' + requestId);
+    const isHidden = container.style.display === 'none' || !container.style.display;
+    if (isHidden) {
+        container.style.display = 'block';
+        el.textContent = '📜 История ▲';
+        loadRequestTimeline(requestId).then(logs => renderTimeline(logs, 'timeline-' + requestId));
+    } else {
+        container.style.display = 'none';
+        el.textContent = '📜 История ▾';
+    }
+}
+
+async function loadRequestTimeline(requestId) {
+    try {
+        const logs = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'request_log?request_id=eq.' + requestId + '&order=created_at.asc', method: 'GET' })
+        });
+        const data = await logs.json();
+        return data;
+    } catch(e) { return []; }
+}
+
+function renderTimeline(logs, containerId) {
+    const actionLabels = {
+        'created': 'Регистрирана',
+        'assigned': 'Разпределена',
+        'started': 'Поета',
+        'completed': 'Изпълнена',
+        'rescheduled': 'Преместена'
+    };
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = logs.map(log => {
+        const dt = new Date(log.created_at);
+        const time = String(dt.getDate()).padStart(2,'0') + '.' + String(dt.getMonth()+1).padStart(2,'0') + ' ' + String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+        return '<div class="tl-entry"><div class="tl-dot tl-dot-' + log.action + '"></div><div><strong>' + log.performed_by + '</strong> — ' + (actionLabels[log.action] || log.action) + (log.details ? ' (' + log.details + ')' : '') + '<div class="tl-time">' + time + '</div></div></div>';
+    }).join('');
+    if (logs.length === 0) container.innerHTML = '<div style="color:var(--text-muted);font-style:italic;">Няма записи</div>';
 }
 
 function updateResponsibleOptions(requestId) {

@@ -478,6 +478,30 @@ async function submitRequest() {
     btn.disabled = true;
     btn.textContent = 'Регистриране...';
 
+    // Check for duplicate
+    const today = new Date().toISOString().split('T')[0];
+    const clientName = document.getElementById('clientName').value.trim();
+    const regNum = document.getElementById('regNumber').value.trim();
+
+    try {
+        const dupeCheck = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: 'service_requests?client_name=eq.' + encodeURIComponent(clientName) + '&reg_number=eq.' + encodeURIComponent(regNum) + '&created_at=gte.' + today + 'T00:00:00',
+                method: 'GET'
+            })
+        });
+        const dupes = await dupeCheck.json();
+        if (dupes.length > 0) {
+            if (!confirm('⚠ Вече има заявка от "' + clientName + '" за машина "' + regNum + '" днес.\n\nПродължаваш ли с регистрацията?')) {
+                btn.disabled = false;
+                btn.textContent = '📨 Регистрирай заявка';
+                return;
+            }
+        }
+    } catch(e) { console.log('Dupe check failed, continuing:', e); }
+
     try {
         const requestNumber = await generateRequestNumber(document.getElementById('clientName').value.trim());
         const requestData = {

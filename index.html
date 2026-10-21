@@ -804,6 +804,22 @@ async function submitForm() {
         };
         const result = await supabaseInsert('work_cards', cardData);
         const cardId = result[0].id;
+
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: 'work_card_log',
+                method: 'POST',
+                body: {
+                    work_card_id: cardId,
+                    action: 'created',
+                    performed_by: cardData.mechanic.join(', '),
+                    details: 'Нова работна карта'
+                }
+            })
+        });
+
         if (hasMaterials) { const materials = collectMaterials(); if (materials.length > 0) { await supabaseInsert('work_card_materials', materials.map(m => ({ ...m, work_card_id: cardId }))); } }
         showStatus(`✓ Записана: ${cardData.mechanic.join(', ')} — ${cardData.vehicle} (${cardData.reg_number}) — ${cardData.activity_type}`, 'success');
 

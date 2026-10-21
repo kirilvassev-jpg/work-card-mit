@@ -87,6 +87,17 @@
         .req-status-tab.active { color:white; background:var(--primary); }
         .req-details.open { display: block !important; }
 
+        /* Request timeline */
+        .request-timeline { font-size:12px; }
+        .tl-entry { display:flex; gap:8px; padding:4px 0; }
+        .tl-dot { width:8px; height:8px; border-radius:50%; margin-top:4px; flex-shrink:0; }
+        .tl-dot-created { background:#e41e2b; }
+        .tl-dot-assigned { background:#7c3aed; }
+        .tl-dot-started { background:#3b82f6; }
+        .tl-dot-completed { background:#10b981; }
+        .tl-dot-rescheduled { background:#f59e0b; }
+        .tl-time { color:var(--text-muted); font-size:10px; }
+
         /* Filters */
         .filters {
             background: var(--card); border-radius: var(--radius);
@@ -564,6 +575,7 @@ let allCards = [];
 let allMaterials = [];
 let allNomenclatures = {};
 let editingCardId = null;
+let editingOldCard = null;
 let editHasMaterials = null;
 let allServiceRequests = [];
 let currentReqFilter = 'all';
@@ -766,6 +778,7 @@ function renderCards(cards) {
         const matBadge = c.has_materials ? '<span class="badge badge-materials">Материали</span>' : '';
         const hoursBadge = c.work_hours ? `<span class="badge badge-hours">${c.work_hours} чч</span>` : '';
         const kmBadge = c.km_traveled ? `<span class="badge b-gray">${c.km_traveled} км</span>` : '';
+        const requestBadge = c.request_id ? '<span class="badge" style="background:rgba(124,58,237,0.1);color:#7c3aed;cursor:pointer;" onclick="event.stopPropagation();goToRequest(\'' + c.request_id + '\')">📋 Заявка</span>' : '';
         const mats = getMaterialsForCard(c.id);
         let details = '';
         const ad = (l,v) => { if(v) details += `<div class="detail-row"><span class="detail-label">${l}</span><span class="detail-value">${v}</span></div>`; };
@@ -779,13 +792,13 @@ function renderCards(cards) {
         ad('Изминати км', c.km_traveled ? c.km_traveled + ' км' : null);
         ad('Записано', formatDateTime(c.created_at));
 
-        return `<div class="work-card ${typeClass}" style="animation-delay:${i*0.04}s" onclick="toggleDetails(${i})">
+        return `<div class="work-card ${typeClass}" data-card-id="${c.id}" style="animation-delay:${i*0.04}s" onclick="toggleDetails(${i})">
             <div class="card-main"><div class="card-stripe"></div><div class="card-content">
                 <div class="card-avatar">${getInitials(Array.isArray(c.mechanic) ? c.mechanic[0] : c.mechanic)}</div>
                 <div class="card-info">
                     <div class="card-top"><div class="card-mechanic">${Array.isArray(c.mechanic) ? c.mechanic.join(', ') : c.mechanic}</div><div class="card-date">${formatDate(c.work_date)}</div></div>
                     <div class="card-vehicle">${c.vehicle}</div><div class="card-reg">${c.reg_number}</div>
-                    <div class="card-badges">${actBadge}${matBadge}${hoursBadge}${kmBadge}</div>
+                    <div class="card-badges">${actBadge}${matBadge}${hoursBadge}${kmBadge}${requestBadge}</div>
                 </div>
             </div></div>
             <div class="card-details" id="details-${i}">${details}${isCoordinator() ? '' : `<button type="button" class="btn btn-outline" style="width:100%;margin-top:10px;" onclick="event.stopPropagation(); editCard(${i})">✏️ Редактирай</button><button type="button" class="btn-delete" onclick="deleteCard('${c.id}', event)">🗑 Изтрий</button>`}<button type="button" style="width:100%;margin-top:6px;background:linear-gradient(135deg, #1a3a8f, #0d1f52);color:white;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 0 #0d1f52, 0 6px 16px rgba(26,58,143,0.4), 0 0 20px rgba(26,58,143,0.15);border-top:1px solid rgba(255,255,255,0.3);" onclick="exportCardPDF(${i}, event)">📄 Експорт в PDF</button></div>
@@ -912,6 +925,7 @@ function toggleCategory(header) {
 function editCard(i) {
     const c = allCards[i];
     editingCardId = c.id;
+    editingOldCard = JSON.parse(JSON.stringify(c));
     buildEditForm(c);
     document.getElementById('editOverlay').classList.add('open');
 }
@@ -919,12 +933,27 @@ function editCard(i) {
 function closeEditModal() {
     document.getElementById('editOverlay').classList.remove('open');
     editingCardId = null;
+    editingOldCard = null;
 }
 
 async function deleteCard(cardId, event) {
     event.stopPropagation();
     if (!confirm('Сигурен ли си, че искаш да изтриеш тази работна карта? Действието е необратимо!')) return;
     try {
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: 'work_card_log',
+                method: 'POST',
+                body: {
+                    work_card_id: cardId,
+                    action: 'deleted',
+                    performed_by: sessionStorage.getItem('workcard_user') || 'Неизвестен',
+                    details: 'Работната карта е изтрита'
+                }
+            })
+        });
         await supabaseDelete('work_card_materials', `work_card_id=eq.${cardId}`);
         await supabaseDelete('work_cards', `id=eq.${cardId}`);
         showStatus('✓ Картата е изтрита успешно', 'success');
@@ -1055,8 +1084,52 @@ function collectEditMaterials() {
     return materials;
 }
 
+async function logWorkCardChanges(cardId, oldData, newData, performedBy) {
+    const fields = [
+        { key: 'mechanic', label: 'Механик' },
+        { key: 'work_date', label: 'Дата' },
+        { key: 'vehicle', label: 'Машина' },
+        { key: 'reg_number', label: 'Рег. номер' },
+        { key: 'km_hours', label: 'km/м.ч.' },
+        { key: 'client', label: 'Клиент' },
+        { key: 'activity_type', label: 'Вид дейност' },
+        { key: 'repair_type', label: 'Вид ремонт' },
+        { key: 'repair_description', label: 'Извършен ремонт' },
+        { key: 'work_hours', label: 'Човекочасове' },
+        { key: 'km_traveled', label: 'Изминати км' },
+        { key: 'notes', label: 'Забележка' },
+    ];
+
+    for (const f of fields) {
+        const oldVal = JSON.stringify(oldData[f.key] || '');
+        const newVal = JSON.stringify(newData[f.key] || '');
+        if (oldVal !== newVal) {
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        path: 'work_card_log',
+                        method: 'POST',
+                        body: {
+                            work_card_id: cardId,
+                            action: 'edited',
+                            performed_by: performedBy,
+                            field_changed: f.label,
+                            old_value: String(oldData[f.key] || ''),
+                            new_value: String(newData[f.key] || ''),
+                            details: 'Поле "' + f.label + '" променено'
+                        }
+                    })
+                });
+            } catch(e) { console.error('Log error:', e); }
+        }
+    }
+}
+
 async function saveEdit() {
     if (!editingCardId) return;
+    const oldData = editingOldCard;
     try {
         const activityType = document.querySelector('input[name="editActivityType"]:checked') ? document.querySelector('input[name="editActivityType"]:checked').value : null;
         const cardData = {
@@ -1078,6 +1151,9 @@ async function saveEdit() {
             km_traveled: document.getElementById('editKmTraveled').value ? parseInt(document.getElementById('editKmTraveled').value) : null
         };
         await supabasePatch('work_cards', `id=eq.${editingCardId}`, cardData);
+        if (oldData) {
+            await logWorkCardChanges(editingCardId, oldData, cardData, sessionStorage.getItem('workcard_user') || 'Неизвестен');
+        }
         await supabaseDelete('work_card_materials', `work_card_id=eq.${editingCardId}`);
         if (editHasMaterials) {
             const materials = collectEditMaterials();
@@ -1233,8 +1309,9 @@ function renderServiceRequests(requests) {
         }
 
         const newClass = r.status === 'Нова' ? ' is-new' : '';
+        const workCardBadge = r.work_card_id ? '<span class="badge" style="background:rgba(16,185,129,0.1);color:#059669;cursor:pointer;" onclick="event.stopPropagation();goToWorkCard(\'' + r.work_card_id + '\')">📝 Работна карта</span>' : '';
 
-        return '<div class="req-card' + newClass + '" style="background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);margin-bottom:10px;animation:fadeInUp 0.3s ease backwards;animation-delay:' + (i*0.04) + 's;" onclick="this.querySelector(\'.req-details\').classList.toggle(\'open\')">' +
+        return '<div class="req-card' + newClass + '" data-request-id="' + r.id + '" style="background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);margin-bottom:10px;animation:fadeInUp 0.3s ease backwards;animation-delay:' + (i*0.04) + 's;" onclick="toggleReqDetails(this, \'' + r.id + '\')">' +
             '<div style="display:flex;">' +
                 '<div style="width:5px;background:' + stripeColor + ';"></div>' +
                 '<div style="flex:1;padding:14px;">' +
@@ -1246,7 +1323,7 @@ function renderServiceRequests(requests) {
                         '<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">📷 Снимка на талон — натисни за увеличаване</div>' +
                     '</div>' : '') +
                     '<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">📞 ' + (r.client_phone || '—') + (r.client_email ? ' · 📧 ' + r.client_email : '') + '</div>' +
-                    '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;">' + actBadges + '<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;' + badgeStyle + ';">' + r.status + '</span>' + urgentBadge + '</div>' +
+                    '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;">' + actBadges + '<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;' + badgeStyle + ';">' + r.status + '</span>' + urgentBadge + workCardBadge + '</div>' +
                     mechHtml +
                     completedHtml +
                     '<div class="req-details" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">' +
@@ -1257,11 +1334,70 @@ function renderServiceRequests(requests) {
                             '<button onclick="event.stopPropagation();addRequestComment(\'' + r.id + '\')" style="padding:7px 12px;background:#1a3a8f;color:white;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">💬</button>' +
                         '</div>') +
                         (r.created_by ? '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Регистрирал: ' + r.created_by + '</div>' : '') +
+                        '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">' +
+                            '<div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">📜 История:</div>' +
+                            '<div id="timeline-' + r.id + '" class="request-timeline"></div>' +
+                        '</div>' +
                     '</div>' +
                 '</div>' +
             '</div>' +
         '</div>';
     }).join('');
+}
+
+function toggleReqDetails(cardEl, requestId) {
+    const details = cardEl.querySelector('.req-details');
+    const wasOpen = details.classList.contains('open');
+    details.classList.toggle('open');
+    if (!wasOpen) {
+        loadRequestTimeline(requestId).then(logs => renderTimeline(logs, 'timeline-' + requestId));
+    }
+}
+
+async function loadRequestTimeline(requestId) {
+    try {
+        const logs = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'request_log?request_id=eq.' + requestId + '&order=created_at.asc', method: 'GET' })
+        });
+        const data = await logs.json();
+        return data;
+    } catch(e) { return []; }
+}
+
+function renderTimeline(logs, containerId) {
+    const actionLabels = {
+        'created': 'Регистрирана',
+        'assigned': 'Разпределена',
+        'started': 'Поета',
+        'completed': 'Изпълнена',
+        'rescheduled': 'Преместена'
+    };
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = logs.map(log => {
+        const dt = new Date(log.created_at);
+        const time = String(dt.getDate()).padStart(2,'0') + '.' + String(dt.getMonth()+1).padStart(2,'0') + ' ' + String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+        return '<div class="tl-entry"><div class="tl-dot tl-dot-' + log.action + '"></div><div><strong>' + log.performed_by + '</strong> — ' + (actionLabels[log.action] || log.action) + (log.details ? ' (' + log.details + ')' : '') + '<div class="tl-time">' + time + '</div></div></div>';
+    }).join('');
+    if (logs.length === 0) container.innerHTML = '<div style="color:var(--text-muted);font-style:italic;">Няма записи</div>';
+}
+
+function goToRequest(requestId) {
+    switchTab('requests');
+    setTimeout(() => {
+        const el = document.querySelector('[data-request-id="' + requestId + '"]');
+        if (el) { el.scrollIntoView({ behavior:'smooth', block:'center' }); el.style.boxShadow = '0 0 0 3px rgba(124,58,237,0.3)'; setTimeout(() => el.style.boxShadow = '', 3000); }
+    }, 500);
+}
+
+function goToWorkCard(cardId) {
+    switchTab('workCards');
+    setTimeout(() => {
+        const el = document.querySelector('[data-card-id="' + cardId + '"]');
+        if (el) { el.scrollIntoView({ behavior:'smooth', block:'center' }); el.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.3)'; setTimeout(() => el.style.boxShadow = '', 3000); }
+    }, 500);
 }
 
 async function addRequestComment(requestId) {
