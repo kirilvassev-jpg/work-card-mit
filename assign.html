@@ -218,6 +218,7 @@
 </nav>
 
 <script>
+function sanitize(s){if(!s)return s;var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
 
 let allRequests = [];

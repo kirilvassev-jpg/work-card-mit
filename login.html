@@ -222,6 +222,7 @@
 // ============================================
 const CLIENT_ID = '62029787-9853-404f-9a43-eff6e9762d13';
 const TENANT_ID = '0b822811-c53c-4f5e-9444-350c2fb3f935';
+function sanitize(s){if(!s)return s;var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
 
 // ============================================
