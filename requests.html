@@ -347,7 +347,7 @@ function updateActivityDisplay() {
     } else {
         display.innerHTML = `<span>${selectedActivities.length} избрани</span><span class="ms-arrow" id="activityArrow">▼</span>`;
     }
-    tags.innerHTML = selectedActivities.map(v => `<div class="ms-tag">${v} <span class="remove" onclick="removeActivity('${v}')">×</span></div>`).join('');
+    tags.innerHTML = selectedActivities.map(v => `<div class="ms-tag">${sanitize(v)} <span class="remove" onclick="removeActivity('${sanitize(v)}')">×</span></div>`).join('');
 }
 
 // Close dropdown when clicking outside
@@ -534,7 +534,7 @@ async function submitRequest() {
         const res = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: 'service_requests', method: 'POST', body: requestData })
+            body: JSON.stringify({ path: 'service_requests', method: 'POST', body: requestData, token: sessionStorage.getItem('workcard_token') || null })
         });
         if (!res.ok) throw new Error(`POST: ${res.status}`);
         const result = await res.json();
@@ -555,7 +555,7 @@ async function submitRequest() {
             })
         });
 
-        showStatus('✓ Заявка ' + requestNumber + ' регистрирана успешно — ' + requestData.client_name + ' — ' + requestData.vehicle, 'success');
+        showStatus('✓ Заявка ' + sanitize(requestNumber) + ' регистрирана успешно — ' + sanitize(requestData.client_name) + ' — ' + sanitize(requestData.vehicle), 'success');
         resetForm();
     } catch(e) {
         console.error(e);
@@ -605,7 +605,12 @@ function logout() {
 }
 
 // Init
-document.addEventListener('DOMContentLoaded', () => { checkAuth(); updateNav(); });
+document.addEventListener('DOMContentLoaded', () => {
+    // Warm up Edge Function
+    fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: 'nomenclatures?limit=1', method: 'GET' }) }).catch(() => {});
+    checkAuth();
+    updateNav();
+});
 </script>
 
 </body>
