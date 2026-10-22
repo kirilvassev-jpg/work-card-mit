@@ -385,13 +385,17 @@ async function handleRedirect() {
             }
 
             const userRole = roles[0].role;
-            sessionStorage.setItem('workcard_role', userRole);
+            // Admin може да избере коя роля да ползва; останалите ползват своята
+            const navRole = (userRole === 'admin' && selectedRole) ? selectedRole : userRole;
+            sessionStorage.setItem('workcard_role', navRole);
+            sessionStorage.setItem('workcard_db_role', userRole);
             sessionStorage.setItem('workcard_user', displayName);
             sessionStorage.setItem('workcard_email', email);
             sessionStorage.setItem('workcard_auth', 'true');
+            sessionStorage.setItem('workcard_token', response.accessToken);
             sessionStorage.removeItem('workcard_pending_role');
 
-            switch(userRole) {
+            switch(navRole) {
                 case 'coordinator': window.location.href = 'requests.html'; break;
                 case 'manager': window.location.href = 'assign.html'; break;
                 case 'admin': window.location.href = 'dashboard.html'; break;
