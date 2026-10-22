@@ -1328,13 +1328,67 @@ function renderServiceRequests(requests) {
                     mechHtml +
                     completedHtml +
                     '<div class="req-details" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">' +
-                        '<div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;">💬 Бележки:</div>' +
-                        '<div style="font-size:12px;margin-bottom:6px;">' + notesHtml + '</div>' +
-                        (isCoordinator() ? '' : '<div style="display:flex;gap:4px;">' +
-                            '<input type="text" id="comment-' + r.id + '" placeholder="Добави бележка..." onclick="event.stopPropagation()" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;">' +
-                            '<button onclick="event.stopPropagation();addRequestComment(\'' + r.id + '\')" style="padding:7px 12px;background:#1a3a8f;color:white;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">💬</button>' +
-                        '</div>') +
+                        // Full info section
+                        '<div style="margin-bottom:12px;">' +
+                            '<div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px;">📝 Описание на проблема</div>' +
+                            '<div style="font-size:13px;padding:8px;background:#f8fafc;border-radius:6px;border-left:3px solid var(--accent-amber);">' + (r.description || '<em style="color:var(--text-muted);">Не е въведено</em>') + '</div>' +
+                        '</div>' +
+                        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">' +
+                            '<div style="padding:8px;background:#f8fafc;border-radius:6px;">' +
+                                '<div style="font-size:10px;color:var(--text-muted);font-weight:600;">ВИД ДЕЙНОСТ</div>' +
+                                '<div style="font-size:13px;font-weight:600;">' + (r.activity_type || []).join(', ') + '</div>' +
+                            '</div>' +
+                            '<div style="padding:8px;background:#f8fafc;border-radius:6px;">' +
+                                '<div style="font-size:10px;color:var(--text-muted);font-weight:600;">ПРИОРИТЕТ</div>' +
+                                '<div style="font-size:13px;font-weight:600;">' + (r.priority === 'Спешен' ? '🔥 Спешен' : 'Нормален') + '</div>' +
+                            '</div>' +
+                            '<div style="padding:8px;background:#f8fafc;border-radius:6px;">' +
+                                '<div style="font-size:10px;color:var(--text-muted);font-weight:600;">ЖЕЛАНА ДАТА</div>' +
+                                '<div style="font-size:13px;font-weight:600;">' + (r.desired_date ? new Date(r.desired_date).toLocaleDateString('bg-BG') : '—') + '</div>' +
+                            '</div>' +
+                            '<div style="padding:8px;background:#f8fafc;border-radius:6px;">' +
+                                '<div style="font-size:10px;color:var(--text-muted);font-weight:600;">ТИП КЛИЕНТ</div>' +
+                                '<div style="font-size:13px;font-weight:600;">' + (r.client_type || 'ФЛ') + '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        // Client info
+                        '<div style="font-size:13px;font-weight:700;color:var(--accent-green);margin-bottom:6px;">👤 Данни на клиента</div>' +
+                        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;font-size:12px;">' +
+                            '<div><span style="color:var(--text-muted);">Клиент:</span> <strong>' + (r.client_name || '—') + '</strong></div>' +
+                            '<div><span style="color:var(--text-muted);">Телефон:</span> <strong>' + (r.client_phone || '—') + '</strong></div>' +
+                            (r.client_email ? '<div><span style="color:var(--text-muted);">Имейл:</span> <strong>' + r.client_email + '</strong></div>' : '') +
+                            (r.company_name ? '<div><span style="color:var(--text-muted);">Фирма:</span> <strong>' + r.company_name + '</strong></div>' : '') +
+                            (r.bulstat ? '<div><span style="color:var(--text-muted);">Булстат:</span> <strong>' + r.bulstat + '</strong></div>' : '') +
+                            (r.contact_person ? '<div><span style="color:var(--text-muted);">Контакт:</span> <strong>' + r.contact_person + '</strong></div>' : '') +
+                        '</div>' +
+                        // Machine info
+                        '<div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:6px;">🚗 Данни за машината</div>' +
+                        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;font-size:12px;">' +
+                            '<div><span style="color:var(--text-muted);">Марка:</span> <strong>' + (r.brand || '—') + '</strong></div>' +
+                            '<div><span style="color:var(--text-muted);">Модел:</span> <strong>' + (r.model || '—') + '</strong></div>' +
+                            '<div><span style="color:var(--text-muted);">рег №:</span> <strong>' + (r.reg_number || '—') + '</strong></div>' +
+                            '<div><span style="color:var(--text-muted);">Година:</span> <strong>' + (r.year_of_manufacture || '—') + '</strong></div>' +
+                            (r.frame_number ? '<div><span style="color:var(--text-muted);">рама №:</span> <strong>' + r.frame_number + '</strong></div>' : '') +
+                            (r.km_hours ? '<div><span style="color:var(--text-muted);">км / мч:</span> <strong>' + r.km_hours + '</strong></div>' : '') +
+                        '</div>' +
+                        // Photo
+                        (r.photo_data ? '<div style="margin-bottom:12px;"><img src="' + r.photo_data + '" alt="Талон" style="max-width:100%;max-height:250px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;" onclick="event.stopPropagation();window.open(this.src,\'_blank\')"><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">📷 Натисни за увеличаване</div></div>' : '') +
+                        // Notes
+                        '<div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:8px;">' +
+                            '<div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;">💬 Бележки:</div>' +
+                            '<div style="font-size:12px;margin-bottom:6px;">' + notesHtml + '</div>' +
+                            '<div style="display:flex;gap:4px;">' +
+                                '<input type="text" id="comment-' + r.id + '" placeholder="Добави бележка..." onclick="event.stopPropagation()" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;">' +
+                                '<button onclick="event.stopPropagation();addRequestComment(\'' + r.id + '\')" style="padding:7px 12px;background:#1a3a8f;color:white;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">💬</button>' +
+                            '</div>' +
+                        '</div>' +
+                        // Edit button for coordinator
+                        (isCoordinatorOrAdmin() ? '<div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:8px;">' +
+                            '<button onclick="event.stopPropagation();editRequest(\'' + r.id + '\')" style="width:100%;padding:10px;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 0 #92400e,0 4px 10px rgba(245,158,11,0.25);border-top:1px solid rgba(255,255,255,0.3);">✏️ Редактирай заявка</button>' +
+                        '</div>' : '') +
+                        // Created by
                         (r.created_by ? '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Регистрирал: ' + r.created_by + '</div>' : '') +
+                        // Timeline
                         '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">' +
                             '<div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">📜 История:</div>' +
                             '<div id="timeline-' + r.id + '" class="request-timeline"></div>' +
@@ -1399,6 +1453,125 @@ function goToWorkCard(cardId) {
         const el = document.querySelector('[data-card-id="' + cardId + '"]');
         if (el) { el.scrollIntoView({ behavior:'smooth', block:'center' }); el.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.3)'; setTimeout(() => el.style.boxShadow = '', 3000); }
     }, 500);
+}
+
+function isCoordinatorOrAdmin() {
+    const role = sessionStorage.getItem('workcard_role');
+    const dbRole = sessionStorage.getItem('workcard_db_role') || role;
+    return role === 'coordinator' || dbRole === 'admin' || role === 'admin';
+}
+
+function editRequest(requestId) {
+    const r = allServiceRequests.find(req => req.id === requestId);
+    if (!r) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'editReqOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;';
+
+    overlay.innerHTML = '<div style="background:white;border-radius:16px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;padding:24px;" onclick="event.stopPropagation()">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">' +
+            '<div style="font-size:18px;font-weight:700;color:var(--primary);">✏️ Редактирай заявка</div>' +
+            '<button onclick="document.getElementById(\'editReqOverlay\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);">✕</button>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:12px;">' +
+            '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Описание на проблема</label>' +
+                '<textarea id="editReqDesc" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;min-height:80px;font-family:inherit;">' + (r.description || '') + '</textarea></div>' +
+            '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Клиент</label>' +
+                '<input id="editReqClient" value="' + (r.client_name || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+            '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Телефон</label>' +
+                '<input id="editReqPhone" value="' + (r.client_phone || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+            '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Имейл</label>' +
+                '<input id="editReqEmail" value="' + (r.client_email || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+            (r.client_type === 'ЮЛ' ? '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Фирма</label>' +
+                '<input id="editReqCompany" value="' + (r.company_name || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+            '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Булстат</label>' +
+                '<input id="editReqBulstat" value="' + (r.bulstat || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' : '') +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+                '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Марка</label>' +
+                    '<input id="editReqBrand" value="' + (r.brand || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+                '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Модел</label>' +
+                    '<input id="editReqModel" value="' + (r.model || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+                '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">рег № / сер № / Инв №</label>' +
+                    '<input id="editReqReg" value="' + (r.reg_number || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+                '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Година</label>' +
+                    '<input id="editReqYear" type="number" value="' + (r.year_of_manufacture || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+                '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">рама №</label>' +
+                    '<input id="editReqFrame" value="' + (r.frame_number || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+                '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">км / мч</label>' +
+                    '<input id="editReqKm" value="' + (r.km_hours || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+            '</div>' +
+            '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Желана дата</label>' +
+                '<input id="editReqDate" type="date" value="' + (r.desired_date || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+            '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Приоритет</label>' +
+                '<select id="editReqPriority" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;">' +
+                    '<option value="Нормален"' + (r.priority !== 'Спешен' ? ' selected' : '') + '>Нормален</option>' +
+                    '<option value="Спешен"' + (r.priority === 'Спешен' ? ' selected' : '') + '>🔥 Спешен</option>' +
+                '</select></div>' +
+            '<button onclick="saveEditRequest(\'' + r.id + '\')" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 0 #0d1f52,0 6px 16px rgba(26,58,143,0.3);border-top:1px solid rgba(255,255,255,0.3);">💾 Запази промените</button>' +
+        '</div>' +
+    '</div>';
+
+    overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+    document.body.appendChild(overlay);
+}
+
+async function saveEditRequest(requestId) {
+    const updateData = {
+        description: document.getElementById('editReqDesc').value.trim() || null,
+        client_name: document.getElementById('editReqClient').value.trim(),
+        client_phone: document.getElementById('editReqPhone').value.trim(),
+        client_email: document.getElementById('editReqEmail').value.trim() || null,
+        brand: document.getElementById('editReqBrand').value.trim(),
+        model: document.getElementById('editReqModel').value.trim(),
+        vehicle: document.getElementById('editReqBrand').value.trim() + ' ' + document.getElementById('editReqModel').value.trim(),
+        reg_number: document.getElementById('editReqReg').value.trim(),
+        year_of_manufacture: document.getElementById('editReqYear').value ? parseInt(document.getElementById('editReqYear').value) : null,
+        frame_number: document.getElementById('editReqFrame').value.trim() || null,
+        km_hours: document.getElementById('editReqKm').value.trim() || null,
+        desired_date: document.getElementById('editReqDate').value || null,
+        priority: document.getElementById('editReqPriority').value,
+        updated_at: new Date().toISOString()
+    };
+
+    const companyEl = document.getElementById('editReqCompany');
+    if (companyEl) updateData.company_name = companyEl.value.trim() || null;
+    const bulstatEl = document.getElementById('editReqBulstat');
+    if (bulstatEl) updateData.bulstat = bulstatEl.value.trim() || null;
+
+    if (!updateData.client_name || !updateData.brand || !updateData.model || !updateData.reg_number) {
+        alert('Попълни задължителните полета: Клиент, Марка, Модел, рег №');
+        return;
+    }
+
+    try {
+        await supabasePatch('service_requests', 'id=eq.' + requestId, updateData);
+
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: 'request_log',
+                method: 'POST',
+                body: {
+                    request_id: requestId,
+                    action: 'edited',
+                    performed_by: sessionStorage.getItem('workcard_user') || 'Неизвестен',
+                    details: 'Заявка редактирана'
+                }
+            })
+        });
+
+        document.getElementById('editReqOverlay').remove();
+        await loadServiceRequests();
+        alert('✓ Заявката е обновена');
+    } catch(e) {
+        alert('Грешка при запазване: ' + e.message);
+    }
 }
 
 async function addRequestComment(requestId) {
