@@ -24,64 +24,111 @@
         .header h1 { font-size:18px; font-weight:700; letter-spacing:1px; }
         .header-sub { font-size:11px; opacity:0.7; margin-top:2px; }
         .header-user { font-size:11px; opacity:0.9; margin-top:4px; background:rgba(255,255,255,0.15); display:inline-block; padding:2px 12px; border-radius:12px; }
+        .hdr-btn { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.3); color:white; padding:5px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; }
+        @media (max-width:600px) { .header { padding:14px 84px; } .header h1 { font-size:16px; } }
 
-        .container { max-width:800px; margin:0 auto; padding:12px; }
+        .container { max-width:900px; margin:0 auto; padding:12px; }
 
-        /* Period selector */
         .period-selector { display:flex; gap:4px; margin-bottom:12px; background:var(--card); border-radius:var(--radius); padding:4px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
         .period-btn { flex:1; padding:10px; text-align:center; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; border:none; background:transparent; color:var(--text-muted); transition:all 0.2s; }
         .period-btn.active { background:var(--primary); color:white; }
 
-        /* Stats cards */
-        .stats { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:12px; }
-        @media (max-width:600px) { .stats { grid-template-columns:repeat(2,1fr); } }
-        .stat-card { background:var(--card); border-radius:var(--radius); padding:14px 10px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06); border-top:4px solid var(--border); transition:transform 0.2s; }
-        .stat-card:hover { transform:translateY(-2px); }
-        .stat-card:nth-child(1) { border-top-color:var(--accent-red); }
-        .stat-card:nth-child(2) { border-top-color:var(--accent-purple); }
-        .stat-card:nth-child(3) { border-top-color:var(--accent-blue); }
-        .stat-card:nth-child(4) { border-top-color:var(--accent-green); }
-        .stat-icon { font-size:20px; margin-bottom:4px; }
-        .stat-val { font-size:28px; font-weight:800; color:var(--primary); }
-        .stat-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:600; letter-spacing:0.5px; }
+        .section-label { font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; margin:14px 2px 8px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 
-        /* Chart cards */
-        .chart-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
-        @media (max-width:600px) { .chart-row { grid-template-columns:1fr; } }
-        .chart-card { background:var(--card); border-radius:var(--radius); padding:16px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
-        .chart-card.full { grid-column:1 / -1; }
-        .chart-title { font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
-        .chart-container { position:relative; width:100%; }
-        .chart-container canvas { width:100% !important; }
+        .stats { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:6px; }
+        @media (max-width:700px) { .stats { grid-template-columns:repeat(2,1fr); } }
+        .stat-card { background:var(--card); border-radius:var(--radius); padding:12px 8px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06); border-top:4px solid var(--border); transition:transform 0.2s, box-shadow 0.2s; position:relative; }
+        .stat-card.clickable { cursor:pointer; }
+        .stat-card.clickable:hover { transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,0.1); }
+        .stat-card.clickable::after { content:'›'; position:absolute; top:6px; right:9px; font-size:16px; color:var(--text-muted); opacity:0.6; }
+        .stat-icon { font-size:18px; margin-bottom:2px; }
+        .stat-val { font-size:26px; font-weight:800; color:var(--primary); line-height:1.2; }
+        .stat-val.small { font-size:20px; }
+        .stat-label { font-size:10px; color:var(--text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.4px; }
+        .stat-cmp { font-size:11px; font-weight:700; margin-top:3px; min-height:16px; }
+        .cmp-good { color:var(--accent-green); }
+        .cmp-bad { color:var(--accent-red); }
+        .cmp-flat { color:var(--text-muted); }
+        .alert-card .stat-val { color:var(--accent-red); }
+        .alert-card.has-items { animation:alertPulse 2s ease-in-out infinite; }
+        @keyframes alertPulse { 0%,100% { background:var(--card); } 50% { background:rgba(228,30,43,0.06); } }
 
-        /* KPI card */
-        .kpi-card { background:var(--card); border-radius:var(--radius); padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.06); text-align:center; }
-        .kpi-value { font-size:36px; font-weight:800; color:var(--primary); }
-        .kpi-unit { font-size:14px; color:var(--text-muted); }
-        .kpi-trend { font-size:13px; font-weight:700; margin-top:4px; }
-        .kpi-trend.up { color:var(--accent-green); }
-        .kpi-trend.down { color:var(--accent-red); }
+        .card { background:var(--card); border-radius:var(--radius); padding:16px; box-shadow:0 1px 3px rgba(0,0,0,0.06); margin-bottom:10px; }
+        .card-title { font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+        .card-hint { font-size:11px; color:var(--text-muted); margin-top:8px; }
+        .row-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+        .row-2 .card { margin-bottom:0; }
+        @media (max-width:700px) { .row-2 { grid-template-columns:1fr; } }
+        .empty-note { text-align:center; padding:18px; color:var(--text-muted); font-size:13px; }
 
-        /* Activity timeline */
-        .timeline-card { background:var(--card); border-radius:var(--radius); padding:16px; box-shadow:0 1px 3px rgba(0,0,0,0.06); margin-bottom:10px; }
-        .timeline { }
+        .phase-bar { display:flex; height:30px; border-radius:8px; overflow:hidden; margin-bottom:10px; background:#eef2f7; }
+        .phase-seg { display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:700; min-width:4px; white-space:nowrap; overflow:hidden; }
+        .phase-list { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+        @media (max-width:600px) { .phase-list { grid-template-columns:1fr; } }
+        .phase-item { padding:10px; border-radius:8px; background:#f8fafc; border-left:4px solid var(--border); }
+        .phase-item.bottleneck { background:rgba(228,30,43,0.06); }
+        .phase-name { font-size:11px; color:var(--text-muted); font-weight:700; }
+        .phase-val { font-size:18px; font-weight:800; color:var(--text); }
+        .phase-tag { font-size:10px; font-weight:800; color:var(--accent-red); text-transform:uppercase; }
+
+        .tbl-wrap { overflow-x:auto; }
+        .mech-table { width:100%; border-collapse:collapse; font-size:13px; min-width:480px; }
+        .mech-table th { text-align:left; font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:800; padding:6px 8px; border-bottom:2px solid var(--border); }
+        .mech-table th.num, .mech-table td.num { text-align:right; }
+        .mech-table td { padding:8px; border-bottom:1px solid #f1f4f8; vertical-align:middle; }
+        .mech-name { font-weight:700; }
+        .hbar { height:6px; border-radius:3px; background:linear-gradient(90deg,var(--primary),var(--primary-light)); margin-top:4px; }
+
+        .mat-group { margin-bottom:10px; }
+        .mat-head { display:flex; justify-content:space-between; font-size:13px; font-weight:800; padding:6px 0; border-bottom:1px solid var(--border); }
+        .mat-line { display:flex; justify-content:space-between; font-size:12px; padding:4px 0 4px 10px; }
+        .mat-line span:last-child { font-weight:700; }
+
+        .rep-item { padding:10px; border-radius:8px; background:rgba(228,30,43,0.05); border-left:4px solid var(--accent-red); margin-bottom:8px; font-size:13px; }
+        .rep-top { display:flex; justify-content:space-between; gap:8px; font-weight:700; }
+        .rep-sub { font-size:12px; color:var(--text-muted); margin-top:2px; }
+
         .tl-item { display:flex; gap:10px; padding:10px 0; border-bottom:1px solid #f3f4f6; }
         .tl-item:last-child { border-bottom:none; }
-        .tl-dot { width:10px; height:10px; border-radius:50%; margin-top:4px; flex-shrink:0; }
+        .tl-dot { width:10px; height:10px; border-radius:50%; margin-top:4px; flex-shrink:0; background:var(--text-muted); }
         .tl-content { flex:1; font-size:13px; }
-        .tl-content strong { color:var(--text); }
         .tl-time { font-size:11px; color:var(--text-muted); margin-top:2px; }
         .dot-created { background:var(--accent-red); }
         .dot-assigned { background:var(--accent-purple); }
         .dot-started { background:var(--accent-blue); }
         .dot-completed { background:var(--accent-green); }
+        .dot-edited, .dot-rescheduled { background:var(--accent-amber); }
 
-        /* Loading */
-        .loading { text-align:center; padding:50px; }
-        .spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 10px; }
+        .modal-overlay { position:fixed; inset:0; background:rgba(13,31,82,0.45); z-index:1000; display:none; align-items:flex-end; justify-content:center; }
+        .modal-overlay.open { display:flex; }
+        @media (min-width:700px) { .modal-overlay { align-items:center; } }
+        .modal { background:white; width:100%; max-width:640px; max-height:85vh; border-radius:16px 16px 0 0; display:flex; flex-direction:column; box-shadow:0 -10px 40px rgba(0,0,0,0.2); }
+        @media (min-width:700px) { .modal { border-radius:16px; } }
+        .modal-head { display:flex; justify-content:space-between; align-items:center; padding:16px 18px; border-bottom:1px solid var(--border); }
+        .modal-title { font-size:16px; font-weight:800; color:var(--primary); }
+        .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); }
+        .modal-body { padding:12px 16px 20px; overflow-y:auto; }
+        .dd-item { padding:12px; border-radius:10px; border:1px solid var(--border); border-left:5px solid var(--border); margin-bottom:8px; }
+        .dd-top { display:flex; justify-content:space-between; gap:8px; }
+        .dd-client { font-weight:800; font-size:14px; }
+        .dd-num { font-size:11px; color:var(--text-muted); }
+        .dd-sub { font-size:13px; margin-top:2px; }
+        .dd-meta { font-size:11px; color:var(--text-muted); margin-top:4px; }
+        .badge { display:inline-block; padding:2px 9px; border-radius:20px; font-size:10px; font-weight:800; margin:4px 4px 0 0; }
+        .b-new { background:rgba(228,30,43,0.1); color:#c41820; }
+        .b-assigned { background:#ede9fe; color:#5b21b6; }
+        .b-progress { background:#dbeafe; color:#1e40af; }
+        .b-done { background:#d1fae5; color:#065f46; }
+        .b-urgent { background:rgba(245,158,11,0.12); color:#92400e; border:1px solid var(--accent-amber); }
+        .b-late { background:var(--accent-red); color:white; }
+        .modal-foot { padding:0 16px 16px; }
+        .btn-primary { display:block; width:100%; text-align:center; padding:11px; border-radius:10px; background:linear-gradient(135deg,var(--primary),var(--primary-dark)); color:white; font-weight:700; font-size:14px; text-decoration:none; box-shadow:0 3px 0 var(--primary-dark); }
+
+        .loading { text-align:center; padding:30px; }
+        .spinner { width:32px; height:32px; border:3px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto; }
         @keyframes spin { to { transform:rotate(360deg); } }
+        .err-box { background:rgba(228,30,43,0.08); color:var(--accent-red); border:1px solid rgba(228,30,43,0.2); padding:12px; border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; margin-bottom:10px; display:none; }
 
-        /* Bottom nav */
         .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:white; border-top:1px solid var(--border); display:flex; z-index:100; box-shadow:0 -2px 10px rgba(0,0,0,0.06); }
         .bottom-nav a { flex:1; display:flex; flex-direction:column; align-items:center; padding:8px 0 10px; text-decoration:none; font-size:11px; font-weight:600; color:var(--text-muted); transition:all 0.2s; }
         .bottom-nav a.active { color:var(--primary); }
@@ -92,8 +139,8 @@
 <body>
 
 <div class="header">
-    <button onclick="window.history.back()" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">← Назад</button>
-    <button onclick="sessionStorage.clear(); localStorage.clear(); if (window.caches) { caches.keys().then(names => names.forEach(name => caches.delete(name))); } window.location.href = 'login.html';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Изход</button>
+    <button class="hdr-btn" style="left:12px;" onclick="window.history.back()">← Назад</button>
+    <button class="hdr-btn" style="right:12px;font-size:11px;" onclick="sessionStorage.clear(); localStorage.clear(); if (window.caches) { caches.keys().then(n => n.forEach(x => caches.delete(x))); } window.location.href = 'login.html';">Изход</button>
     <div class="header-top">
         <img src="Repairs.png" alt="Logo">
         <h1>DASHBOARD</h1>
@@ -103,55 +150,95 @@
 </div>
 
 <div class="container">
-    <!-- Period -->
+    <div class="err-box" id="errBox"></div>
+
     <div class="period-selector">
         <button class="period-btn" data-period="today" onclick="setPeriod('today')">Днес</button>
-        <button class="period-btn active" data-period="week" onclick="setPeriod('week')">Седмица</button>
-        <button class="period-btn" data-period="month" onclick="setPeriod('month')">Месец</button>
+        <button class="period-btn active" data-period="week" onclick="setPeriod('week')">7 дни</button>
+        <button class="period-btn" data-period="month" onclick="setPeriod('month')">30 дни</button>
         <button class="period-btn" data-period="all" onclick="setPeriod('all')">Всички</button>
     </div>
 
-    <!-- Stats -->
+    <div class="section-label">📅 За периода <span id="cmpNote" style="font-weight:600;text-transform:none;letter-spacing:0;"></span></div>
     <div class="stats">
-        <div class="stat-card"><div class="stat-icon">🔴</div><div class="stat-val" id="stNew">-</div><div class="stat-label">Нови</div></div>
-        <div class="stat-card"><div class="stat-icon">🟣</div><div class="stat-val" id="stAssigned">-</div><div class="stat-label">Разпределени</div></div>
-        <div class="stat-card"><div class="stat-icon">🔵</div><div class="stat-val" id="stProgress">-</div><div class="stat-label">В изпълнение</div></div>
-        <div class="stat-card"><div class="stat-icon">🟢</div><div class="stat-val" id="stDone">-</div><div class="stat-label">Изпълнени</div></div>
-        <div class="stat-card" style="border-top-color:#e41e2b;">
-            <div class="stat-icon">⚠</div>
-            <div class="stat-val" id="stOverdue" style="color:#e41e2b;">0</div>
-            <div class="stat-label">Просрочени</div>
+        <div class="stat-card clickable" style="border-top-color:var(--primary);" onclick="openDrill('registered')">
+            <div class="stat-icon">📝</div><div class="stat-val" id="kRegistered">-</div><div class="stat-label">Регистрирани</div><div class="stat-cmp" id="cRegistered"></div>
+        </div>
+        <div class="stat-card clickable" style="border-top-color:var(--accent-green);" onclick="openDrill('done')">
+            <div class="stat-icon">✅</div><div class="stat-val" id="kDone">-</div><div class="stat-label">Изпълнени</div><div class="stat-cmp" id="cDone"></div>
+        </div>
+        <div class="stat-card clickable" style="border-top-color:var(--accent-blue);" onclick="openDrill('done')">
+            <div class="stat-icon">⏱</div><div class="stat-val small" id="kAvg">-</div><div class="stat-label">Средно време</div><div class="stat-cmp" id="cAvg"></div>
+        </div>
+        <div class="stat-card" style="border-top-color:var(--accent-purple);">
+            <div class="stat-icon">👷</div><div class="stat-val" id="kHours">-</div><div class="stat-label">Човекочасове</div><div class="stat-cmp" id="cHours"></div>
+        </div>
+        <div class="stat-card" style="border-top-color:var(--accent-amber);">
+            <div class="stat-icon">🚗</div><div class="stat-val" id="kKm">-</div><div class="stat-label">Изминати км</div><div class="stat-cmp" id="cKm"></div>
         </div>
     </div>
 
-    <!-- Charts row 1 -->
-    <div class="chart-row">
-        <div class="chart-card">
-            <div class="chart-title">👷 Натовареност по механик</div>
-            <div class="chart-container"><canvas id="barChart"></canvas></div>
+    <div class="section-label">🔴 В момента</div>
+    <div class="stats">
+        <div class="stat-card clickable" style="border-top-color:var(--accent-red);" onclick="openDrill('new')">
+            <div class="stat-icon">🔴</div><div class="stat-val" id="kNew">-</div><div class="stat-label">Нови</div>
         </div>
-        <div class="kpi-card">
-            <div class="chart-title" style="justify-content:center;">⏱ Средно време за изпълнение</div>
-            <div class="kpi-value" id="avgTime">-</div>
-            <div class="kpi-unit">часа / заявка</div>
-            <div class="kpi-trend" id="avgTrend"></div>
+        <div class="stat-card clickable" style="border-top-color:var(--accent-purple);" onclick="openDrill('assigned')">
+            <div class="stat-icon">🟣</div><div class="stat-val" id="kAssigned">-</div><div class="stat-label">Разпределени</div>
         </div>
-    </div>
-
-    <!-- Trend by type -->
-    <div class="chart-row">
-        <div class="chart-card full">
-            <div class="chart-title">⚡ Заявки по вид дейност</div>
-            <div class="chart-container"><canvas id="typeChart"></canvas></div>
+        <div class="stat-card clickable" style="border-top-color:var(--accent-blue);" onclick="openDrill('progress')">
+            <div class="stat-icon">🔵</div><div class="stat-val" id="kProgress">-</div><div class="stat-label">В изпълнение</div>
+        </div>
+        <div class="stat-card clickable alert-card" id="cardOverdue" style="border-top-color:var(--accent-red);" onclick="openDrill('overdue')">
+            <div class="stat-icon">⚠️</div><div class="stat-val" id="kOverdue">-</div><div class="stat-label">Просрочени</div>
+        </div>
+        <div class="stat-card clickable alert-card" id="cardUrgent" style="border-top-color:var(--accent-amber);" onclick="openDrill('urgent')">
+            <div class="stat-icon">🔥</div><div class="stat-val" id="kUrgent">-</div><div class="stat-label">Спешни &gt; 4 ч</div>
         </div>
     </div>
 
-    <!-- Activity timeline -->
-    <div class="timeline-card">
-        <div class="chart-title">🕐 Последна активност</div>
-        <div class="timeline" id="timeline">
-            <div class="loading"><div class="spinner"></div></div>
+    <div class="card" style="margin-top:6px;">
+        <div class="card-title">⏳ Къде отива времето — изпълнени заявки за периода</div>
+        <div id="phaseBox"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">👷 Натовареност по механик</div>
+        <div class="tbl-wrap" id="mechBox"><div class="loading"><div class="spinner"></div></div></div>
+        <div class="card-hint">Отворени = текущо разпределени / в изпълнение. Човекочасовете на карта с няколко механика се делят поравно; километрите се отчитат на всеки участник.</div>
+    </div>
+
+    <div class="row-2">
+        <div class="card">
+            <div class="card-title">⚡ Заявки по вид дейност</div>
+            <canvas id="typeChart"></canvas>
+            <div class="empty-note" id="typeEmpty" style="display:none;">Няма заявки за периода</div>
         </div>
+        <div class="card">
+            <div class="card-title">📦 Вложени материали за периода</div>
+            <div id="matBox"><div class="loading"><div class="spinner"></div></div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">🔁 Повторни ремонти (същата машина до 30 дни)</div>
+        <div id="repBox"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">🕐 Последна активност</div>
+        <div id="timeline"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="drillModal" onclick="if(event.target===this) closeDrill()">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-title" id="drillTitle">Заявки</div>
+            <button class="modal-close" onclick="closeDrill()">✕</button>
+        </div>
+        <div class="modal-body" id="drillBody"></div>
+        <div class="modal-foot"><a class="btn-primary" href="history.html">📊 Отвори в Преглед</a></div>
     </div>
 </div>
 
@@ -164,242 +251,463 @@
 </nav>
 
 <script>
-function sanitize(s){if(!s)return s;var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function sanitize(s){if(s===null||s===undefined)return '';var d=document.createElement('div');d.textContent=String(s);return d.innerHTML;}
 const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
 
-let allRequests = [];
-let allLogs = [];
-let currentPeriod = 'week';
-let barChart, typeChart;
+const REQ_FIELDS = 'id,request_number,client_name,company_name,vehicle,brand,model,reg_number,status,priority,activity_type,assigned_mechanics,responsible_mechanic,desired_date,created_at,assigned_at,started_at,completed_at';
+const CARD_FIELDS = 'id,mechanic,work_date,work_hours,km_traveled,reg_number,vehicle,activity_type,client,repair_type';
+const URGENT_HOURS = 4;
+const REPEAT_DAYS = 30;
+const OPEN_STATUSES = ['Нова', 'Разпределена', 'В изпълнение'];
 
-// Check auth
+let currentPeriod = 'week';
+let typeChart = null;
+let mechanicNames = [];
+let drillSets = {};
+
+// ---------- Auth & navigation ----------
 function checkAuth() {
     const auth = sessionStorage.getItem('workcard_auth');
     const role = sessionStorage.getItem('workcard_role');
-    if (auth !== 'true') {
+    if (auth !== 'true' || !['manager', 'admin', 'coordinator'].includes(role)) {
         window.location.href = 'login.html';
-        return;
-    }
-    if (role !== 'manager' && role !== 'admin' && role !== 'coordinator') {
-        window.location.href = 'login.html';
-        return;
+        return false;
     }
     const user = sessionStorage.getItem('workcard_user');
     if (user) document.getElementById('headerUser').textContent = user;
+    return true;
 }
 
 function updateNav() {
     const role = sessionStorage.getItem('workcard_role');
-    const nav = document.getElementById('bottomNav');
-    if (!nav) return;
-    const links = nav.querySelectorAll('a');
-    links.forEach(link => {
+    document.querySelectorAll('#bottomNav a').forEach(link => {
         const href = link.getAttribute('href');
         if (role === 'coordinator') {
-            // Координатор вижда: Нова заявка + Разпределяне + Преглед + Dashboard
-            link.style.display = (href === 'requests.html' || href === 'assign.html' || href === 'history.html' || href === 'schedule.html' || href === 'dashboard.html') ? 'flex' : 'none';
+            link.style.display = ['requests.html','assign.html','history.html','schedule.html','dashboard.html'].includes(href) ? 'flex' : 'none';
         } else if (role === 'manager') {
-            // Ръководител вижда: Разпределяне + Преглед + Dashboard
-            link.style.display = (href === 'assign.html' || href === 'history.html' || href === 'schedule.html' || href === 'dashboard.html') ? 'flex' : 'none';
-        } else if (role === 'admin') {
-            // Управител вижда всичко
+            link.style.display = ['assign.html','history.html','schedule.html','dashboard.html'].includes(href) ? 'flex' : 'none';
+        } else {
             link.style.display = 'flex';
         }
     });
 }
 
-// API helper
-async function apiCall(path, method = 'GET', body = undefined) {
+// ---------- API ----------
+async function apiCall(path) {
     const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path, method, body })
+        body: JSON.stringify({ path, method: 'GET' })
     });
-    if (!res.ok) throw new Error(`${method}: ${res.status}`);
+    if (!res.ok) throw new Error('GET ' + path.split('?')[0] + ': ' + res.status);
     return res.json();
 }
 
-// Period
-function setPeriod(period) {
-    currentPeriod = period;
-    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector(`.period-btn[data-period="${period}"]`).classList.add('active');
+// ---------- Helpers ----------
+function pad(n) { return String(n).padStart(2, '0'); }
+function isoDate(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function fmtDate(v) { if (!v) return '—'; const d = new Date(v); return pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear(); }
+function hoursBetween(a, b) { if (!a || !b) return null; const h = (new Date(b) - new Date(a)) / 3600000; return h >= 0 ? h : null; }
+function avg(arr) { const v = arr.filter(x => x !== null && !isNaN(x)); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; }
+function fmtHours(h) {
+    if (h === null || h === undefined) return '—';
+    if (h < 1) return Math.max(1, Math.round(h * 60)) + ' мин';
+    if (h < 48) return h.toFixed(1).replace('.0', '') + ' ч';
+    return (h / 24).toFixed(1).replace('.0', '') + ' дни';
+}
+function fmtNum(n, dec) { if (n === null || n === undefined) return '—'; return Number(n).toLocaleString('bg-BG', { maximumFractionDigits: dec || 0 }); }
+function normReg(r) { return (r || '').toUpperCase().replace(/[\s\-]/g, ''); }
+function mechList(m) { return Array.isArray(m) ? m : (m ? String(m).split(',').map(x => x.trim()).filter(Boolean) : []); }
+function isRepair(t) { return (t || '').toUpperCase().includes('РЕМОНТ'); }
+
+function periodRange() {
+    const now = new Date();
+    let start, prevStart = null;
+    if (currentPeriod === 'today') {
+        start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        prevStart = new Date(start); prevStart.setDate(prevStart.getDate() - 1);
+    } else if (currentPeriod === 'week') {
+        start = new Date(now); start.setDate(start.getDate() - 7);
+        prevStart = new Date(now); prevStart.setDate(prevStart.getDate() - 14);
+    } else if (currentPeriod === 'month') {
+        start = new Date(now); start.setDate(start.getDate() - 30);
+        prevStart = new Date(now); prevStart.setDate(prevStart.getDate() - 60);
+    } else {
+        start = new Date('2020-01-01T00:00:00Z');
+    }
+    return { start, prevStart, now };
+}
+
+function cmpHtml(cur, prev, lowerIsBetter) {
+    if (currentPeriod === 'all' || prev === null || prev === undefined || cur === null || cur === undefined) return '';
+    if (prev === 0) return cur > 0 ? '<span class="cmp-flat">↑ (преди 0)</span>' : '<span class="cmp-flat">без промяна</span>';
+    const pct = Math.round((cur - prev) / prev * 100);
+    if (pct === 0) return '<span class="cmp-flat">= без промяна</span>';
+    const up = pct > 0;
+    const good = lowerIsBetter ? !up : up;
+    return '<span class="' + (good ? 'cmp-good' : 'cmp-bad') + '">' + (up ? '↑ ' : '↓ ') + Math.abs(pct) + '%</span>';
+}
+
+// ---------- Load ----------
+function setPeriod(p) {
+    currentPeriod = p;
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === p));
     loadDashboard();
 }
 
-function getPeriodDate() {
-    const now = new Date();
-    switch(currentPeriod) {
-        case 'today': return new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-        case 'week': const w = new Date(now); w.setDate(w.getDate() - 7); return w.toISOString();
-        case 'month': const m = new Date(now); m.setMonth(m.getMonth() - 1); return m.toISOString();
-        case 'all': return '2020-01-01T00:00:00.000Z';
-    }
-}
-
-// Load data
-async function loadDashboard() {
+async function loadMechanicNames() {
     try {
-        const since = getPeriodDate();
-        allRequests = await apiCall(`service_requests?created_at=gte.${since}&order=created_at.desc`);
-        allLogs = await apiCall(`request_log?created_at=gte.${since}&order=created_at.desc&limit=20`);
-        updateStats();
-        updateBarChart();
-        updateTypeChart();
-        updateAvgTime();
-        updateTimeline();
-    } catch(e) {
-        console.error('Dashboard error:', e);
+        const rows = await apiCall('nomenclatures?group_name=eq.mechanics&is_active=eq.true&order=sort_order&select=value');
+        mechanicNames = rows.map(r => r.value);
+    } catch (e) { mechanicNames = []; }
+}
+
+async function loadMaterials(cardsInPeriod, startDate) {
+    try {
+        let q = 'work_card_materials?select=category,item_type,quantity,unit,work_card_id,work_cards!inner(work_date)';
+        if (currentPeriod !== 'all') q += '&work_cards.work_date=gte.' + startDate;
+        return await apiCall(q);
+    } catch (e) {
+        const ids = cardsInPeriod.map(c => c.id);
+        let out = [];
+        for (let i = 0; i < ids.length; i += 40) {
+            const chunk = ids.slice(i, i + 40);
+            const rows = await apiCall('work_card_materials?select=category,item_type,quantity,unit,work_card_id&work_card_id=in.(' + chunk.join(',') + ')');
+            out = out.concat(rows);
+        }
+        return out;
     }
 }
 
-// Stats
-function updateStats() {
-    const counts = { 'Нова':0, 'Разпределена':0, 'В изпълнение':0, 'Изпълнена':0 };
-    allRequests.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
-    document.getElementById('stNew').textContent = counts['Нова'];
-    document.getElementById('stAssigned').textContent = counts['Разпределена'];
-    document.getElementById('stProgress').textContent = counts['В изпълнение'];
-    document.getElementById('stDone').textContent = counts['Изпълнена'];
+async function loadDashboard() {
+    const errBox = document.getElementById('errBox');
+    errBox.style.display = 'none';
+    const { start, prevStart, now } = periodRange();
+    const fromTs = (prevStart || start).toISOString();
+    const startDate = isoDate(start);
+    const cardsFrom = new Date(prevStart || start); cardsFrom.setDate(cardsFrom.getDate() - REPEAT_DAYS);
 
-    const today = new Date().toISOString().split('T')[0];
-    const overdue = allRequests.filter(r =>
-        r.desired_date &&
-        r.desired_date < today &&
-        r.status !== 'Изпълнена'
-    ).length;
-    document.getElementById('stOverdue').textContent = overdue;
+    document.getElementById('cmpNote').textContent = currentPeriod === 'all' ? '' :
+        '· стрелките сравняват с ' + (currentPeriod === 'today' ? 'вчера' : currentPeriod === 'week' ? 'предходните 7 дни' : 'предходните 30 дни');
+
+    try {
+        const cardQuery = currentPeriod === 'all'
+            ? 'work_cards?select=' + CARD_FIELDS + '&order=work_date.asc'
+            : 'work_cards?select=' + CARD_FIELDS + '&work_date=gte.' + isoDate(cardsFrom) + '&order=work_date.asc';
+
+        const [openReqs, createdReqs, completedReqs, cards, logs] = await Promise.all([
+            apiCall('service_requests?select=' + REQ_FIELDS + '&status=in.(' + OPEN_STATUSES.join(',') + ')&order=created_at.desc'),
+            apiCall('service_requests?select=' + REQ_FIELDS + '&created_at=gte.' + fromTs + '&order=created_at.desc'),
+            apiCall('service_requests?select=' + REQ_FIELDS + '&status=eq.Изпълнена&completed_at=gte.' + fromTs + '&order=completed_at.desc'),
+            apiCall(cardQuery),
+            apiCall('request_log?created_at=gte.' + start.toISOString() + '&order=created_at.desc&limit=15')
+        ]);
+
+        const inCur = v => v && new Date(v) >= start;
+        const inPrev = v => prevStart && v && new Date(v) >= prevStart && new Date(v) < start;
+
+        const regCur = createdReqs.filter(r => inCur(r.created_at));
+        const regPrev = createdReqs.filter(r => inPrev(r.created_at));
+        const doneCur = completedReqs.filter(r => inCur(r.completed_at));
+        const donePrev = completedReqs.filter(r => inPrev(r.completed_at));
+
+        const cardsCur = cards.filter(c => c.work_date && c.work_date >= startDate);
+        const cardsPrev = prevStart ? cards.filter(c => c.work_date && c.work_date >= isoDate(prevStart) && c.work_date < startDate) : [];
+
+        const todayStr = isoDate(now);
+        const overdue = openReqs.filter(r => r.desired_date && r.desired_date < todayStr);
+        const urgentLate = openReqs.filter(r => r.priority === 'Спешен' && hoursBetween(r.created_at, now.toISOString()) > URGENT_HOURS);
+
+        drillSets = {
+            registered: { title: '📝 Регистрирани за периода', items: regCur },
+            done: { title: '✅ Изпълнени за периода', items: doneCur },
+            new: { title: '🔴 Нови — чакат разпределяне', items: openReqs.filter(r => r.status === 'Нова') },
+            assigned: { title: '🟣 Разпределени — чакат поемане', items: openReqs.filter(r => r.status === 'Разпределена') },
+            progress: { title: '🔵 В изпълнение', items: openReqs.filter(r => r.status === 'В изпълнение') },
+            overdue: { title: '⚠️ Просрочени (мината желана дата)', items: overdue },
+            urgent: { title: '🔥 Спешни, неизпълнени над ' + URGENT_HOURS + ' часа', items: urgentLate }
+        };
+
+        renderKpis(regCur, regPrev, doneCur, donePrev, cardsCur, cardsPrev, openReqs, overdue, urgentLate);
+        renderPhases(doneCur);
+        renderMechanics(openReqs, doneCur, cardsCur);
+        renderTypeChart(regCur);
+        renderRepeats(cards, startDate);
+        renderTimeline(logs);
+
+        try {
+            const mats = await loadMaterials(cardsCur, startDate);
+            renderMaterials(mats);
+        } catch (e) {
+            document.getElementById('matBox').innerHTML = '<div class="empty-note">Материалите не могат да се заредят</div>';
+        }
+    } catch (e) {
+        console.error(e);
+        errBox.textContent = 'Грешка при зареждане: ' + e.message;
+        errBox.style.display = 'block';
+    }
 }
 
-// Bar chart - mechanic workload
-function updateBarChart() {
-    const mechCounts = {};
-    allRequests.forEach(r => {
-        (r.assigned_mechanics || []).forEach(m => {
-            if (!mechCounts[m]) mechCounts[m] = { total:0, done:0 };
-            mechCounts[m].total++;
-            if (r.status === 'Изпълнена') mechCounts[m].done++;
-        });
+// ---------- KPIs ----------
+function sumHours(cards) { return cards.reduce((s, c) => s + (parseFloat(c.work_hours) || 0), 0); }
+function sumKm(cards) { return cards.reduce((s, c) => s + (parseInt(c.km_traveled) || 0), 0); }
+function avgTotal(reqs) { return avg(reqs.map(r => hoursBetween(r.created_at, r.completed_at))); }
+
+function renderKpis(regCur, regPrev, doneCur, donePrev, cardsCur, cardsPrev, openReqs, overdue, urgentLate) {
+    const set = (id, v) => document.getElementById(id).textContent = v;
+    const setCmp = (id, html) => document.getElementById(id).innerHTML = html;
+
+    set('kRegistered', regCur.length);
+    setCmp('cRegistered', cmpHtml(regCur.length, regPrev.length, false));
+    set('kDone', doneCur.length);
+    setCmp('cDone', cmpHtml(doneCur.length, donePrev.length, false));
+
+    const aCur = avgTotal(doneCur), aPrev = avgTotal(donePrev);
+    set('kAvg', fmtHours(aCur));
+    setCmp('cAvg', cmpHtml(aCur, aPrev, true));
+
+    const hCur = sumHours(cardsCur), hPrev = sumHours(cardsPrev);
+    set('kHours', fmtNum(hCur, 1));
+    setCmp('cHours', cmpHtml(hCur, hPrev, false));
+
+    const kCur = sumKm(cardsCur), kPrev = sumKm(cardsPrev);
+    set('kKm', fmtNum(kCur));
+    setCmp('cKm', cmpHtml(kCur, kPrev, false));
+
+    set('kNew', openReqs.filter(r => r.status === 'Нова').length);
+    set('kAssigned', openReqs.filter(r => r.status === 'Разпределена').length);
+    set('kProgress', openReqs.filter(r => r.status === 'В изпълнение').length);
+    set('kOverdue', overdue.length);
+    set('kUrgent', urgentLate.length);
+    document.getElementById('cardOverdue').classList.toggle('has-items', overdue.length > 0);
+    document.getElementById('cardUrgent').classList.toggle('has-items', urgentLate.length > 0);
+}
+
+// ---------- Phases ----------
+function renderPhases(doneCur) {
+    const box = document.getElementById('phaseBox');
+    if (!doneCur.length) { box.innerHTML = '<div class="empty-note">Няма изпълнени заявки за периода</div>'; return; }
+
+    const phases = [
+        { name: 'Чакане за разпределяне', color: '#e41e2b', val: avg(doneCur.map(r => hoursBetween(r.created_at, r.assigned_at))) },
+        { name: 'До поемане от механик', color: '#7c3aed', val: avg(doneCur.map(r => hoursBetween(r.assigned_at, r.started_at))) },
+        { name: 'Изпълнение', color: '#3b82f6', val: avg(doneCur.map(r => hoursBetween(r.started_at, r.completed_at))) }
+    ];
+    const known = phases.filter(p => p.val !== null);
+    const total = known.reduce((s, p) => s + p.val, 0);
+    const maxVal = known.length ? Math.max(...known.map(p => p.val)) : 0;
+
+    let bar = '<div class="phase-bar">';
+    if (total > 0) known.forEach(p => {
+        const w = Math.max(p.val / total * 100, 2);
+        bar += '<div class="phase-seg" style="width:' + w + '%;background:' + p.color + ';" title="' + p.name + '">' + (w > 14 ? fmtHours(p.val) : '') + '</div>';
+    });
+    bar += '</div>';
+
+    const items = phases.map(p => {
+        const bn = p.val !== null && p.val === maxVal && known.length > 1 && maxVal > 0;
+        return '<div class="phase-item' + (bn ? ' bottleneck' : '') + '" style="border-left-color:' + p.color + ';">' +
+            '<div class="phase-name">' + p.name + '</div>' +
+            '<div class="phase-val">' + fmtHours(p.val) + '</div>' +
+            (bn ? '<div class="phase-tag">▲ Най-дълъг етап</div>' : '') +
+        '</div>';
+    }).join('');
+
+    box.innerHTML = bar + '<div class="phase-list">' + items + '</div>' +
+        '<div class="card-hint">Средно за ' + doneCur.length + ' изпълнени заявки. Общо от регистрация до изпълнение: <strong>' + fmtHours(avgTotal(doneCur)) + '</strong>.</div>';
+}
+
+// ---------- Mechanics ----------
+function renderMechanics(openReqs, doneCur, cardsCur) {
+    const m = {};
+    const ensure = n => { if (!m[n]) m[n] = { open: 0, done: 0, cards: 0, hours: 0, km: 0 }; return m[n]; };
+    mechanicNames.forEach(ensure);
+
+    openReqs.filter(r => r.status !== 'Нова').forEach(r => (r.assigned_mechanics || []).forEach(n => ensure(n).open++));
+    doneCur.forEach(r => (r.assigned_mechanics || []).forEach(n => ensure(n).done++));
+    cardsCur.forEach(c => {
+        const list = mechList(c.mechanic);
+        if (!list.length) return;
+        const h = (parseFloat(c.work_hours) || 0) / list.length;
+        const km = parseInt(c.km_traveled) || 0;
+        list.forEach(n => { const e = ensure(n); e.cards++; e.hours += h; e.km += km; });
     });
 
-    const names = Object.keys(mechCounts).map(n => n.split(' ')[0]); // First name only
-    const totals = Object.values(mechCounts).map(v => v.total);
-    const dones = Object.values(mechCounts).map(v => v.done);
+    const rows = Object.entries(m).sort((a, b) => b[1].hours - a[1].hours || b[1].open - a[1].open);
+    const box = document.getElementById('mechBox');
+    if (!rows.length) { box.innerHTML = '<div class="empty-note">Няма данни</div>'; return; }
+    const maxH = Math.max(...rows.map(r => r[1].hours), 1);
 
-    const data = {
-        labels: names,
-        datasets: [
-            { label:'Общо', data:totals, backgroundColor:'rgba(26,58,143,0.7)', borderRadius:6 },
-            { label:'Изпълнени', data:dones, backgroundColor:'rgba(16,185,129,0.7)', borderRadius:6 }
-        ]
-    };
-
-    if (barChart) { barChart.data = data; barChart.update(); }
-    else {
-        barChart = new Chart(document.getElementById('barChart'), {
-            type: 'bar', data,
-            options: { responsive:true, maintainAspectRatio:true, plugins: { legend: { position:'bottom', labels: { font: { size:10, weight:'bold' }, padding:8, usePointStyle:true } } }, scales: { x: { grid: { display:false } }, y: { beginAtZero:true, ticks: { stepSize:1 } } } }
-        });
-    }
+    box.innerHTML = '<table class="mech-table"><thead><tr>' +
+        '<th>Механик</th><th class="num">Отворени</th><th class="num">Изпълнени</th><th class="num">Карти</th><th class="num">Човекочасове</th><th class="num">Км</th>' +
+        '</tr></thead><tbody>' +
+        rows.map(([name, v]) => '<tr>' +
+            '<td><div class="mech-name">' + sanitize(name) + '</div><div class="hbar" style="width:' + Math.round(v.hours / maxH * 100) + '%;"></div></td>' +
+            '<td class="num">' + (v.open ? '<strong style="color:var(--accent-purple);">' + v.open + '</strong>' : '0') + '</td>' +
+            '<td class="num">' + v.done + '</td>' +
+            '<td class="num">' + v.cards + '</td>' +
+            '<td class="num"><strong>' + fmtNum(v.hours, 1) + '</strong></td>' +
+            '<td class="num">' + fmtNum(v.km) + '</td>' +
+        '</tr>').join('') +
+        '</tbody></table>';
 }
 
-// Type chart - by activity type
-function updateTypeChart() {
+// ---------- Activity types ----------
+function renderTypeChart(regCur) {
     const types = {};
-    allRequests.forEach(r => {
-        (r.activity_type || []).forEach(t => { types[t] = (types[t] || 0) + 1; });
+    regCur.forEach(r => (r.activity_type || []).forEach(t => { types[t] = (types[t] || 0) + 1; }));
+    const labels = Object.keys(types);
+    const canvas = document.getElementById('typeChart');
+    document.getElementById('typeEmpty').style.display = labels.length ? 'none' : 'block';
+    canvas.style.display = labels.length ? 'block' : 'none';
+    if (typeof Chart === 'undefined' || !labels.length) return;
+
+    const colors = { 'ТО / ППП': '#1a3a8f', 'РЕМОНТ': '#e41e2b', 'ГАРАНЦИОНЕН РЕМОНТ': '#7c3aed', 'ДРУГО': '#f59e0b' };
+    const data = { labels, datasets: [{ data: labels.map(l => types[l]), backgroundColor: labels.map(l => colors[l] || '#64748b'), borderWidth: 0, borderRadius: 6 }] };
+    if (typeChart) { typeChart.data = data; typeChart.update(); return; }
+    typeChart = new Chart(canvas, {
+        type: 'bar', data,
+        options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } }, y: { grid: { display: false } } } }
     });
-
-    const colors = { 'ТО / ППП':'#1a3a8f', 'РЕМОНТ':'#e41e2b', 'ГАРАНЦИОНЕН РЕМОНТ':'#7c3aed', 'ДРУГО':'#f59e0b' };
-
-    const data = {
-        labels: Object.keys(types),
-        datasets: [{ data: Object.values(types), backgroundColor: Object.keys(types).map(t => colors[t] || '#64748b'), borderWidth:0, borderRadius:6 }]
-    };
-
-    if (typeChart) { typeChart.data = data; typeChart.update(); }
-    else {
-        typeChart = new Chart(document.getElementById('typeChart'), {
-            type: 'bar', data,
-            options: { responsive:true, maintainAspectRatio:true, indexAxis:'y', plugins: { legend: { display:false } }, scales: { x: { beginAtZero:true, ticks: { stepSize:1 } }, y: { grid: { display:false } } } }
-        });
-    }
 }
 
-// Average time
-function updateAvgTime() {
-    const completed = allRequests.filter(r => r.status === 'Изпълнена' && r.completed_at && r.created_at);
-    if (completed.length === 0) {
-        document.getElementById('avgTime').textContent = '-';
-        document.getElementById('avgTrend').textContent = '';
-        return;
-    }
-
-    const totalHours = completed.reduce((sum, r) => {
-        const diff = (new Date(r.completed_at) - new Date(r.created_at)) / (1000 * 60 * 60);
-        return sum + diff;
-    }, 0);
-
-    const avg = (totalHours / completed.length).toFixed(1);
-    document.getElementById('avgTime').textContent = avg;
-
-    // Simple trend indicator
-    const trend = document.getElementById('avgTrend');
-    if (parseFloat(avg) < 24) {
-        trend.textContent = '✓ Добро темпо';
-        trend.className = 'kpi-trend up';
-    } else {
-        trend.textContent = '⚠ Може да се подобри';
-        trend.className = 'kpi-trend down';
-    }
-}
-
-// Timeline
-function updateTimeline() {
-    const tl = document.getElementById('timeline');
-    if (allLogs.length === 0) {
-        tl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Няма активност за избрания период</div>';
-        return;
-    }
-
-    const actionNames = { created:'регистрира заявка', assigned:'разпредели заявка', started:'пое задача', completed:'изпълни задача' };
-    const dotClasses = { created:'dot-created', assigned:'dot-assigned', started:'dot-started', completed:'dot-completed' };
-    const actionIcons = { created:'📝', assigned:'📋', started:'▶️', completed:'✅' };
-
-    tl.innerHTML = allLogs.slice(0, 10).map(log => {
-        const dt = new Date(log.created_at);
-        const timeStr = `${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
-        const ago = getTimeAgo(dt);
-
-        return `
-        <div class="tl-item">
-            <div class="tl-dot ${dotClasses[log.action] || 'dot-created'}"></div>
-            <div class="tl-content">
-                ${actionIcons[log.action] || '📌'} <strong>${log.performed_by}</strong> ${actionNames[log.action] || log.action}
-                ${log.details ? `<br><span style="color:var(--text-muted);font-size:12px;">${log.details}</span>` : ''}
-                <div class="tl-time">${timeStr} · ${ago}</div>
-            </div>
-        </div>`;
+// ---------- Materials ----------
+function renderMaterials(mats) {
+    const box = document.getElementById('matBox');
+    if (!mats || !mats.length) { box.innerHTML = '<div class="empty-note">Няма вложени материали за периода</div>'; return; }
+    const catNames = { oil: '🛢 Масло', antifreeze: '💧 Антифриз', bulb: '💡 Крушки', quick_coupling: '🔗 Бързи връзки', teeth: '🦷 Зъби' };
+    const order = ['oil', 'antifreeze', 'bulb', 'quick_coupling', 'teeth'];
+    const groups = {};
+    mats.forEach(x => {
+        const cat = x.category || 'other';
+        if (!groups[cat]) groups[cat] = { unit: x.unit || '', total: 0, items: {} };
+        const q = parseFloat(x.quantity) || 0;
+        const name = x.item_type || '—';
+        groups[cat].total += q;
+        groups[cat].items[name] = (groups[cat].items[name] || 0) + q;
+    });
+    const unitLabel = u => { const s = (u || '').toLowerCase(); return s.startsWith('лит') ? 'л' : s.startsWith('бр') ? 'бр.' : sanitize(u); };
+    const rank = c => { const i = order.indexOf(c); return i === -1 ? 99 : i; };
+    box.innerHTML = Object.keys(groups).sort((a, b) => rank(a) - rank(b)).map(cat => {
+        const g = groups[cat], u = unitLabel(g.unit);
+        const lines = Object.entries(g.items).sort((a, b) => b[1] - a[1])
+            .map(([name, q]) => '<div class="mat-line"><span>' + sanitize(name) + '</span><span>' + fmtNum(q, 1) + ' ' + u + '</span></div>').join('');
+        return '<div class="mat-group"><div class="mat-head"><span>' + (catNames[cat] || sanitize(cat)) + '</span><span>' + fmtNum(g.total, 1) + ' ' + u + '</span></div>' + lines + '</div>';
     }).join('');
 }
 
+// ---------- Repeat repairs ----------
+function renderRepeats(cards, startDate) {
+    const box = document.getElementById('repBox');
+    const byReg = {};
+    cards.filter(c => isRepair(c.activity_type) && normReg(c.reg_number) && c.work_date)
+         .forEach(c => { const k = normReg(c.reg_number); (byReg[k] = byReg[k] || []).push(c); });
+
+    const found = [];
+    Object.values(byReg).forEach(list => {
+        list.sort((a, b) => a.work_date.localeCompare(b.work_date));
+        for (let i = 1; i < list.length; i++) {
+            const cur = list[i], prev = list[i - 1];
+            if (currentPeriod !== 'all' && cur.work_date < startDate) continue;
+            const days = Math.round((new Date(cur.work_date) - new Date(prev.work_date)) / 86400000);
+            if (days <= REPEAT_DAYS) found.push({ cur, prev, days });
+        }
+    });
+
+    if (!found.length) { box.innerHTML = '<div class="empty-note">✓ Няма повторни ремонти за периода</div>'; return; }
+    found.sort((a, b) => a.days - b.days);
+    box.innerHTML = found.map(f =>
+        '<div class="rep-item">' +
+            '<div class="rep-top"><span>' + sanitize(f.cur.vehicle || '') + ' — ' + sanitize(f.cur.reg_number) + '</span><span style="color:var(--accent-red);">след ' + f.days + ' дни</span></div>' +
+            '<div class="rep-sub">1-ви ремонт: ' + fmtDate(f.prev.work_date) + ' · ' + sanitize(mechList(f.prev.mechanic).join(', ')) + (f.prev.repair_type ? ' · ' + sanitize(f.prev.repair_type) : '') + '</div>' +
+            '<div class="rep-sub">2-ри ремонт: ' + fmtDate(f.cur.work_date) + ' · ' + sanitize(mechList(f.cur.mechanic).join(', ')) + (f.cur.repair_type ? ' · ' + sanitize(f.cur.repair_type) : '') + '</div>' +
+        '</div>'
+    ).join('');
+}
+
+// ---------- Timeline ----------
 function getTimeAgo(date) {
     const diff = (Date.now() - date.getTime()) / 1000;
     if (diff < 60) return 'Току-що';
-    if (diff < 3600) return `Преди ${Math.floor(diff/60)} мин.`;
-    if (diff < 86400) return `Преди ${Math.floor(diff/3600)} ч.`;
-    return `Преди ${Math.floor(diff/86400)} дни`;
+    if (diff < 3600) return 'Преди ' + Math.floor(diff / 60) + ' мин.';
+    if (diff < 86400) return 'Преди ' + Math.floor(diff / 3600) + ' ч.';
+    return 'Преди ' + Math.floor(diff / 86400) + ' дни';
 }
 
-// Auto-refresh every 30 seconds
-setInterval(loadDashboard, 30000);
+function renderTimeline(logs) {
+    const tl = document.getElementById('timeline');
+    if (!logs.length) { tl.innerHTML = '<div class="empty-note">Няма активност за избрания период</div>'; return; }
+    const names = { created: 'регистрира заявка', assigned: 'разпредели заявка', started: 'пое задача', completed: 'изпълни задача', edited: 'редактира заявка', rescheduled: 'премести заявка' };
+    const icons = { created: '📝', assigned: '📋', started: '▶️', completed: '✅', edited: '✏️', rescheduled: '📅' };
+    tl.innerHTML = logs.slice(0, 10).map(log => {
+        const dt = new Date(log.created_at);
+        return '<div class="tl-item"><div class="tl-dot dot-' + sanitize(log.action) + '"></div><div class="tl-content">' +
+            (icons[log.action] || '📌') + ' <strong>' + sanitize(log.performed_by) + '</strong> ' + (names[log.action] || sanitize(log.action)) +
+            (log.details ? '<br><span style="color:var(--text-muted);font-size:12px;">' + sanitize(log.details) + '</span>' : '') +
+            '<div class="tl-time">' + pad(dt.getDate()) + '.' + pad(dt.getMonth() + 1) + ' ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes()) + ' · ' + getTimeAgo(dt) + '</div>' +
+        '</div></div>';
+    }).join('');
+}
 
-// Init
-document.addEventListener('DOMContentLoaded', () => {
-    checkAuth();
+// ---------- Drill-down ----------
+function statusBadge(s) {
+    const map = { 'Нова': 'b-new', 'Разпределена': 'b-assigned', 'В изпълнение': 'b-progress', 'Изпълнена': 'b-done' };
+    return '<span class="badge ' + (map[s] || '') + '">' + sanitize(s) + '</span>';
+}
+
+function openDrill(key) {
+    const set = drillSets[key];
+    if (!set) return;
+    document.getElementById('drillTitle').textContent = set.title + ' (' + set.items.length + ')';
+    const body = document.getElementById('drillBody');
+    const todayStr = isoDate(new Date());
+    const nowIso = new Date().toISOString();
+    const colors = { 'Нова': '#e41e2b', 'Разпределена': '#7c3aed', 'В изпълнение': '#3b82f6', 'Изпълнена': '#10b981' };
+
+    if (!set.items.length) {
+        body.innerHTML = '<div class="empty-note">Няма заявки в тази категория ✓</div>';
+    } else {
+        body.innerHTML = set.items.slice(0, 150).map(r => {
+            const late = r.desired_date && r.desired_date < todayStr && r.status !== 'Изпълнена';
+            const machine = (r.brand || r.model) ? ((r.brand || '') + ' ' + (r.model || '')).trim() : (r.vehicle || '');
+            const mechs = (r.assigned_mechanics || []).map(n => (n === r.responsible_mechanic ? '★ ' : '') + n).join(', ');
+            const waited = r.status !== 'Изпълнена' ? 'чака ' + fmtHours(hoursBetween(r.created_at, nowIso)) : 'изпълнена за ' + fmtHours(hoursBetween(r.created_at, r.completed_at));
+            return '<div class="dd-item" style="border-left-color:' + (colors[r.status] || '#d8dfe8') + ';">' +
+                '<div class="dd-top"><span class="dd-client">' + sanitize(r.company_name || r.client_name) + '</span><span class="dd-num">' + sanitize(r.request_number || fmtDate(r.created_at)) + '</span></div>' +
+                '<div class="dd-sub">' + sanitize(machine) + ' — ' + sanitize(r.reg_number) + '</div>' +
+                '<div>' + statusBadge(r.status) +
+                    (r.priority === 'Спешен' ? '<span class="badge b-urgent">🔥 Спешна</span>' : '') +
+                    (late ? '<span class="badge b-late">Просрочена</span>' : '') +
+                    (r.activity_type || []).map(t => '<span class="badge" style="background:#eef2f7;color:#1a3a8f;">' + sanitize(t) + '</span>').join('') +
+                '</div>' +
+                '<div class="dd-meta">Регистрирана ' + fmtDate(r.created_at) +
+                    (r.desired_date ? ' · Желана дата ' + fmtDate(r.desired_date) : '') +
+                    ' · ' + waited +
+                    (mechs ? '<br>Механици: ' + sanitize(mechs) : '') +
+                '</div>' +
+            '</div>';
+        }).join('');
+    }
+    document.getElementById('drillModal').classList.add('open');
+}
+
+function closeDrill() { document.getElementById('drillModal').classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrill(); });
+
+// ---------- Init ----------
+setInterval(() => { if (!document.getElementById('drillModal').classList.contains('open')) loadDashboard(); }, 60000);
+
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!checkAuth()) return;
     updateNav();
+    await loadMechanicNames();
     loadDashboard();
 });
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(err => console.log('SW:', err));
+}
 </script>
 
 </body>
