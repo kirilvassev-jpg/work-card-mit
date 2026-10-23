@@ -24,6 +24,7 @@
         .header h1 { font-size:28px; font-weight:700; letter-spacing:1px; }
         .header-sub { font-size:12px; opacity:0.7; margin-top:2px; }
         .header-clock { font-size:18px; opacity:0.9; margin-top:4px; font-weight:600; }
+        @media (max-width:600px) { .header { padding-left:84px !important; padding-right:12px !important; } .header h1 { font-size:20px !important; } .header img { width:34px !important; height:34px !important; } }
 
         .mechanic-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; padding:0 14px 14px; }
         .mechanic-card { background:var(--card); border-radius:16px; padding:24px 16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.06); cursor:pointer; transition:all 0.25s; border:3px solid transparent; position:relative; }
@@ -187,6 +188,7 @@
 
 <div class="container">
     <div id="statusMsg" class="status"></div>
+<div id="soundBar" onclick="unlockAudio()" style="display:none;align-items:center;justify-content:center;gap:8px;background:#f59e0b;color:white;padding:12px;font-size:16px;font-weight:700;cursor:pointer;">🔊 Натисни тук, за да включиш звука и известията</div>
 
     <!-- Екран 1: Избор на механик -->
     <div id="screenMechanics" class="screen-active">
@@ -273,10 +275,47 @@ async function loadMechanics() {
 // Format date
 function fmtDate(d) { const dt = new Date(d); return `${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}.${dt.getFullYear()}`; }
 
+// Shared audio — browsers allow sound only after the user has tapped the page
+let sharedAudioCtx = null;
+function getAudioCtx() {
+    if (!sharedAudioCtx) {
+        try { sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; }
+    }
+    return sharedAudioCtx;
+}
+function unlockAudio() {
+    const ctx = getAudioCtx();
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+    const bar = document.getElementById('soundBar');
+    if (bar) bar.style.display = 'none';
+}
+document.addEventListener('click', unlockAudio, { once: true });
+document.addEventListener('touchstart', unlockAudio, { once: true });
+
+// Safe notification — works on Android (via Service Worker) and desktop
+function safeNotify(title, options) {
+    try {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg && reg.showNotification) reg.showNotification(title, options).catch(() => {});
+                else { try { new Notification(title, options); } catch(e) {} }
+            }).catch(() => {});
+        } else {
+            new Notification(title, options);
+        }
+    } catch(e) { console.log('Notification skipped:', e.message); }
+}
+
 // Notification sound
 function playNotificationSound() {
     try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const audioCtx = getAudioCtx();
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
 
         function beep(startTime) {
             const oscillator = audioCtx.createOscillator();
@@ -350,7 +389,17 @@ function selectMechanic(name) {
     loadTasksForMechanic(name);
 }
 
+function isLoggedMechanic() {
+    return sessionStorage.getItem('workcard_role') === 'mechanic' && !!sessionStorage.getItem('workcard_user');
+}
+
 function backToMechanics() {
+    if (isLoggedMechanic()) {
+        if (!confirm('Изход от профила на ' + sessionStorage.getItem('workcard_user') + '?')) return;
+        sessionStorage.clear();
+        window.location.href = 'login.html';
+        return;
+    }
     selectedMechanic = null;
     document.getElementById('screenTasks').style.display = 'none';
     document.getElementById('screenMechanics').style.display = 'block';
@@ -395,6 +444,14 @@ function checkNewTasks() {
         banner.classList.add('show');
         if (assignedCount > previousNewCount) {
             playNotificationSound();
+            if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]);
+            safeNotify('Нова задача за ' + (selectedMechanic || 'механик'), {
+                body: assignedCount === 1 ? 'Имаш 1 разпределена задача' : 'Имаш ' + assignedCount + ' разпределени задачи',
+                icon: 'Repairs.png',
+                tag: 'mechanic-tasks',
+                renotify: true,
+                vibrate: [300, 150, 300]
+            });
         }
     } else {
         banner.classList.remove('show');
@@ -539,6 +596,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateClock();
     await loadMechanics();
     await loadMechanicScreen();
+
+    // Mechanic who logged in via login.html goes straight to own tasks
+    if (isLoggedMechanic()) {
+        const name = sessionStorage.getItem('workcard_user');
+        selectMechanic(name);
+        const backBtn = document.querySelector('#selectedMechanicBar button');
+        if (backBtn) backBtn.textContent = 'Изход';
+    }
+
+    // Ask the user to tap once so sound can play
+    const ctx = getAudioCtx();
+    if (ctx && ctx.state === 'suspended') {
+        const bar = document.getElementById('soundBar');
+        if (bar) bar.style.display = 'flex';
+    }
 });
 </script>
 
