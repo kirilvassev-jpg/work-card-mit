@@ -383,19 +383,74 @@
         .rm-hint { font-size:11px; color:#5a6577; margin-top:4px; }
         @media (max-width:420px) { .rm-grid { grid-template-columns:1fr; } }
     </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap&subset=cyrillic">
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ===== Работна карта — режим за телефон и таблет ===== */
+.header, .bottom-nav { display:none !important; }
+body { padding-bottom: 96px; }
+.form-container { max-width: 720px; margin: 0 auto; padding: 12px 12px 0; }
+.section { border-left: none !important; border: 1px solid var(--border); border-radius: 14px; box-shadow: none; padding: 16px; }
+.section-title { text-transform: none !important; letter-spacing: 0 !important; font-size: 16px !important; color: var(--navy) !important; border-bottom: none !important; padding-bottom: 0 !important; margin-bottom: 14px !important; display:flex; align-items:center; gap:8px; }
+.section-title .icon { display:inline-grid; place-items:center; width:32px; height:32px; border-radius:9px; background:#eef2fb; color:var(--primary); font-size:0; }
+.section-title .icon svg.ico { width:18px; height:18px; }
+.field label { font-size: 14px; font-weight: 600; color: var(--text-muted); }
+input[type="text"], input[type="number"], input[type="date"], input.flatpickr-input, select, textarea, .ms-display {
+    font-size: 16px !important; min-height: 50px; border-radius: 11px !important; }
+textarea { min-height: 90px; }
+.checkbox-item, .radio-option, .ms-option, .material-header { min-height: 50px; font-size: 15px; }
+.toggle-btn { min-height: 50px; font-size: 16px !important; }
+.material-header .mat-icon { display:inline-grid; place-items:center; width:26px; height:26px; border-radius:7px; background:#eef2fb; color:var(--primary); margin-right:8px; font-size:0; vertical-align:middle; }
+.material-header .mat-icon svg.ico { width:15px; height:15px; }
+
+/* стъпки */
+.wc-steps { display:flex; gap:6px; margin: 2px 0 14px; }
+.wc-step { flex:1; background:none; border:none; padding:0; text-align:left; cursor:pointer; font-family:inherit; }
+.wc-step .ln { height:5px; border-radius:3px; background:var(--border); transition:background .2s; }
+.wc-step.done .ln, .wc-step.cur .ln { background:var(--primary); }
+.wc-step span { display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-top:5px; }
+.wc-step.cur span { color:var(--navy); font-weight:700; }
+.wc-step .n { display:none; }
+.step-hidden { display:none !important; }
+
+/* долна лента с бутони */
+.submit-section { position: fixed !important; left:0; right:0; bottom:0; z-index:150; margin:0 !important; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) !important;
+    background:#fff; border-top:1px solid var(--border); box-shadow:0 -4px 16px rgba(19,41,107,0.08); }
+.action-row { max-width:720px; margin:0 auto; display:flex; gap:10px; }
+.act-back { flex:0 0 112px; min-height:54px; border:1.5px solid var(--border); background:#fff; color:var(--primary); border-radius:12px; font-size:16px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; }
+.act-next, #submitBtn { flex:1; min-height:54px; border:none; border-radius:12px; font-size:17px !important; font-weight:700; cursor:pointer; color:#fff; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:none !important; }
+.act-next { background:var(--primary); }
+#submitBtn { background:var(--accent-red) !important; margin:0 !important; width:auto !important; padding:0 12px !important; }
+.act-back[disabled] { visibility:hidden; }
+
+/* табелка на машината */
+.req-machine { background:linear-gradient(180deg,#f7f9fb,#edf1f6) !important; border:1.5px solid #c6cfdb !important; border-left:1.5px solid #c6cfdb !important; border-radius:12px !important; position:relative; padding:14px 16px !important; }
+.req-machine::before, .req-machine::after { content:''; position:absolute; top:9px; width:7px; height:7px; border-radius:50%; background:#b6c0cd; box-shadow:inset 0 0 0 1px #9eaaba; }
+.req-machine::before { left:9px; } .req-machine::after { right:9px; }
+.plate-head { text-align:center; font-size:12px; color:var(--text-muted); font-weight:600; }
+.plate-reg { text-align:center; font-size:26px; font-weight:700; letter-spacing:2px; margin:2px 0 10px; font-variant-numeric:tabular-nums; }
+.rm-title { text-transform:none !important; letter-spacing:0 !important; font-size:14px !important; }
+.rm-grid > div { background:rgba(255,255,255,0.7) !important; }
+
+#requestBanner { font-size:14px !important; padding:10px 12px !important; }
+#requestBanner button { padding:8px !important; font-size:13px !important; margin-top:6px !important; }
+.req-machine .rm-grid { grid-template-columns:1fr 1fr !important; gap:6px !important; }
+.req-machine .rm-grid > div { padding:7px 9px !important; font-size:14px !important; }
+.status { display:none !important; }
+.ms-display { display:flex !important; align-items:center; }
+.radio-option, .checkbox-item { gap:10px; }
+</style>
+<script src="ui.js"></script>
 <script src="datepicker.js"></script>
 </head>
 <body>
 
-<div class="header">
-    <button onclick="window.history.back()" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">← Назад</button>
-    <button onclick="sessionStorage.clear(); localStorage.clear(); if (window.caches) { caches.keys().then(names => names.forEach(name => caches.delete(name))); } window.location.href = 'login.html';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Изход</button>
-    <div class="header-top">
-        <img src="Repairs.png" alt="Logo" style="width:42px; height:42px; border-radius:10px; box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 0 15px rgba(255,255,255,0.2); padding:3px; background: rgba(255,255,255,0.15); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.25);">
-        <div class="header-text">
-            <h1>РАБОТНА КАРТА</h1>
-        </div>
-    </div>
+<div class="app-bar">
+    <button class="icon-btn" onclick="window.history.back()" aria-label="Назад" data-icon="back" data-icon-class="lg"></button>
+    <div class="title">Работна карта</div>
+    <div class="who" id="whoChip" style="display:none;"><span data-icon="user" data-icon-class="sm"></span><span id="whoName"></span></div>
+    <button class="icon-btn" aria-label="Изход" data-icon="out" onclick="sessionStorage.clear(); localStorage.clear(); if (window.caches) { caches.keys().then(n => n.forEach(x => caches.delete(x))); } window.location.href = 'login.html';"></button>
 </div>
 
 <div id="offlineBanner" class="offline-banner">⚠ Няма интернет връзка. Опитай по-късно.</div>
@@ -409,8 +464,15 @@
 
 <form id="workCardForm" class="form-container" style="display:none;" onsubmit="return false;">
 
-    <div class="section">
-        <div class="section-title"><span class="icon">📋</span> Основни данни</div>
+    <div class="wc-steps" id="wcSteps">
+        <button type="button" class="wc-step cur" onclick="goStep(1)"><div class="ln"></div><span>Машина</span></button>
+        <button type="button" class="wc-step" onclick="goStep(2)"><div class="ln"></div><span>Дейност</span></button>
+        <button type="button" class="wc-step" onclick="goStep(3)"><div class="ln"></div><span>Материали</span></button>
+        <button type="button" class="wc-step" onclick="goStep(4)"><div class="ln"></div><span>Време</span></button>
+    </div>
+
+    <div class="section" data-step="1">
+        <div class="section-title"><span class="icon" data-icon="clip"></span> Основни данни</div>
         <div class="field" id="fMechanic">
             <label>Механик <span class="required">*</span></label>
             <div id="mechanicDropdown" class="ms-dropdown" onclick="toggleMechanicDropdown(event)">
@@ -448,21 +510,21 @@
         </div>
     </div>
 
-    <div class="section">
-        <div class="section-title"><span class="icon">⚡</span> Вид дейност</div>
+    <div class="section" data-step="2">
+        <div class="section-title"><span class="icon" data-icon="bolt"></span> Вид дейност</div>
         <div class="field" id="fActivity">
             <div id="activityTypes" class="radio-group"></div>
             <div class="error-msg">Избери вид дейност</div>
         </div>
     </div>
 
-    <div id="sectionServices" class="section conditional">
-        <div class="section-title"><span class="icon">🔄</span> Обслужване — Филтри</div>
+    <div id="sectionServices" class="section conditional" data-step="2">
+        <div class="section-title"><span class="icon" data-icon="filter"></span> Обслужване — Филтри</div>
         <div id="servicesList" class="checkbox-grid"></div>
     </div>
 
-    <div id="sectionRepair" class="section conditional">
-        <div class="section-title"><span class="icon">🛠</span> Ремонт</div>
+    <div id="sectionRepair" class="section conditional" data-step="2">
+        <div class="section-title"><span class="icon" data-icon="wrench"></span> Ремонт</div>
         <div class="field">
             <label>Система за ремонт</label>
             <div id="repairSystemsList" class="checkbox-grid"></div>
@@ -477,8 +539,8 @@
         </div>
     </div>
 
-    <div class="section">
-        <div class="section-title"><span class="icon">📦</span> Вложени материали <span class="required">*</span></div>
+    <div class="section" data-step="3">
+        <div class="section-title"><span class="icon" data-icon="box"></span> Вложени материали <span class="required">*</span></div>
         <div class="field" id="fMaterials">
             <div class="toggle-group">
                 <button type="button" class="toggle-btn" onclick="toggleMaterials(true)">Да</button>
@@ -487,24 +549,24 @@
             <div class="error-msg">Избери Да или Не</div>
         </div>
         <div id="materialsSection" class="conditional">
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">🛢</span>Масло</span><span class="arrow">▼</span></div><div class="material-body"><div id="oilsList" class="checkbox-grid"></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">💧</span>Антифриз</span><span class="arrow">▼</span></div><div class="material-body"><div id="antifreezesList" class="checkbox-grid"></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">💡</span>Крушки</span><span class="arrow">▼</span></div><div class="material-body"><div id="bulbsList" class="checkbox-grid"></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">🔩</span>Бързи връзки</span><span class="arrow">▼</span></div><div class="material-body"><div id="quickCouplingsList" class="checkbox-grid"></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">⚙</span>Зъби</span><span class="arrow">▼</span></div><div class="material-body"><div id="teethList" class="checkbox-grid"></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">📝</span>Друго</span><span class="arrow">▼</span></div><div class="material-body"><textarea id="otherMaterials" rows="3" placeholder="Опиши допълнителни материали..."></textarea></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="drop"></span>Масло</span><span class="arrow">▼</span></div><div class="material-body"><div id="oilsList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="thermo"></span>Антифриз</span><span class="arrow">▼</span></div><div class="material-body"><div id="antifreezesList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="bulb"></span>Крушки</span><span class="arrow">▼</span></div><div class="material-body"><div id="bulbsList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="link"></span>Бързи връзки</span><span class="arrow">▼</span></div><div class="material-body"><div id="quickCouplingsList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="cog"></span>Зъби</span><span class="arrow">▼</span></div><div class="material-body"><div id="teethList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="note"></span>Друго</span><span class="arrow">▼</span></div><div class="material-body"><textarea id="otherMaterials" rows="3" placeholder="Опиши допълнителни материали..."></textarea></div></div>
         </div>
     </div>
 
-    <div class="section" style="border-left:4px solid var(--accent-amber, #f59e0b);">
-        <div class="section-title"><span class="icon">💬</span> Забележка</div>
+    <div class="section" data-step="3">
+        <div class="section-title"><span class="icon" data-icon="note"></span> Забележка</div>
         <div class="field" id="fWorkNotes">
             <textarea id="workNotes" rows="3" placeholder="Забележка, коментар..." style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;resize:vertical;background:#f8fafc;"></textarea>
         </div>
     </div>
 
-    <div class="section">
-        <div class="section-title"><span class="icon">⏱</span> Време за работа</div>
+    <div class="section" data-step="4">
+        <div class="section-title"><span class="icon" data-icon="clock"></span> Време за работа</div>
         <div class="field" id="fWorkHours">
             <label>Човекочасове <span class="required">*</span></label>
             <input type="number" id="workHours" step="0.5" min="0" placeholder="напр. 2.5" inputmode="decimal">
@@ -518,9 +580,11 @@
 </form>
 
 <div class="submit-section" id="submitSection" style="display:none;">
-    <button type="button" class="submit-btn" id="submitBtn" onclick="submitForm()">
-        ✓ Запиши работна карта
-    </button>
+    <div class="action-row">
+        <button type="button" class="act-back" id="actBack" onclick="prevStep()" disabled><span data-icon="back"></span>Назад</button>
+        <button type="button" class="act-next" id="actNext" onclick="nextStep()">Към дейност<span data-icon="next"></span></button>
+        <button type="button" class="submit-btn" id="submitBtn" onclick="submitForm()" style="display:none;">✓ Запиши работна карта</button>
+    </div>
 </div>
 
 <nav class="bottom-nav">
@@ -611,7 +675,7 @@ function prefillMechanicOnly(mech) {
     };
     banner.appendChild(backBtn);
     const form = document.getElementById('workCardForm');
-    form.insertBefore(banner, form.firstChild);
+    (document.getElementById('wcSteps') ? document.getElementById('wcSteps').insertAdjacentElement('afterend', banner) : form.insertBefore(banner, form.firstChild));
 }
 
 async function loadFullRequest(id) {
@@ -619,7 +683,7 @@ async function loadFullRequest(id) {
         const res = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: 'service_requests?id=eq.' + id + '&select=client_name,company_name,client_phone,brand,model,vehicle,reg_number,year_of_manufacture,frame_number,km_hours,description,activity_type,photo_data', method: 'GET' })
+            body: JSON.stringify({ path: 'service_requests?id=eq.' + id + '&select=request_number,client_name,company_name,client_phone,brand,model,vehicle,reg_number,year_of_manufacture,frame_number,km_hours,description,activity_type,photo_data', method: 'GET' })
         });
         if (!res.ok) return null;
         const rows = await res.json();
@@ -638,20 +702,21 @@ function prefillKm(d) {
 
 function machineInfoHtml(d) {
     const v = x => (x === null || x === undefined || x === '') ? '<span style="color:var(--text-muted,#5a6577);">—</span>' : '<strong>' + sanitize(x) + '</strong>';
-    let h = '<div class="rm-title">🚗 Данни за машината (от заявката)</div>' +
+    const head = [d.request_number, d.company_name || d.client_name].filter(Boolean).map(x => sanitize(String(x))).join(' · ');
+    let h = '<div class="plate-head">' + (head || 'Данни за машината от заявката') + '</div>' +
+        '<div class="plate-reg">' + sanitize(d.reg_number || '—') + '</div>' +
         '<div class="rm-grid">' +
             '<div><span>Марка</span>' + v(d.brand) + '</div>' +
             '<div><span>Модел</span>' + v(d.model || (!d.brand ? d.vehicle : '')) + '</div>' +
-            '<div><span>рег № / сер № / Инв №</span>' + v(d.reg_number) + '</div>' +
             '<div><span>Година на производство</span>' + v(d.year_of_manufacture) + '</div>' +
             '<div><span>рама №</span>' + v(d.frame_number) + '</div>' +
             '<div><span>изминати км / мч (по заявка)</span>' + v(d.km_hours) + '</div>' +
         '</div>';
     if (d.description) {
-        h += '<div class="rm-title" style="margin-top:10px;">📝 Описание на проблема</div><div class="rm-desc">' + sanitize(d.description) + '</div>';
+        h += '<div class="rm-title" style="margin-top:12px;">Описание на проблема</div><div class="rm-desc">' + sanitize(d.description) + '</div>';
     }
     if (d.photo_data) {
-        h += '<div class="rm-title" style="margin-top:10px;">📷 Снимка на талон</div>' +
+        h += '<div class="rm-title" style="margin-top:12px;">Снимка на талон</div>' +
              '<img src="' + sanitize(d.photo_data) + '" alt="Талон" class="rm-photo" onclick="window.open(this.src,\'_blank\')">' +
              '<div class="rm-hint">Натисни снимката за увеличаване</div>';
     }
@@ -662,7 +727,7 @@ function prefillFromRequest(data, requestId) {
     const banner = document.createElement('div');
     banner.id = 'requestBanner';
     banner.style.cssText = 'background:rgba(124,58,237,0.08);border:1.5px solid rgba(124,58,237,0.2);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;color:#5b21b6;font-weight:600;';
-    banner.innerHTML = '📋 Заявка от <strong>' + sanitize(data.company_name || data.client_name) + '</strong> — ' + sanitize(data.vehicle) + ' (' + sanitize(data.reg_number) + ')';
+    banner.innerHTML = 'Заявка от <strong>' + sanitize(data.company_name || data.client_name) + '</strong> — ' + sanitize(data.vehicle) + ' (' + sanitize(data.reg_number) + ')';
     const backBtn = document.createElement('button');
     backBtn.textContent = '← Назад към таблото';
     backBtn.style.cssText = 'display:block;width:100%;padding:10px;margin-top:8px;background:white;color:#7c3aed;border:1.5px solid rgba(124,58,237,0.3);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;';
@@ -674,12 +739,13 @@ function prefillFromRequest(data, requestId) {
     };
     banner.appendChild(backBtn);
     const form = document.getElementById('workCardForm');
-    form.insertBefore(banner, form.firstChild);
+    (document.getElementById('wcSteps') ? document.getElementById('wcSteps').insertAdjacentElement('afterend', banner) : form.insertBefore(banner, form.firstChild));
 
     // Пълни данни за машината от заявката
     const machineBox = document.createElement('div');
     machineBox.id = 'requestMachine';
     machineBox.className = 'req-machine';
+    machineBox.dataset.step = '1';
     machineBox.innerHTML = machineInfoHtml(data);
     banner.insertAdjacentElement('afterend', machineBox);
     loadFullRequest(requestId).then(full => { if (full) { machineBox.innerHTML = machineInfoHtml(full); prefillKm(full); } });
@@ -983,9 +1049,7 @@ async function submitForm() {
 }
 
 function showStatus(msg, type) {
-    const el = document.getElementById('statusMsg'); el.textContent = msg; el.className = 'status ' + type;
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    if (type === 'success') setTimeout(() => { el.className = 'status'; }, 8000);
+    if (window.UI) UI.toast(msg, type === 'success' ? 'success' : type === 'error' ? 'error' : 'info');
 }
 function resetForm() {
     const rm = document.getElementById('requestMachine'); if (rm && !window._currentRequestId) rm.remove();
@@ -1018,6 +1082,76 @@ function resetForm() {
 }
 window.addEventListener('online', () => document.getElementById('offlineBanner').classList.remove('show'));
 window.addEventListener('offline', () => document.getElementById('offlineBanner').classList.add('show'));
+// ===== Стъпки на работната карта =====
+let currentStep = 1;
+const STEP_NAMES = ['', 'Машина', 'Дейност', 'Материали', 'Време'];
+const FIELD_STEP = { fMechanic: 1, fDate: 1, fVehicle: 1, fRegNumber: 1, fKmHours: 1, fClient: 1, fActivity: 2, fMaterials: 3, fWorkHours: 4 };
+
+function goStep(n, noScroll) {
+    currentStep = Math.max(1, Math.min(4, n));
+    document.querySelectorAll('#workCardForm [data-step]').forEach(el => {
+        el.classList.toggle('step-hidden', +el.dataset.step !== currentStep);
+    });
+    document.querySelectorAll('#wcSteps .wc-step').forEach((b, i) => {
+        b.classList.toggle('cur', i + 1 === currentStep);
+        b.classList.toggle('done', i + 1 < currentStep);
+    });
+    const back = document.getElementById('actBack');
+    const next = document.getElementById('actNext');
+    const save = document.getElementById('submitBtn');
+    if (back) back.disabled = currentStep === 1;
+    if (next) {
+        next.style.display = currentStep < 4 ? 'flex' : 'none';
+        next.innerHTML = 'Към ' + STEP_NAMES[currentStep + 1].toLowerCase() + (window.UI ? UI.icon('next') : '');
+    }
+    if (save) save.style.display = currentStep === 4 ? 'flex' : 'none';
+    if (!noScroll) window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+// Проверка само на полетата от текущата стъпка
+function stepValid(step) {
+    validate();
+    let ok = true;
+    Object.keys(FIELD_STEP).forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (FIELD_STEP[id] === step) { if (el.classList.contains('invalid')) ok = false; }
+        else if (FIELD_STEP[id] > step) el.classList.remove('invalid');   // не показвай грешки от следващите стъпки
+    });
+    if (!ok) {
+        const first = document.querySelector('[data-step="' + step + '"] .field.invalid');
+        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        showStatus('Попълни задължителните полета, за да продължиш', 'error');
+    } else {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+    return ok;
+}
+
+function nextStep() { if (stepValid(currentStep)) goStep(currentStep + 1); }
+function prevStep() { goStep(currentStep - 1); }
+
+// При запис — ако липсва поле от предишна стъпка, отиди на нея
+const _origSubmitForm = submitForm;
+submitForm = async function () {
+    if (!validate()) {
+        const firstInvalid = Object.keys(FIELD_STEP).find(id => { const el = document.getElementById(id); return el && el.classList.contains('invalid'); });
+        if (firstInvalid) { goStep(FIELD_STEP[firstInvalid], true); stepValid(FIELD_STEP[firstInvalid]); }
+        return;
+    }
+    return _origSubmitForm();
+};
+
+// След успешен запис — обратно към първата стъпка
+const _origResetForm = resetForm;
+resetForm = function () { _origResetForm(); goStep(1); };
+
+document.addEventListener('DOMContentLoaded', () => {
+    const user = sessionStorage.getItem('workcard_user');
+    if (user) { document.getElementById('whoName').textContent = user; document.getElementById('whoChip').style.display = 'flex'; }
+    goStep(1, true);
+});
+
 document.addEventListener('DOMContentLoaded', loadNomenclatures);
 </script>
 <script>

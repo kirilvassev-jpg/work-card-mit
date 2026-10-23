@@ -179,22 +179,55 @@
         @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.85; } }
         .notif-count { background:white; color:var(--accent-red); font-size:18px; font-weight:800; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
     </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap&subset=cyrillic">
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ===== Табло на механиците — телефон и таблет ===== */
+.header { display:none !important; }
+.app-bar { height:64px; }
+.app-bar .title { font-size:19px; }
+.app-bar .clock { font-size:15px; font-weight:600; color:#dfe6f7; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.container { max-width:900px; }
+.summary-item { border-top-width:0 !important; border:1px solid var(--border); box-shadow:none; }
+.summary-icon { font-size:0 !important; height:12px; margin-bottom:4px; }
+.summary-icon .dot { display:inline-block; width:12px; height:12px; border-radius:50%; }
+.summary-label { text-transform:none !important; letter-spacing:0 !important; font-size:14px !important; }
+.task-card { border:1px solid var(--border); box-shadow:none !important; }
+.action-btn { min-height:60px; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:none !important; border-top:none !important; }
+.btn-claim { background:var(--accent-blue) !important; }
+.btn-workcard { background:var(--accent-red) !important; }
+.btn-free-card { display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; }
+.notif-banner { background:var(--accent-red) !important; box-shadow:none !important; margin:0 0 14px !important; }
+.mechanic-card { border:1px solid var(--border); box-shadow:none; min-height:150px; }
+.mechanic-card-name { font-size:19px !important; }
+#soundBar { display:none; }
+#soundBar[style*="flex"] { display:flex !important; }
+@media (max-width:600px) {
+    .app-bar .title small { display:none; }
+    .app-bar .mark { display:none; }
+    .app-bar .title { font-size:17px; }
+    .app-bar .clock { font-size:13px; }
+    .summary { gap:6px !important; }
+    .summary-val { font-size:26px !important; }
+    .task-client { font-size:19px !important; }
+}
+</style>
+<script src="ui.js"></script>
 </head>
 <body>
 
-<div class="header">
-    <button onclick="window.history.back()" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">← Назад</button>
-    <div class="header-top">
-        <img src="Repairs.png" alt="Logo">
-        <h1>СЕРВИЗНО ТАБЛО</h1>
-    </div>
-    <div class="header-sub">Ар Си Техник ООД</div>
-    <div class="header-clock" id="clock"></div>
+<div class="header" style="display:none"><div id="clockHidden"></div></div>
+<div class="app-bar">
+    <button class="icon-btn" onclick="window.history.back()" aria-label="Назад" data-icon="back" data-icon-class="lg"></button>
+    <div class="mark"><img src="Repairs.png" alt=""></div>
+    <div class="title">Табло на механиците<small>Ар Си Техник ООД</small></div>
+    <div class="clock" id="clock"></div>
 </div>
 
 <div class="container">
     <div id="statusMsg" class="status"></div>
-<div id="soundBar" onclick="unlockAudio()" style="display:none;align-items:center;justify-content:center;gap:8px;background:#f59e0b;color:white;padding:12px;font-size:16px;font-weight:700;cursor:pointer;">🔊 Натисни тук, за да включиш звука и известията</div>
+<div id="soundBar" onclick="unlockAudio()" style="display:none;align-items:center;justify-content:center;gap:8px;background:#f59e0b;color:white;padding:12px;font-size:16px;font-weight:700;cursor:pointer;"><span data-icon="sound" data-icon-class="lg"></span>&nbsp;Натисни тук, за да включиш звука и известията</div>
 
     <!-- Екран 1: Избор на механик -->
     <div id="screenMechanics" class="screen-active">
@@ -214,19 +247,19 @@
         </div>
         <button onclick="backToMechanics()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:8px 18px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">← Назад</button>
     </div>
-    <button class="btn-free-card" onclick="createCardWithoutRequest()">📝 Създай работна карта (без заявка)</button>
+    <button class="btn-free-card" onclick="createCardWithoutRequest()"><span data-icon="plus" data-icon-class="lg"></span>Създай работна карта (без заявка)</button>
 
     <div id="notifBanner" class="notif-banner">
-        <span style="font-size:24px;">🔔</span>
+        <span data-icon="bell" data-icon-class="lg"></span>
         <div style="flex:1;"><strong style="font-size:16px;">Нови задачи!</strong><br>Има назначени задачи за изпълнение</div>
         <div class="notif-count" id="notifCount">0</div>
     </div>
 
     <div class="summary" id="summaryBar">
-        <div class="summary-item"><div class="summary-icon">🔴</div><div class="summary-val" id="sNew">0</div><div class="summary-label">Нови</div></div>
-        <div class="summary-item"><div class="summary-icon">🟣</div><div class="summary-val" id="sAssigned">0</div><div class="summary-label">Разпред.</div></div>
-        <div class="summary-item"><div class="summary-icon">🔵</div><div class="summary-val" id="sProgress">0</div><div class="summary-label">В изпълн.</div></div>
-        <div class="summary-item"><div class="summary-icon">🟢</div><div class="summary-val" id="sDone">0</div><div class="summary-label">Изпълнени</div></div>
+        <div class="summary-item"><div class="summary-icon"><span class="dot" style="background:#e41e2b"></span></div><div class="summary-val" id="sNew">0</div><div class="summary-label">Нови</div></div>
+        <div class="summary-item"><div class="summary-icon"><span class="dot" style="background:#6d34d6"></span></div><div class="summary-val" id="sAssigned">0</div><div class="summary-label">Разпред.</div></div>
+        <div class="summary-item"><div class="summary-icon"><span class="dot" style="background:#2f6fe0"></span></div><div class="summary-val" id="sProgress">0</div><div class="summary-label">В изпълн.</div></div>
+        <div class="summary-item"><div class="summary-icon"><span class="dot" style="background:#0f8a5f"></span></div><div class="summary-val" id="sDone">0</div><div class="summary-label">Изпълнени</div></div>
     </div>
 
     <div id="loading" class="loading">
@@ -500,12 +533,12 @@ function renderTasks() {
         if (t.status === 'Разпределена') {
             actionsSection = `
                 <div class="task-actions">
-                    <button class="action-btn btn-claim" onclick="claimTask('${t.id}')">▶ Поемам задачата</button>
+                    <button class="action-btn btn-claim" onclick="claimTask('${t.id}')">${UI.icon('play','lg')}Поемам задачата</button>
                 </div>`;
         } else if (t.status === 'В изпълнение') {
             actionsSection = `
                 <div class="task-actions">
-                    ${selectedMechanic === t.responsible_mechanic ? `<button class="action-btn btn-workcard" onclick="fillWorkCard('${t.id}')">📝 Попълни работна карта</button>` : ''}
+                    ${selectedMechanic === t.responsible_mechanic ? `<button class="action-btn btn-workcard" onclick="fillWorkCard('${t.id}')">${UI.icon('file','lg')}Попълни работна карта</button>` : ''}
                     <div class="info-banner">★ Само отговорникът <strong>${t.responsible_mechanic}</strong> попълва работната карта</div>
                 </div>`;
         }
@@ -569,7 +602,7 @@ async function claimTask(taskId) {
 const DAYS_BG_T = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
 function tp2(n) { return String(n).padStart(2, '0'); }
 function planLine(t) {
-    if (!t.scheduled_at) return '<div class="task-plan muted">🕒 Без планиран час</div>';
+    if (!t.scheduled_at) return '<div class="task-plan muted">' + UI.icon('clock','sm') + ' Без планиран час</div>';
     const s = new Date(t.scheduled_at);
     const dur = parseFloat(t.estimated_hours) || 1;
     const e = new Date(s.getTime() + dur * 3600000);
@@ -578,7 +611,7 @@ function planLine(t) {
     const diffDays = Math.round((day0 - today) / 86400000);
     const dayLabel = diffDays === 0 ? 'Днес' : diffDays === 1 ? 'Утре' : DAYS_BG_T[s.getDay()] + ' ' + tp2(s.getDate()) + '.' + tp2(s.getMonth() + 1);
     const late = t.status !== 'Изпълнена' && new Date() > e;
-    return '<div class="task-plan' + (late ? ' late' : diffDays === 0 ? ' today' : '') + '">🕒 ' + dayLabel + ', ' +
+    return '<div class="task-plan' + (late ? ' late' : diffDays === 0 ? ' today' : '') + '">' + UI.icon('clock','sm') + ' ' + dayLabel + ', ' +
         tp2(s.getHours()) + ':' + tp2(s.getMinutes()) + ' – ' + tp2(e.getHours()) + ':' + tp2(e.getMinutes()) +
         (late ? ' · закъснява' : '') + '</div>';
 }
