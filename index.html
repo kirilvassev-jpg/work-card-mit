@@ -57,6 +57,11 @@
         .header-text { text-align: left; }
         .header h1 { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 0.3px; }
         .header .subtitle { font-size: 12px; color: rgba(255,255,255,0.7); }
+        @media (max-width:600px) {
+            .header { padding: 16px 84px 24px !important; }
+            .header h1 { font-size: 18px; }
+            .header-top img { width:34px !important; height:34px !important; }
+        }
 
         /* Offline banner */
         .offline-banner {
@@ -378,7 +383,7 @@
     <div class="header-top">
         <img src="Repairs.png" alt="Logo" style="width:42px; height:42px; border-radius:10px; box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 0 15px rgba(255,255,255,0.2); padding:3px; background: rgba(255,255,255,0.15); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.25);">
         <div class="header-text">
-            <h1>ПЛАТФОРМА ЗА УПРАВЛЕНИЕ НА СЕРВИЗНИ ЗАЯВКИ</h1>
+            <h1>РАБОТНА КАРТА</h1>
         </div>
     </div>
 </div>
@@ -514,6 +519,10 @@
 </nav>
 
 <script>
+// Без вход → към login.html
+if (sessionStorage.getItem('workcard_auth') !== 'true') {
+    window.location.replace('login.html');
+}
 function sanitize(s){if(!s)return s;var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
 
