@@ -603,8 +603,14 @@ function fillWorkCard(taskId) {
     sessionStorage.setItem('workcard_request_id', task.id);
     sessionStorage.setItem('workcard_request_data', JSON.stringify({
         client_name: task.client_name,
+        company_name: task.company_name || null,
         vehicle: task.vehicle,
+        brand: task.brand || null,
+        model: task.model || null,
         reg_number: task.reg_number,
+        year_of_manufacture: task.year_of_manufacture || null,
+        frame_number: task.frame_number || null,
+        km_hours: task.km_hours || null,
         activity_type: task.activity_type,
         description: task.description,
         assigned_mechanics: task.assigned_mechanics,
