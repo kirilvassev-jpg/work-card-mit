@@ -586,6 +586,24 @@
 
 <script>
 function sanitize(s){if(!s)return s;var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+// Safe notification — works on Android (via Service Worker) and desktop
+function safeNotify(title, options) {
+    try {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg && reg.showNotification) {
+                    reg.showNotification(title, options).catch(() => {});
+                } else {
+                    try { new Notification(title, options); } catch (e) {}
+                }
+            }).catch(() => {});
+        } else {
+            new Notification(title, options);
+        }
+    } catch (e) { console.log('Notification skipped:', e.message); }
+}
+
 const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
 
 let allCards = [];
@@ -1290,7 +1308,7 @@ function updateReqCounts() {
             if (counts['Нова'] > prevNewReqCount) {
                 playReqAlertSound();
                 if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification('Нови заявки', { body: counts['Нова'] + ' заявки чакат разпределяне', icon: 'Repairs.png', tag: 'new-requests' });
+                    safeNotify('Нови заявки', { body: counts['Нова'] + ' заявки чакат разпределяне', icon: 'Repairs.png', tag: 'new-requests' });
                 }
             }
         } else {
