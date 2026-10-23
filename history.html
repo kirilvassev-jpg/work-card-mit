@@ -86,6 +86,7 @@
         }
         .req-status-tab.active { color:white; background:var(--primary); }
         .req-details.open { display: block !important; }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.85; } }
 
         /* Request timeline */
         .request-timeline { font-size:12px; }
@@ -454,6 +455,15 @@
 </div>
 
 <div id="tabRequests" style="display:none;">
+    <!-- Notification banner -->
+    <div id="newReqBanner" style="display:none;background:linear-gradient(135deg,#e41e2b,#c41820);color:white;padding:12px 16px;border-radius:var(--radius);margin-bottom:12px;align-items:center;gap:10px;animation:pulse 2s infinite;box-shadow:0 4px 16px rgba(228,30,43,0.3);">
+        <span style="font-size:22px;">🔔</span>
+        <div style="flex:1;">
+            <strong style="font-size:14px;">Нови заявки!</strong><br>
+            <span style="font-size:12px;opacity:0.9;" id="newReqBannerText">Заявки чакат разпределяне</span>
+        </div>
+        <div id="newReqBannerCount" style="background:white;color:#e41e2b;font-size:16px;font-weight:800;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;"></div>
+    </div>
     <!-- Филтри и търсене -->
     <div style="background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
@@ -1229,6 +1239,25 @@ async function loadServiceRequests() {
     }
 }
 
+let prevNewReqCount = 0;
+
+function playReqAlertSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        function beep(time, freq) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.type = 'sine'; osc.frequency.setValueAtTime(freq, time);
+            gain.gain.setValueAtTime(0.4, time);
+            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.25);
+            osc.start(time); osc.stop(time + 0.25);
+        }
+        const now = ctx.currentTime;
+        beep(now, 880); beep(now + 0.3, 1100); beep(now + 0.6, 880);
+    } catch(e) {}
+}
+
 function updateReqCounts() {
     const counts = { 'Нова':0, 'Разпределена':0, 'В изпълнение':0, 'Изпълнена':0 };
     allServiceRequests.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
@@ -1237,11 +1266,32 @@ function updateReqCounts() {
     document.getElementById('rcProgress').textContent = counts['В изпълнение'];
     document.getElementById('rcDone').textContent = counts['Изпълнена'];
 
-    // Update tab badge with count of unassigned (неразпределени) requests
+    // Update tab badge
     const unassigned = counts['Нова'];
     const badge = document.getElementById('requestsTabCount');
     if (unassigned > 0) { badge.textContent = unassigned; badge.style.display = 'inline'; }
     else { badge.style.display = 'none'; }
+
+    // Notification banner
+    const banner = document.getElementById('newReqBanner');
+    if (banner) {
+        if (counts['Нова'] > 0) {
+            banner.style.display = 'flex';
+            document.getElementById('newReqBannerCount').textContent = counts['Нова'];
+            document.getElementById('newReqBannerText').textContent = counts['Нова'] === 1
+                ? '1 нова заявка чака разпределяне'
+                : counts['Нова'] + ' нови заявки чакат разпределяне';
+            if (counts['Нова'] > prevNewReqCount) {
+                playReqAlertSound();
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('Нови заявки', { body: counts['Нова'] + ' заявки чакат разпределяне', icon: 'Repairs.png', tag: 'new-requests' });
+                }
+            }
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+    prevNewReqCount = counts['Нова'];
 }
 
 function filterReqByStatus(status) {
@@ -1624,6 +1674,10 @@ function exportRequestsExcel() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
     if (sessionStorage.getItem('workcard_auth') === 'true') {
         showApp();
     } else {
@@ -1631,6 +1685,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('passwordInput').focus();
     }
 });
+
+// Auto-refresh requests every 30 seconds
+setInterval(() => {
+    if (allServiceRequests.length >= 0 && document.getElementById('tabRequests').style.display !== 'none') {
+        loadServiceRequests();
+    }
+}, 30000);
 </script>
 <script>
 if ('serviceWorker' in navigator) {
