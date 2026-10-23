@@ -86,6 +86,25 @@
         }
         .req-status-tab.active { color:white; background:var(--primary); }
         .req-details.open { display: block !important; }
+        .times-box:empty { display:none; }
+        .times-box { margin:10px 0; padding:12px; border-radius:10px; background:#f8fafc; border:1px solid var(--border); border-left:4px solid #1a3a8f; font-size:12px; }
+        .times-title { font-size:13px; font-weight:800; color:#1a3a8f; margin-bottom:8px; }
+        .times-row { display:grid; grid-template-columns:105px 95px 1fr; gap:6px; align-items:baseline; padding:2px 0; }
+        .times-step { font-weight:800; color:var(--text); }
+        .times-step.pending { color:var(--text-muted); font-weight:600; }
+        .times-at { font-variant-numeric:tabular-nums; color:var(--text); }
+        .times-who { color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; }
+        .times-gap { padding:2px 0 4px 14px; font-size:12px; color:var(--text); }
+        .times-live { display:inline-block; font-size:10px; font-weight:800; color:white; background:#3b82f6; padding:1px 7px; border-radius:10px; margin-left:4px; }
+        .times-total { display:flex; justify-content:space-between; gap:8px; border-top:1px dashed var(--border); margin-top:6px; padding-top:6px; font-size:12px; color:var(--text-muted); }
+        .times-total strong { color:var(--text); font-size:13px; }
+        .times-note { margin-top:6px; font-size:11px; color:#92400e; background:rgba(245,158,11,0.1); padding:6px 8px; border-radius:6px; }
+        .times-delay { margin-top:8px; padding:7px 10px; border-radius:6px; font-size:12px; font-weight:700; }
+        .times-delay.late { background:rgba(228,30,43,0.1); color:#c41820; border-left:3px solid #e41e2b; }
+        .times-delay.ok { background:rgba(16,185,129,0.1); color:#065f46; }
+        .times-delay.neutral { background:#eef2f7; color:var(--text-muted); font-weight:600; }
+        .times-legend { margin-top:8px; font-size:10px; color:var(--text-muted); display:flex; gap:8px; flex-wrap:wrap; }
+        @media (max-width:480px) { .times-row { grid-template-columns:90px 80px 1fr; } }
         .edit-ct { flex:1; padding:10px; border:1.5px solid var(--border); border-radius:10px; background:#f8fafc; font-size:13px; font-weight:700; cursor:pointer; color:var(--text); }
         .edit-ct.active { border-color:#10b981; background:rgba(16,185,129,0.08); color:#059669; }
         .req-card { cursor:pointer; }
@@ -1455,6 +1474,8 @@ function renderServiceRequests(requests) {
                                 '<button onclick="event.stopPropagation();addRequestComment(\'' + r.id + '\')" style="padding:7px 12px;background:#1a3a8f;color:white;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">💬</button>' +
                             '</div>' +
                         '</div>' +
+                        // Times block — only for Управител
+                        (isManagerAdmin() ? '<div id="times-' + r.id + '" class="times-box"></div>' : '') +
                         // Edit button for coordinator
                         (isCoordinatorOrAdmin() ? '<div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:8px;">' +
                             '<button onclick="event.stopPropagation();editRequest(\'' + r.id + '\')" style="width:100%;padding:10px;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 0 #92400e,0 4px 10px rgba(245,158,11,0.25);border-top:1px solid rgba(255,255,255,0.3);">✏️ Редактирай заявка</button>' +
@@ -1480,7 +1501,10 @@ function toggleReqDetails(cardEl, requestId) {
     const hint = cardEl.querySelector('.req-toggle-hint');
     if (hint) hint.textContent = wasOpen ? '▾ Пълна информация за заявката' : '▴ Скрий информацията';
     if (!wasOpen) {
-        loadRequestTimeline(requestId).then(logs => renderTimeline(logs, 'timeline-' + requestId));
+        loadRequestTimeline(requestId).then(logs => {
+            renderTimeline(logs, 'timeline-' + requestId);
+            if (isManagerAdmin()) renderRequestTimes(requestId, logs);
+        });
     }
 }
 
@@ -1528,6 +1552,111 @@ function goToWorkCard(cardId) {
         const el = document.querySelector('[data-card-id="' + cardId + '"]');
         if (el) { el.scrollIntoView({ behavior:'smooth', block:'center' }); el.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.3)'; setTimeout(() => el.style.boxShadow = '', 3000); }
     }, 500);
+}
+
+// ===== Времена по заявка — видимо само за Управител =====
+function isManagerAdmin() {
+    return sessionStorage.getItem('workcard_role') === 'admin' || sessionStorage.getItem('workcard_db_role') === 'admin';
+}
+
+
+function fmtDuration(h) {
+    if (h === null || h === undefined || isNaN(h) || h < 0) return '—';
+    const totalMin = Math.round(h * 60);
+    const d = Math.floor(totalMin / 1440), hh = Math.floor((totalMin % 1440) / 60), mm = totalMin % 60;
+    if (d > 0) return d + ' дн ' + hh + ' ч';
+    if (hh > 0) return hh + ' ч ' + mm + ' мин';
+    return Math.max(mm, 1) + ' мин';
+}
+
+function fmtStamp(v) {
+    if (!v) return '—';
+    const d = new Date(v), p = n => String(n).padStart(2, '0');
+    return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '  ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+function hrs(a, b) { if (!a || !b) return null; return (new Date(b) - new Date(a)) / 3600000; }
+
+
+// Закъснение спрямо желаната дата (краят на деня на желаната дата)
+function delayHtml(r) {
+    if (!r.desired_date) return '<div class="times-delay neutral">Няма зададена желана дата — закъснение не се отчита</div>';
+    const deadline = new Date(r.desired_date + 'T23:59:59');
+    const end = r.completed_at ? new Date(r.completed_at) : new Date();
+    const lateH = (end - deadline) / 3600000;
+    const desired = new Date(r.desired_date).toLocaleDateString('bg-BG');
+    if (lateH <= 0) {
+        return r.completed_at
+            ? '<div class="times-delay ok">✓ Изпълнена в срок (желана дата ' + desired + ')</div>'
+            : '<div class="times-delay neutral">В срок — желана дата ' + desired + '</div>';
+    }
+    return r.completed_at
+        ? '<div class="times-delay late">⚠ Изпълнена със закъснение ' + fmtDuration(lateH) + ' след желаната дата (' + desired + ')</div>'
+        : '<div class="times-delay late">⚠ Просрочена с ' + fmtDuration(lateH) + ' — желана дата ' + desired + '</div>';
+}
+
+async function renderRequestTimes(requestId, logs) {
+    const box = document.getElementById('times-' + requestId);
+    const r = allServiceRequests.find(x => x.id === requestId);
+    if (!box || !r) return;
+
+    const nowIso = new Date().toISOString();
+    const by = action => { const l = (logs || []).find(x => x.action === action); return l ? l.performed_by : null; };
+    const esc = v => sanitize(v === null || v === undefined ? '' : String(v));
+
+    // Duration of each stage; open stage counts up to "now"
+    const steps = [
+        { label: 'Регистрирана', at: r.created_at, who: r.created_by || by('created') },
+        { label: 'Разпределена', at: r.assigned_at, who: (by('assigned') || '') + (r.responsible_mechanic ? ' → ★ ' + r.responsible_mechanic : '') },
+        { label: 'Поета', at: r.started_at, who: by('started') || r.responsible_mechanic },
+        { label: 'Изпълнена', at: r.completed_at, who: r.completed_at ? 'работна карта записана' : '' }
+    ];
+    const gaps = [
+        { key: 'assign',  text: 'чакала за разпределяне', from: r.created_at, to: r.assigned_at },
+        { key: 'claim',   text: 'до поемане от механик',  from: r.assigned_at, to: r.started_at },
+        { key: 'execute', text: 'изпълнение',             from: r.started_at, to: r.completed_at }
+    ];
+
+    let html = '<div class="times-title">⏱ Времена по заявката</div>';
+    steps.forEach((st, i) => {
+        html += '<div class="times-row"><span class="times-step' + (st.at ? '' : ' pending') + '">' + st.label + '</span>' +
+                '<span class="times-at">' + fmtStamp(st.at) + '</span>' +
+                '<span class="times-who">' + esc(st.who) + '</span></div>';
+        if (i < gaps.length) {
+            const g = gaps[i];
+            if (!g.from) return;
+            const running = !g.to;
+            const h = hrs(g.from, g.to || nowIso);
+            html += '<div class="times-gap">↓ ' + g.text + ': <strong>' + fmtDuration(h) + '</strong>' +
+                    (running ? ' <span class="times-live">тече в момента</span>' : '') + '</div>';
+        }
+    });
+
+    const total = hrs(r.created_at, r.completed_at || nowIso);
+    html += '<div class="times-total"><span>' + (r.completed_at ? 'ОБЩО от регистрация до изпълнение' : 'ОБЩО до момента (не е изпълнена)') + '</span><strong>' + fmtDuration(total) + '</strong></div>';
+
+    html += delayHtml(r);
+
+    if (r.work_card_id) {
+        try {
+            const cards = await supabaseGet('work_cards', 'id=eq.' + r.work_card_id + '&select=work_hours,km_traveled');
+            if (cards && cards[0]) {
+                const wh = parseFloat(cards[0].work_hours);
+                const exec = hrs(r.started_at, r.completed_at);
+                html += '<div class="times-total" style="border-top:none;padding-top:2px;"><span>Въведени човекочасове в картата</span><strong>' + (isNaN(wh) ? '—' : String(wh).replace('.', ',') + ' ч') + '</strong></div>';
+                if (!isNaN(wh) && exec !== null && exec > 0) {
+                    const diff = exec - wh;
+                    if (Math.abs(diff) >= 1) {
+                        html += '<div class="times-note">' + (diff > 0
+                            ? 'Изпълнението по системата е с ' + fmtDuration(diff) + ' по-дълго от въведените човекочасове (възможно чакане, път или късно записана карта).'
+                            : 'Въведените човекочасове са с ' + fmtDuration(-diff) + ' повече от времето по системата (вероятно работа на няколко механика).') + '</div>';
+                    }
+                }
+            }
+        } catch (e) { /* ignore */ }
+    }
+    html += '<div class="times-legend">Закъснението се отчита спрямо желаната дата за ремонт / ТО · видимо само за Управител</div>';
+    box.innerHTML = html;
 }
 
 function isCoordinatorOrAdmin() {
