@@ -406,7 +406,7 @@ async function handleRedirect() {
             const role = sessionStorage.getItem('workcard_role');
             if (auth === 'true' && role) {
                 switch(role) {
-                    case 'mechanic': window.location.href = 'index.html'; break;
+                    case 'mechanic': window.location.href = 'tablet.html'; break;
                     case 'coordinator': window.location.href = 'requests.html'; break;
                     case 'manager': window.location.href = 'assign.html'; break;
                     case 'admin': window.location.href = 'dashboard.html'; break;
