@@ -86,6 +86,8 @@
         }
         .req-status-tab.active { color:white; background:var(--primary); }
         .req-details.open { display: block !important; }
+        .edit-ct { flex:1; padding:10px; border:1.5px solid var(--border); border-radius:10px; background:#f8fafc; font-size:13px; font-weight:700; cursor:pointer; color:var(--text); }
+        .edit-ct.active { border-color:#10b981; background:rgba(16,185,129,0.08); color:#059669; }
         .req-card { cursor:pointer; }
         .req-card .req-toggle-hint, .req-card .req-toggle-hint * { cursor:pointer; }
         .req-card .req-toggle-hint:hover { background:rgba(26,58,143,0.12) !important; }
@@ -1534,9 +1536,23 @@ function isCoordinatorOrAdmin() {
     return role === 'coordinator' || dbRole === 'admin' || role === 'admin';
 }
 
+function escAttr(v) {
+    return (v === null || v === undefined) ? '' : String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+let editClientType = 'ФЛ';
+function setEditClientType(type) {
+    editClientType = type;
+    document.getElementById('editCtFL').classList.toggle('active', type === 'ФЛ');
+    document.getElementById('editCtUL').classList.toggle('active', type === 'ЮЛ');
+    document.getElementById('editUlFields').style.display = type === 'ЮЛ' ? 'flex' : 'none';
+}
+
 function editRequest(requestId) {
     const r = allServiceRequests.find(req => req.id === requestId);
     if (!r) return;
+    const isUL = r.client_type === 'ЮЛ';
+    editClientType = isUL ? 'ЮЛ' : 'ФЛ';
 
     const overlay = document.createElement('div');
     overlay.id = 'editReqOverlay';
@@ -1550,16 +1566,22 @@ function editRequest(requestId) {
         '<div style="display:flex;flex-direction:column;gap:12px;">' +
             '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Описание на проблема</label>' +
                 '<textarea id="editReqDesc" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;min-height:80px;font-family:inherit;">' + (r.description || '') + '</textarea></div>' +
-            '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Клиент</label>' +
-                '<input id="editReqClient" value="' + (r.client_name || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
-            '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Телефон</label>' +
-                '<input id="editReqPhone" value="' + (r.client_phone || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
-            '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Имейл</label>' +
-                '<input id="editReqEmail" value="' + (r.client_email || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
-            (r.client_type === 'ЮЛ' ? '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Фирма</label>' +
-                '<input id="editReqCompany" value="' + (r.company_name || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
-            '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Булстат</label>' +
-                '<input id="editReqBulstat" value="' + (r.bulstat || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' : '') +
+            '<div style="border-top:1px solid var(--border);padding-top:12px;font-size:14px;font-weight:800;color:#059669;">👤 Данни на клиента</div>' +
+            '<div style="display:flex;gap:8px;">' +
+                '<button type="button" id="editCtFL" class="edit-ct' + (isUL ? '' : ' active') + '" onclick="setEditClientType(\'ФЛ\')">Физическо лице</button>' +
+                '<button type="button" id="editCtUL" class="edit-ct' + (isUL ? ' active' : '') + '" onclick="setEditClientType(\'ЮЛ\')">Юридическо лице</button>' +
+            '</div>' +
+            '<div id="editUlFields" style="display:' + (isUL ? 'flex' : 'none') + ';flex-direction:column;gap:12px;">' +
+                '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Име на фирма *</label><input id="editReqCompany" value="' + escAttr(r.company_name) + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+                '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Булстат *</label><input id="editReqBulstat" value="' + escAttr(r.bulstat) + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+                '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Контактно лице (Име, Фамилия)</label><input id="editReqContact" value="' + escAttr(r.contact_person) + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+            '</div>' +
+            '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Име, Фамилия *</label><input id="editReqClient" value="' + escAttr(r.client_name) + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+                '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Телефон *</label><input id="editReqPhone" value="' + escAttr(r.client_phone) + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+                '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Имейл</label><input id="editReqEmail" value="' + escAttr(r.client_email) + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+            '</div>' +
+            '<div style="border-top:1px solid var(--border);padding-top:12px;font-size:14px;font-weight:800;color:var(--primary);">🚗 Данни за машината</div>' +
             '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
                 '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Марка</label>' +
                     '<input id="editReqBrand" value="' + (r.brand || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
@@ -1611,15 +1633,31 @@ async function saveEditRequest(requestId) {
         updated_at: new Date().toISOString()
     };
 
-    const companyEl = document.getElementById('editReqCompany');
-    if (companyEl) updateData.company_name = companyEl.value.trim() || null;
-    const bulstatEl = document.getElementById('editReqBulstat');
-    if (bulstatEl) updateData.bulstat = bulstatEl.value.trim() || null;
+    updateData.client_type = editClientType;
+    if (editClientType === 'ЮЛ') {
+        updateData.company_name = document.getElementById('editReqCompany').value.trim() || null;
+        updateData.bulstat = document.getElementById('editReqBulstat').value.trim() || null;
+        updateData.contact_person = document.getElementById('editReqContact').value.trim() || null;
+    } else {
+        updateData.company_name = null;
+        updateData.bulstat = null;
+        updateData.contact_person = null;
+    }
 
-    if (!updateData.client_name || !updateData.brand || !updateData.model || !updateData.reg_number) {
-        alert('Попълни задължителните полета: Клиент, Марка, Модел, рег №');
+    const missing = [];
+    if (!updateData.client_name) missing.push('Име, Фамилия');
+    if (!updateData.client_phone) missing.push('Телефон');
+    if (editClientType === 'ЮЛ' && !updateData.company_name) missing.push('Име на фирма');
+    if (editClientType === 'ЮЛ' && !updateData.bulstat) missing.push('Булстат');
+    if (!updateData.brand) missing.push('Марка');
+    if (!updateData.model) missing.push('Модел');
+    if (!updateData.reg_number) missing.push('рег №');
+    if (missing.length) {
+        alert('Попълни задължителните полета: ' + missing.join(', '));
         return;
     }
+    const before = allServiceRequests.find(x => x.id === requestId);
+    const typeChanged = before && (before.client_type || 'ФЛ') !== editClientType;
 
     try {
         await supabasePatch('service_requests', 'id=eq.' + requestId, updateData);
@@ -1634,7 +1672,7 @@ async function saveEditRequest(requestId) {
                     request_id: requestId,
                     action: 'edited',
                     performed_by: sessionStorage.getItem('workcard_user') || 'Неизвестен',
-                    details: 'Заявка редактирана'
+                    details: typeChanged ? 'Заявка редактирана (клиент сменен на ' + editClientType + ')' : 'Заявка редактирана'
                 }
             })
         });
