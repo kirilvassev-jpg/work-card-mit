@@ -1100,11 +1100,11 @@ function goStep(n, noScroll) {
     const next = document.getElementById('actNext');
     const save = document.getElementById('submitBtn');
     if (back) back.disabled = currentStep === 1;
+    if (save) save.style.display = currentStep === 4 ? 'flex' : 'none';
     if (next) {
         next.style.display = currentStep < 4 ? 'flex' : 'none';
-        next.innerHTML = 'Към ' + STEP_NAMES[currentStep + 1].toLowerCase() + (window.UI ? UI.icon('next') : '');
+        if (currentStep < 4) next.innerHTML = 'Към ' + STEP_NAMES[currentStep + 1].toLowerCase() + (window.UI ? UI.icon('next') : ' ›');
     }
-    if (save) save.style.display = currentStep === 4 ? 'flex' : 'none';
     if (!noScroll) window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
