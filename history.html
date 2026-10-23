@@ -1369,15 +1369,12 @@ function renderServiceRequests(requests) {
                     '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><div style="font-size:15px;font-weight:700;">' + r.client_name + '</div><div style="font-size:12px;color:var(--text-muted);">' + dateStr + '</div></div>' +
                     '<div style="font-size:14px;">' + r.vehicle + ' — ' + r.reg_number + '</div>' +
                     (r.description ? '<div style="font-size:13px;color:var(--text-muted);margin-top:4px;padding:6px 8px;background:#f8fafc;border-radius:6px;border-left:3px solid var(--border);">' + r.description + '</div>' : '') +
-                    (r.photo_data ? '<div style="margin-top:8px;">' +
-                        '<img src="' + r.photo_data + '" alt="Талон" style="max-width:100%;max-height:200px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;" onclick="event.stopPropagation();window.open(this.src,\'_blank\')">' +
-                        '<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">📷 Снимка на талон — натисни за увеличаване</div>' +
-                    '</div>' : '') +
                     '<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">📞 ' + (r.client_phone || '—') + (r.client_email ? ' · 📧 ' + r.client_email : '') + '</div>' +
                     '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;">' + actBadges + '<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;' + badgeStyle + ';">' + r.status + '</span>' + urgentBadge + workCardBadge + '</div>' +
                     mechHtml +
                     completedHtml +
-                    '<div class="req-details" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">' +
+                    '<div class="req-toggle-hint" style="margin-top:10px;padding:8px;text-align:center;background:rgba(26,58,143,0.06);border:1px dashed rgba(26,58,143,0.3);border-radius:8px;font-size:12px;font-weight:700;color:var(--primary);">▾ Пълна информация за заявката</div>' +
+                    '<div class="req-details" onclick="event.stopPropagation()" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">' +
                         // Full info section
                         '<div style="margin-bottom:12px;">' +
                             '<div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px;">📝 Описание на проблема</div>' +
@@ -1454,6 +1451,8 @@ function toggleReqDetails(cardEl, requestId) {
     const details = cardEl.querySelector('.req-details');
     const wasOpen = details.classList.contains('open');
     details.classList.toggle('open');
+    const hint = cardEl.querySelector('.req-toggle-hint');
+    if (hint) hint.textContent = wasOpen ? '▾ Пълна информация за заявката' : '▴ Скрий информацията';
     if (!wasOpen) {
         loadRequestTimeline(requestId).then(logs => renderTimeline(logs, 'timeline-' + requestId));
     }

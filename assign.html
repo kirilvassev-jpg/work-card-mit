@@ -118,6 +118,15 @@
 
         /* Assignment section */
         .assign-section { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+        .full-toggle { margin-top:10px; padding:8px; text-align:center; background:rgba(26,58,143,0.06); border:1px dashed rgba(26,58,143,0.3); border-radius:8px; font-size:12px; font-weight:700; color:var(--primary); cursor:pointer; }
+        .full-info { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+        .fi-title { font-size:13px; font-weight:700; margin:10px 0 6px; }
+        .fi-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:12px; }
+        .fi-grid .lbl { color:var(--text-muted); }
+        .fi-box { padding:8px; background:#f8fafc; border-radius:6px; }
+        .fi-box .cap { font-size:10px; color:var(--text-muted); font-weight:600; text-transform:uppercase; }
+        .fi-box .val { font-size:13px; font-weight:600; }
+        @media (max-width:500px) { .fi-grid { grid-template-columns:1fr; } }
         .assign-label { font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
 
         /* Mechanic checkboxes */
@@ -482,12 +491,10 @@ function renderRequests() {
                     <div style="font-size:10px;color:${waitColor};font-weight:600;">⏱ Чака ${waitTime}</div>
                     <div class="card-vehicle">${r.vehicle} — ${r.reg_number}</div>
                     ${r.description ? `<div class="card-desc">${r.description}</div>` : ''}
-                    ${r.photo_data ? `<div style="margin-top:8px;">
-                        <img src="${r.photo_data}" alt="Талон" style="max-width:100%;max-height:200px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;" onclick="event.stopPropagation();window.open(this.src,'_blank')">
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">📷 Снимка на талон — натисни за увеличаване</div>
-                    </div>` : ''}
                     <div class="card-contact">📞 ${r.client_phone || '—'} ${r.client_email ? '· 📧 ' + r.client_email : ''}</div>
                     <div class="card-badges">${activityBadges}${statusBadge}${urgentBadge}</div>
+                    <div class="full-toggle" onclick="toggleFullInfo('${r.id}', this)">▾ Пълна информация за заявката</div>
+                    <div id="full-${r.id}" class="full-info" style="display:none;">${buildFullInfo(r)}</div>
                     ${assignSection}
                     <div style="margin-top:8px;cursor:pointer;color:var(--primary);font-size:11px;font-weight:600;" onclick="toggleRequestTimeline('${r.id}', this)">📜 История ▾</div>
                     <div id="timeline-${r.id}" class="request-timeline" style="display:none;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);"></div>
@@ -495,7 +502,67 @@ function renderRequests() {
             </div>
         </div>`;
     }).join('');
+    openFullInfo.forEach(id => {
+        const box = document.getElementById('full-' + id);
+        if (box) { box.style.display = 'block'; const t = box.previousElementSibling; if (t) t.textContent = '▴ Скрий информацията'; }
+    });
 }
+
+function esc(v) { return (v === null || v === undefined || v === '') ? '—' : sanitize(String(v)); }
+
+function buildFullInfo(r) {
+    const desired = r.desired_date ? new Date(r.desired_date).toLocaleDateString('bg-BG') : '—';
+    let html = '';
+    html += '<div class="fi-title" style="color:#b45309;">📝 Описание на проблема</div>';
+    html += '<div style="font-size:13px;padding:8px;background:#f8fafc;border-radius:6px;border-left:3px solid #f59e0b;">' + esc(r.description) + '</div>';
+    html += '<div class="fi-grid" style="margin-top:10px;">' +
+        '<div class="fi-box"><div class="cap">Вид дейност</div><div class="val">' + esc((r.activity_type || []).join(', ')) + '</div></div>' +
+        '<div class="fi-box"><div class="cap">Желана дата</div><div class="val">' + desired + '</div></div>' +
+        '<div class="fi-box"><div class="cap">Приоритет</div><div class="val">' + (r.priority === 'Спешен' ? '🔥 Спешен' : 'Нормален') + '</div></div>' +
+        '<div class="fi-box"><div class="cap">Номер на заявка</div><div class="val">' + esc(r.request_number) + '</div></div>' +
+    '</div>';
+    html += '<div class="fi-title" style="color:#059669;">👤 Данни на клиента</div>';
+    html += '<div class="fi-grid">' +
+        '<div><span class="lbl">Тип:</span> <strong>' + (r.client_type === 'ЮЛ' ? 'Юридическо лице' : 'Физическо лице') + '</strong></div>' +
+        '<div><span class="lbl">Име, Фамилия:</span> <strong>' + esc(r.client_name) + '</strong></div>' +
+        (r.client_type === 'ЮЛ' ?
+            '<div><span class="lbl">Фирма:</span> <strong>' + esc(r.company_name) + '</strong></div>' +
+            '<div><span class="lbl">Булстат:</span> <strong>' + esc(r.bulstat) + '</strong></div>' +
+            '<div><span class="lbl">Контактно лице:</span> <strong>' + esc(r.contact_person) + '</strong></div>' : '') +
+        '<div><span class="lbl">Телефон:</span> <strong>' + esc(r.client_phone) + '</strong></div>' +
+        '<div><span class="lbl">Имейл:</span> <strong>' + esc(r.client_email) + '</strong></div>' +
+    '</div>';
+    html += '<div class="fi-title" style="color:#1a3a8f;">🚗 Данни за машината</div>';
+    html += '<div class="fi-grid">' +
+        '<div><span class="lbl">Марка:</span> <strong>' + esc(r.brand) + '</strong></div>' +
+        '<div><span class="lbl">Модел:</span> <strong>' + esc(r.model) + '</strong></div>' +
+        '<div><span class="lbl">рег № / сер № / Инв №:</span> <strong>' + esc(r.reg_number) + '</strong></div>' +
+        '<div><span class="lbl">Година на производство:</span> <strong>' + esc(r.year_of_manufacture) + '</strong></div>' +
+        '<div><span class="lbl">рама №:</span> <strong>' + esc(r.frame_number) + '</strong></div>' +
+        '<div><span class="lbl">изминати км / мч:</span> <strong>' + esc(r.km_hours) + '</strong></div>' +
+    '</div>';
+    if (r.photo_data) {
+        html += '<div class="fi-title">📷 Снимка на талон</div>' +
+            '<img src="' + r.photo_data + '" alt="Талон" style="max-width:100%;max-height:250px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;" onclick="event.stopPropagation();window.open(this.src,\'_blank\')">';
+    }
+    if (r.notes) {
+        html += '<div class="fi-title">💬 Бележки</div><div style="font-size:12px;">' + sanitize(r.notes).replace(/\n/g, '<br>') + '</div>';
+    }
+    if (r.created_by) {
+        html += '<div style="font-size:11px;color:var(--text-muted);margin-top:8px;">Регистрирал: ' + sanitize(r.created_by) + '</div>';
+    }
+    return html;
+}
+
+function toggleFullInfo(id, el) {
+    const box = document.getElementById('full-' + id);
+    const open = box.style.display !== 'none';
+    box.style.display = open ? 'none' : 'block';
+    el.textContent = open ? '▾ Пълна информация за заявката' : '▴ Скрий информацията';
+    if (open) openFullInfo.delete(id); else openFullInfo.add(id);
+}
+
+const openFullInfo = new Set();
 
 function toggleRequestTimeline(requestId, el) {
     const container = document.getElementById('timeline-' + requestId);
