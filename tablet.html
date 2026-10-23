@@ -101,6 +101,12 @@
         .task-date { font-size:13px; color:var(--text-muted); }
         .task-vehicle { font-size:19px; color:var(--text); margin-bottom:2px; }
         .task-reg { font-size:16px; color:var(--text-muted); }
+        .task-plan { display:inline-block; margin-top:8px; padding:6px 12px; border-radius:10px; font-size:17px; font-weight:800; background:rgba(26,58,143,0.08); color:var(--primary); }
+        .task-plan.today { background:rgba(16,185,129,0.12); color:#047857; }
+        .task-plan.late { background:rgba(228,30,43,0.1); color:#c41820; }
+        .task-plan.muted { background:#f1f4f8; color:var(--text-muted); font-weight:600; font-size:15px; }
+        .btn-free-card { display:block; width:100%; margin:0 0 14px; padding:16px; border:2px dashed var(--primary); border-radius:var(--radius); background:white; color:var(--primary); font-size:18px; font-weight:800; cursor:pointer; }
+        .btn-free-card:active { transform:scale(0.98); }
         .task-desc { font-size:16px; color:var(--text-muted); margin-top:8px; padding:10px; background:#f8fafc; border-radius:10px; border-left:4px solid var(--border); }
 
         .task-badges { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
@@ -208,6 +214,7 @@
         </div>
         <button onclick="backToMechanics()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:8px 18px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">← Назад</button>
     </div>
+    <button class="btn-free-card" onclick="createCardWithoutRequest()">📝 Създай работна карта (без заявка)</button>
 
     <div id="notifBanner" class="notif-banner">
         <span style="font-size:24px;">🔔</span>
@@ -412,6 +419,13 @@ async function loadTasksForMechanic(mechanicName) {
         const tasks = await apiCall('service_requests?status=in.(Разпределена,В изпълнение)&order=priority.desc,created_at.desc');
         if (selectedMechanic !== mechanicName) return;
         allTasks = tasks.filter(t => (t.assigned_mechanics || []).includes(mechanicName));
+        // Подредба по планиран час; без план — накрая, спешните първи
+        allTasks.sort((a, b) => {
+            if (a.scheduled_at && b.scheduled_at) return new Date(a.scheduled_at) - new Date(b.scheduled_at);
+            if (a.scheduled_at) return -1;
+            if (b.scheduled_at) return 1;
+            return (b.priority === 'Спешен') - (a.priority === 'Спешен');
+        });
         updateSummary();
         renderTasks();
         checkNewTasks();
@@ -508,6 +522,7 @@ function renderTasks() {
                     <div class="task-vehicle">${t.vehicle} — ${t.reg_number}</div>
                     ${t.description ? `<div class="task-desc">${t.description}</div>` : ''}
                     <div class="task-badges">${actBadges}${statusBadge}${urgentBadge}</div>
+                    ${planLine(t)}
                     ${mechSection}
                     ${actionsSection}
                 </div>
@@ -550,6 +565,36 @@ async function claimTask(taskId) {
 }
 
 // Fill work card - redirect to index.html with request data
+// ===== Планиран час на задачата =====
+const DAYS_BG_T = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+function tp2(n) { return String(n).padStart(2, '0'); }
+function planLine(t) {
+    if (!t.scheduled_at) return '<div class="task-plan muted">🕒 Без планиран час</div>';
+    const s = new Date(t.scheduled_at);
+    const dur = parseFloat(t.estimated_hours) || 1;
+    const e = new Date(s.getTime() + dur * 3600000);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const day0 = new Date(s); day0.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((day0 - today) / 86400000);
+    const dayLabel = diffDays === 0 ? 'Днес' : diffDays === 1 ? 'Утре' : DAYS_BG_T[s.getDay()] + ' ' + tp2(s.getDate()) + '.' + tp2(s.getMonth() + 1);
+    const late = t.status !== 'Изпълнена' && new Date() > e;
+    return '<div class="task-plan' + (late ? ' late' : diffDays === 0 ? ' today' : '') + '">🕒 ' + dayLabel + ', ' +
+        tp2(s.getHours()) + ':' + tp2(s.getMinutes()) + ' – ' + tp2(e.getHours()) + ':' + tp2(e.getMinutes()) +
+        (late ? ' · закъснява' : '') + '</div>';
+}
+
+// ===== Работна карта без заявка =====
+function createCardWithoutRequest() {
+    if (!selectedMechanic) return;
+    sessionStorage.removeItem('workcard_request_id');
+    sessionStorage.removeItem('workcard_request_data');
+    sessionStorage.setItem('workcard_prefill_mechanic', selectedMechanic);
+    sessionStorage.setItem('workcard_from_tablet', '1');
+    if (!sessionStorage.getItem('workcard_role')) sessionStorage.setItem('workcard_role', 'mechanic');
+    sessionStorage.setItem('workcard_auth', 'true');
+    window.location.href = 'index.html';
+}
+
 function fillWorkCard(taskId) {
     const task = allTasks.find(t => t.id === taskId);
     if (!task) return;
@@ -565,7 +610,8 @@ function fillWorkCard(taskId) {
         assigned_mechanics: task.assigned_mechanics,
         responsible_mechanic: task.responsible_mechanic
     }));
-    sessionStorage.setItem('workcard_role', 'mechanic');
+    sessionStorage.setItem('workcard_from_tablet', '1');
+    if (!sessionStorage.getItem('workcard_role')) sessionStorage.setItem('workcard_role', 'mechanic');
     sessionStorage.setItem('workcard_auth', 'true');
 
     window.location.href = 'index.html';

@@ -410,6 +410,7 @@
         .conditional { display: none; }
         .conditional.visible { display: block; }
     </style>
+<script src="datepicker.js"></script>
 </head>
 <body>
 
@@ -834,7 +835,7 @@ function renderCards(cards) {
         const matBadge = c.has_materials ? '<span class="badge badge-materials">Материали</span>' : '';
         const hoursBadge = c.work_hours ? `<span class="badge badge-hours">${c.work_hours} чч</span>` : '';
         const kmBadge = c.km_traveled ? `<span class="badge b-gray">${c.km_traveled} км</span>` : '';
-        const requestBadge = c.request_id ? '<span class="badge" style="background:rgba(124,58,237,0.1);color:#7c3aed;cursor:pointer;" onclick="event.stopPropagation();goToRequest(\'' + c.request_id + '\')">📋 Заявка</span>' : '';
+        const requestBadge = c.request_id ? '<span class="badge" style="background:rgba(124,58,237,0.1);color:#7c3aed;cursor:pointer;" onclick="event.stopPropagation();goToRequest(\'' + c.request_id + '\')">📋 Заявка</span>' : '<span class="badge" style="background:#eef2f7;color:#5a6577;">📝 Без заявка</span>';
         const mats = getMaterialsForCard(c.id);
         let details = '';
         const ad = (l,v) => { if(v) details += `<div class="detail-row"><span class="detail-label">${l}</span><span class="detail-value">${v}</span></div>`; };
@@ -1578,6 +1579,24 @@ function fmtStamp(v) {
 function hrs(a, b) { if (!a || !b) return null; return (new Date(b) - new Date(a)) / 3600000; }
 
 
+// Закъснение спрямо плана на Ръководителя (планиран час + продължителност)
+function planDelayHtml(r) {
+    if (!r.scheduled_at) return '<div class="times-delay neutral">Няма планиран час от Ръководителя</div>';
+    const s = new Date(r.scheduled_at);
+    const dur = parseFloat(r.estimated_hours) || 1;
+    const e = new Date(s.getTime() + dur * 3600000);
+    const p = n => String(n).padStart(2, '0');
+    const planTxt = s.toLocaleDateString('bg-BG') + ' ' + p(s.getHours()) + ':' + p(s.getMinutes()) + '–' + p(e.getHours()) + ':' + p(e.getMinutes());
+    const end = r.completed_at ? new Date(r.completed_at) : new Date();
+    const lateH = (end - e) / 3600000;
+    if (lateH <= 0.25) {
+        return r.completed_at
+            ? '<div class="times-delay ok">✓ Изпълнена по план (' + planTxt + ')</div>'
+            : '<div class="times-delay neutral">По план: ' + planTxt + '</div>';
+    }
+    return '<div class="times-delay late">⚠ ' + (r.completed_at ? 'Изпълнена ' + fmtDuration(lateH) + ' след плана' : 'Закъснява спрямо плана с ' + fmtDuration(lateH)) + ' (план ' + planTxt + ')</div>';
+}
+
 // Закъснение спрямо желаната дата (краят на деня на желаната дата)
 function delayHtml(r) {
     if (!r.desired_date) return '<div class="times-delay neutral">Няма зададена желана дата — закъснение не се отчита</div>';
@@ -1636,6 +1655,7 @@ async function renderRequestTimes(requestId, logs) {
     html += '<div class="times-total"><span>' + (r.completed_at ? 'ОБЩО от регистрация до изпълнение' : 'ОБЩО до момента (не е изпълнена)') + '</span><strong>' + fmtDuration(total) + '</strong></div>';
 
     html += delayHtml(r);
+    html += planDelayHtml(r);
 
     if (r.work_card_id) {
         try {
@@ -1655,7 +1675,7 @@ async function renderRequestTimes(requestId, logs) {
             }
         } catch (e) { /* ignore */ }
     }
-    html += '<div class="times-legend">Закъснението се отчита спрямо желаната дата за ремонт / ТО · видимо само за Управител</div>';
+    html += '<div class="times-legend">Закъснението се отчита спрямо желаната дата на клиента и спрямо плана на Ръководителя · видимо само за Управител</div>';
     box.innerHTML = html;
 }
 

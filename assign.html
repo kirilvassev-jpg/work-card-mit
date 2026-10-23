@@ -118,6 +118,15 @@
 
         /* Assignment section */
         .assign-section { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+        .plan-grid { display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:8px; margin-bottom:6px; }
+        @media (max-width:520px) { .plan-grid { grid-template-columns:1fr 1fr; } .plan-grid .plan-field:first-child { grid-column:1 / -1; } }
+        .plan-field { display:flex; flex-direction:column; gap:4px; font-size:11px; font-weight:700; color:var(--text-muted); }
+        .plan-field input, .plan-field select { padding:10px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; font-family:inherit; background:#f8fafc; color:var(--text); width:100%; }
+        .plan-hint { font-size:11px; color:var(--text-muted); margin-bottom:8px; }
+        .plan-box { margin-top:8px; padding:8px 10px; border-radius:8px; background:rgba(26,58,143,0.06); font-size:12px; color:var(--text); }
+        .plan-box.muted { background:#f1f4f8; color:var(--text-muted); }
+        .plan-late { margin-top:4px; color:#c41820; font-weight:700; }
+        .plan-ok { margin-top:4px; color:#059669; font-weight:700; }
         .full-toggle { margin-top:10px; padding:8px; text-align:center; background:rgba(26,58,143,0.06); border:1px dashed rgba(26,58,143,0.3); border-radius:8px; font-size:12px; font-weight:700; color:var(--primary); cursor:pointer; }
         .full-info { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
         .full-toggle, .full-toggle * { cursor:pointer; user-select:none; }
@@ -174,6 +183,7 @@
         .bottom-nav a.active::after { content:''; display:block; width:24px; height:3px; background:var(--accent-red); border-radius:2px; margin-top:2px; }
         .nav-badge { position:absolute; top:2px; right:calc(50% - 20px); background:var(--accent-red); color:white; font-size:9px; font-weight:800; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
     </style>
+<script src="datepicker.js"></script>
 </head>
 <body>
 
@@ -400,6 +410,7 @@ async function loadMechanics() {
 
 // Load requests
 async function loadRequests() {
+    const formState = saveAssignState();
     document.getElementById('loading').style.display = 'block';
     document.getElementById('requestsList').innerHTML = '';
     document.getElementById('emptyState').style.display = 'none';
@@ -408,6 +419,7 @@ async function loadRequests() {
         allRequests = await apiCall('service_requests?order=created_at.desc');
         updateCounts();
         renderRequests();
+        restoreAssignState(formState);
         checkForNewRequests();
         updatePageTitle();
     } catch(e) {
@@ -477,6 +489,13 @@ function renderRequests() {
                     <div class="mechanic-list">${mechChecks}</div>
                     <div class="assign-label">★ Отговорник:</div>
                     <select class="responsible-select" id="resp-${r.id}"><option value="">— Избери отговорник —</option></select>
+                    <div class="assign-label">🕒 Планирано изпълнение:</div>
+                    <div class="plan-grid">
+                        <label class="plan-field">Дата *<input type="date" id="pdate-${r.id}" min="${todayIso()}" value="${r.desired_date && r.desired_date >= todayIso() ? r.desired_date : ''}"></label>
+                        <label class="plan-field">Час *<select id="ptime-${r.id}">${timeOptions()}</select></label>
+                        <label class="plan-field">Продължителност *<select id="pdur-${r.id}">${durationOptions()}</select></label>
+                    </div>
+                    ${r.desired_date ? `<div class="plan-hint">Желана дата от клиента: ${fmtPlanDate(r.desired_date + 'T00:00:00')}</div>` : ''}
                     <div class="card-actions">
                         <button class="action-btn btn-assign" onclick="assignRequest('${r.id}')">✓ Разпредели</button>
                     </div>
@@ -487,6 +506,7 @@ function renderRequests() {
                 <div class="assign-section">
                     <div class="assign-label">Назначени:</div>
                     <div class="assigned-display">${assignedTags}</div>
+                    ${planHtml(r)}
                 </div>`;
         } else if (r.status === 'Изпълнена') {
             const assignedTags = (r.assigned_mechanics || []).map(m => `<span class="assigned-tag ${m === r.responsible_mechanic ? 'responsible' : ''}">${m === r.responsible_mechanic ? '★ ' : ''}${m}</span>`).join('');
@@ -497,6 +517,7 @@ function renderRequests() {
                     <div class="assign-label">Изпълнена от:</div>
                     <div class="assigned-display">${assignedTags}</div>
                     ${completedStr ? `<div style="font-size:11px;color:var(--accent-green);margin-top:4px;font-weight:600;">✓ ${completedStr}</div>` : ''}
+                    ${planHtml(r)}
                 </div>`;
         }
 
@@ -628,6 +649,90 @@ function renderTimeline(logs, containerId) {
     if (logs.length === 0) container.innerHTML = '<div style="color:var(--text-muted);font-style:italic;">Няма записи</div>';
 }
 
+// ===== Планиране: дата, час, продължителност =====
+const WORK_START = 7, WORK_END = 19;   // работно време в графика
+const DURATIONS = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+const DAYS_BG = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+
+function p2(n) { return String(n).padStart(2, '0'); }
+function todayIso() { const d = new Date(); return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); }
+function addHours(d, h) { return new Date(new Date(d).getTime() + h * 3600000); }
+function fmtTime(d) { d = new Date(d); return p2(d.getHours()) + ':' + p2(d.getMinutes()); }
+function fmtPlanDate(d) { d = new Date(d); return DAYS_BG[d.getDay()] + ' ' + p2(d.getDate()) + '.' + p2(d.getMonth() + 1) + '.' + d.getFullYear(); }
+function fmtDur(h) { h = parseFloat(h); if (!h) return '—'; return h < 1 ? Math.round(h * 60) + ' мин' : (String(h).replace('.', ',') + ' ч'); }
+
+function timeOptions() {
+    let o = '<option value="">— час —</option>';
+    for (let h = WORK_START; h < WORK_END; h++) {
+        o += '<option value="' + p2(h) + ':00">' + p2(h) + ':00</option><option value="' + p2(h) + ':30">' + p2(h) + ':30</option>';
+    }
+    return o;
+}
+function durationOptions() {
+    return '<option value="">— —</option>' + DURATIONS.map(d => '<option value="' + d + '">' + fmtDur(d) + '</option>').join('');
+}
+
+function planHtml(r) {
+    if (!r.scheduled_at) return '<div class="plan-box muted">🕒 Няма планирана дата и час</div>';
+    const start = new Date(r.scheduled_at);
+    const dur = parseFloat(r.estimated_hours) || 0;
+    const end = addHours(start, dur || 1);
+    let late = '';
+    if (r.status === 'Изпълнена' && r.completed_at) {
+        const d = (new Date(r.completed_at) - end) / 3600000;
+        late = d > 0.25 ? '<div class="plan-late">⚠ Изпълнена ' + fmtDur(Math.round(d * 2) / 2 || 0.5) + ' след плана</div>' : '<div class="plan-ok">✓ В рамките на плана</div>';
+    } else if (r.status !== 'Изпълнена' && new Date() > end) {
+        const d = (new Date() - end) / 3600000;
+        late = '<div class="plan-late">⚠ Закъснява спрямо плана с ' + (d >= 24 ? Math.floor(d / 24) + ' дн ' + Math.round(d % 24) + ' ч' : fmtDur(Math.max(0.5, Math.round(d * 2) / 2))) + '</div>';
+    }
+    return '<div class="plan-box">🕒 Планирано: <strong>' + fmtPlanDate(start) + ', ' + fmtTime(start) + ' – ' + fmtTime(end) + '</strong> (' + fmtDur(dur) + ')' + late + '</div>';
+}
+
+// Проверка за застъпване с други задачи на механиците в същия ден
+async function findConflicts(mechs, start, durH, excludeId) {
+    const day0 = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const day1 = addHours(day0, 24);
+    const rows = await apiCall('service_requests?select=id,request_number,client_name,assigned_mechanics,scheduled_at,estimated_hours&status=in.(Разпределена,В изпълнение)&scheduled_at=gte.' + day0.toISOString() + '&scheduled_at=lt.' + day1.toISOString());
+    const end = addHours(start, durH);
+    const out = [];
+    rows.forEach(x => {
+        if (x.id === excludeId || !x.scheduled_at) return;
+        const xs = new Date(x.scheduled_at), xe = addHours(xs, parseFloat(x.estimated_hours) || 1);
+        if (xs < end && xe > start) {
+            const common = (x.assigned_mechanics || []).filter(m => mechs.includes(m));
+            if (common.length) out.push(common.join(', ') + ' — ' + (x.client_name || '') + ' ' + fmtTime(xs) + '–' + fmtTime(xe));
+        }
+    });
+    return out;
+}
+
+// Запазва въведеното при автоматично обновяване на списъка
+function saveAssignState() {
+    const st = {};
+    document.querySelectorAll('.assign-section select, .assign-section input').forEach(el => {
+        if (!el.id && !el.name) return;
+        const key = el.id || (el.name + '|' + el.value);
+        st[key] = el.type === 'checkbox' ? el.checked : el.value;
+    });
+    return st;
+}
+function restoreAssignState(st) {
+    if (!st) return;
+    document.querySelectorAll('.assign-section input[type="checkbox"]').forEach(el => {
+        const key = el.name + '|' + el.value;
+        if (key in st) el.checked = st[key];
+    });
+    // обнови списъците за отговорник, после възстанови стойностите
+    const ids = new Set();
+    document.querySelectorAll('.assign-section input[type="checkbox"]').forEach(el => ids.add(el.name.replace('mech-', '')));
+    ids.forEach(id => { if (typeof updateResponsibleOptions === 'function') updateResponsibleOptions(id); });
+    Object.keys(st).forEach(k => {
+        if (k.includes('|')) return;
+        const el = document.getElementById(k);
+        if (el && st[k] !== undefined && st[k] !== '') el.value = st[k];
+    });
+}
+
 function updateResponsibleOptions(requestId) {
     const checked = Array.from(document.querySelectorAll(`input[name="mech-${requestId}"]:checked`)).map(cb => cb.value);
     const select = document.getElementById(`resp-${requestId}`);
@@ -643,8 +748,25 @@ async function assignRequest(requestId) {
     if (checked.length === 0) { showStatus('Избери поне един механик', 'error'); return; }
     if (!responsible) { showStatus('Избери отговорник', 'error'); return; }
 
+    const pDate = document.getElementById(`pdate-${requestId}`).value;
+    const pTime = document.getElementById(`ptime-${requestId}`).value;
+    const pDur = parseFloat(document.getElementById(`pdur-${requestId}`).value);
+    if (!pDate || !pTime || !pDur) { showStatus('Избери дата, час и продължителност на изпълнението', 'error'); return; }
+    const scheduledAt = new Date(pDate + 'T' + pTime + ':00');
+
+    // Застъпване с други задачи на същите механици
+    let conflictText = '';
+    try {
+        const conflicts = await findConflicts(checked, scheduledAt, pDur, requestId);
+        if (conflicts.length) {
+            conflictText = '\n\n⚠ ЗАСТЪПВАНЕ:\n' + conflicts.map(c => '• ' + c).join('\n') + '\n';
+        }
+    } catch (e) { console.log('Conflict check skipped', e); }
+
     const mechNames = checked.join(', ');
-    const confirmed = confirm('Сигурен ли си?\n\nНазначаване към: ' + mechNames + '\nОтговорник: ' + responsible);
+    const confirmed = confirm('Сигурен ли си?\n\nНазначаване към: ' + mechNames + '\nОтговорник: ' + responsible +
+        '\nПланирано: ' + fmtPlanDate(scheduledAt) + ', ' + pTime + ' – ' + fmtTime(addHours(scheduledAt, pDur)) + ' (' + fmtDur(pDur) + ')' +
+        conflictText + (conflictText ? '\nПродължаваш ли въпреки застъпването?' : ''));
     if (!confirmed) return;
 
     try {
@@ -652,6 +774,8 @@ async function assignRequest(requestId) {
             assigned_mechanics: checked,
             responsible_mechanic: responsible,
             status: 'Разпределена',
+            scheduled_at: scheduledAt.toISOString(),
+            estimated_hours: pDur,
             assigned_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         });
@@ -660,7 +784,7 @@ async function assignRequest(requestId) {
             request_id: requestId,
             action: 'assigned',
             performed_by: sessionStorage.getItem('workcard_user') || 'Ръководител',
-            details: `Назначени: ${checked.join(', ')}. Отговорник: ${responsible}`
+            details: `Назначени: ${checked.join(', ')}. Отговорник: ${responsible}. Планирано: ${fmtPlanDate(scheduledAt)} ${pTime} (${fmtDur(pDur)})`
         });
 
         showStatus(`✓ Заявката е разпределена → ${checked.join(', ')} (★ ${responsible})`, 'success');

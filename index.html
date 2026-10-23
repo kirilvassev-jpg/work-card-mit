@@ -374,6 +374,7 @@
             }
         }
     </style>
+<script src="datepicker.js"></script>
 </head>
 <body>
 
@@ -574,7 +575,34 @@ function checkForRequest() {
             const data = JSON.parse(requestDataStr);
             prefillFromRequest(data, requestId);
         } catch(e) { console.error('Request parse error:', e); }
+        return;
     }
+    // Карта без заявка — механикът от таблото се попълва автоматично
+    const mech = sessionStorage.getItem('workcard_prefill_mechanic') ||
+        (sessionStorage.getItem('workcard_role') === 'mechanic' ? sessionStorage.getItem('workcard_user') : null);
+    if (mech) prefillMechanicOnly(mech);
+}
+
+function prefillMechanicOnly(mech) {
+    const opt = document.querySelector('#mechanicOptions .ms-option[data-value="' + CSS.escape(mech) + '"]');
+    if (opt && !opt.classList.contains('selected')) toggleMechanicOption(opt);
+    if (sessionStorage.getItem('workcard_from_tablet') !== '1') return;
+    const banner = document.createElement('div');
+    banner.id = 'requestBanner';
+    banner.style.cssText = 'background:rgba(26,58,143,0.06);border:1.5px solid rgba(26,58,143,0.2);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;color:#1a3a8f;font-weight:600;';
+    banner.textContent = '📝 Работна карта без заявка — ' + mech;
+    const backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.textContent = '← Назад към таблото';
+    backBtn.style.cssText = 'display:block;width:100%;padding:10px;margin-top:8px;background:white;color:#1a3a8f;border:1.5px solid rgba(26,58,143,0.3);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;';
+    backBtn.onclick = function () {
+        sessionStorage.removeItem('workcard_prefill_mechanic');
+        sessionStorage.removeItem('workcard_from_tablet');
+        window.location.href = 'tablet.html';
+    };
+    banner.appendChild(backBtn);
+    const form = document.getElementById('workCardForm');
+    form.insertBefore(banner, form.firstChild);
 }
 
 function prefillFromRequest(data, requestId) {
@@ -877,6 +905,14 @@ async function submitForm() {
                 console.error('Error updating request:', e);
             }
         }
+
+        // Карта без заявка, отворена от таблото → връщане към таблото
+        if (!cardData.request_id && sessionStorage.getItem('workcard_from_tablet') === '1') {
+            sessionStorage.removeItem('workcard_prefill_mechanic');
+            sessionStorage.removeItem('workcard_from_tablet');
+            setTimeout(() => { window.location.href = 'tablet.html'; }, 2000);
+        }
+        if (cardData.request_id) sessionStorage.removeItem('workcard_from_tablet');
 
         resetForm();
     } catch (e) { console.error('Грешка при запис:', e); showStatus('Грешка при запис: ' + e.message, 'error'); }

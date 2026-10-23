@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>График за изпълнение — Ар Си Техник</title>
+    <title>График — Ар Си Техник</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a3a8f">
     <style>
         :root {
-            --primary: #1a3a8f; --primary-dark: #0d1f52; --primary-light: #2955c7;
-            --accent-red: #e41e2b; --accent-green: #10b981; --accent-amber: #f59e0b;
-            --accent-purple: #7c3aed; --accent-blue: #3b82f6;
-            --bg: #f0f4f8; --card: #ffffff; --text: #1a2332; --text-muted: #5a6577; --border: #d8dfe8;
-            --radius: 12px;
+            --primary:#1a3a8f; --primary-dark:#0d1f52; --primary-light:#2955c7;
+            --accent-red:#e41e2b; --accent-green:#10b981; --accent-amber:#f59e0b;
+            --accent-purple:#7c3aed; --accent-blue:#3b82f6;
+            --bg:#f0f4f8; --card:#ffffff; --text:#1a2332; --text-muted:#5a6577; --border:#d8dfe8;
+            --radius:12px; --row:30px;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; padding-bottom:80px; }
+        body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.45; padding-bottom:80px; }
 
         .header { background:linear-gradient(135deg,var(--primary-dark),var(--primary),var(--primary-light)); color:white; padding:16px 20px; text-align:center; position:sticky; top:0; z-index:100; box-shadow:0 4px 20px rgba(30,41,59,0.3); }
         .header-top { display:flex; align-items:center; justify-content:center; gap:10px; }
@@ -23,226 +23,181 @@
         .header h1 { font-size:18px; font-weight:700; letter-spacing:1px; }
         .header-sub { font-size:11px; opacity:0.7; margin-top:2px; }
         .header-user { font-size:11px; opacity:0.9; margin-top:4px; background:rgba(255,255,255,0.15); display:inline-block; padding:2px 12px; border-radius:12px; }
+        .hdr-btn { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.3); color:white; padding:5px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; }
+        @media (max-width:600px) { .header { padding:14px 84px; } .header h1 { font-size:15px; } }
 
-        body.read-only .cal-cell { cursor:default; }
-        body.read-only [draggable="true"] { -webkit-user-drag:none; cursor:default; }
-        body.read-only .assign-btn { display:none !important; }
+        .readonly-banner { display:none; max-width:1200px; margin:12px auto 0; padding:10px 14px; background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.2); border-radius:var(--radius); text-align:center; font-size:13px; color:#1e40af; font-weight:600; }
+        .read-only .readonly-banner { display:block; }
 
-        /* Layout */
-        .schedule-container {
-            display:grid;
-            grid-template-columns: 1fr 350px;
-            gap:12px;
-            max-width:1200px;
-            margin:0 auto;
-            padding:12px;
-        }
-        @media (max-width: 900px) {
-            .schedule-container { grid-template-columns: 1fr; }
-        }
+        .layout { display:grid; grid-template-columns:1fr 320px; gap:12px; max-width:1200px; margin:0 auto; padding:12px; }
+        @media (max-width:900px) { .layout { grid-template-columns:1fr; } }
+        .card { background:var(--card); border-radius:var(--radius); box-shadow:0 1px 3px rgba(0,0,0,0.06); padding:14px; }
+        .card + .card { margin-top:12px; }
+        .card-title { font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
 
-        #readOnlyBanner { background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.2); border-radius:var(--radius); padding:10px 14px; text-align:center; font-size:13px; color:#1e40af; font-weight:600; margin:0 auto 0; max-width:1200px; }
-
-        /* Calendar section */
-        .calendar-section { background:var(--card); border-radius:var(--radius); padding:14px; box-shadow:0 1px 3px rgba(0,0,0,0.06); height:fit-content; }
-        .cal-nav { display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:14px; }
-        .cal-nav button { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 14px; font-size:14px; font-weight:700; cursor:pointer; color:var(--primary); transition:all 0.2s; }
-        .cal-nav button:hover { background:var(--primary); color:white; }
-        .cal-nav span { font-size:16px; font-weight:700; min-width:150px; text-align:center; }
-        .cal-nav .today-btn { font-size:12px; color:var(--text-muted); }
-
-        .cal-grid {
-            display:grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap:2px;
-            background:var(--border);
-            border-radius:var(--radius);
-            overflow:hidden;
-        }
-        .cal-header-cell {
-            background:var(--primary);
-            color:white;
-            text-align:center;
-            padding:8px 4px;
-            font-size:12px;
-            font-weight:700;
-        }
-        .cal-cell {
-            background:var(--card);
-            min-height:80px;
-            padding:6px;
-            cursor:pointer;
-            transition:background 0.2s;
-            position:relative;
-        }
-        .cal-cell:hover { background:#f8fafc; }
-        .cal-cell.today { background:rgba(245,158,11,0.08); }
-        .cal-cell.selected { background:rgba(26,58,143,0.06); box-shadow:inset 0 0 0 2px var(--primary); }
+        /* Month */
+        .cal-nav { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+        .cal-nav button { border:1.5px solid var(--border); background:white; border-radius:8px; padding:7px 12px; font-weight:700; cursor:pointer; color:var(--primary); }
+        .cal-nav .title { flex:1; text-align:center; font-size:17px; font-weight:800; color:var(--primary); }
+        .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; background:var(--border); border-radius:10px; overflow:hidden; }
+        .cal-head { background:var(--primary); color:white; text-align:center; padding:7px 2px; font-size:12px; font-weight:700; }
+        .cal-cell { background:white; min-height:84px; padding:5px; cursor:pointer; position:relative; transition:background 0.15s; }
+        .cal-cell:hover { background:#f5f8fc; }
+        .cal-cell.other { background:#fafbfd; }
+        .cal-cell.other .cal-num { color:#b6c0cd; }
+        .cal-cell.today { background:rgba(245,158,11,0.09); }
+        .cal-cell.weekend .cal-num { color:var(--accent-red); }
         .cal-cell.overloaded { box-shadow:inset 0 0 0 2px var(--accent-red); }
-        .cal-cell.today.overloaded { box-shadow:inset 0 0 0 2px var(--accent-red); }
-        .cal-cell.other-month { opacity:0.4; }
-        .cal-day-num { font-size:13px; font-weight:700; color:var(--text); margin-bottom:4px; }
-        .cal-dots { display:flex; flex-wrap:wrap; gap:3px; }
+        .cal-num { font-size:13px; font-weight:800; }
+        .cal-count { font-size:11px; font-weight:700; color:var(--primary); margin-top:2px; }
+        .cal-dots { display:flex; flex-wrap:wrap; gap:3px; margin-top:4px; }
         .cal-dot { width:8px; height:8px; border-radius:50%; }
-        .dot-new { background:var(--accent-red); }
-        .dot-assigned { background:#7c3aed; }
-        .dot-progress { background:#3b82f6; }
-        .dot-done { background:#10b981; }
-        .cal-count { font-size:10px; color:var(--text-muted); font-weight:600; }
-        .cal-warning { position:absolute; top:4px; right:4px; font-size:12px; }
+        .cal-desired { font-size:10px; color:#b45309; font-weight:700; margin-top:3px; }
+        .cal-warn { position:absolute; top:4px; right:5px; font-size:12px; }
+        .legend { display:flex; flex-wrap:wrap; gap:12px; font-size:11px; color:var(--text-muted); margin-top:10px; }
+        .legend span::before { content:''; display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:4px; vertical-align:middle; background:var(--c); }
 
-        .legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); font-size:11px; color:var(--text-muted); }
-        .legend-item { display:flex; align-items:center; gap:5px; }
+        /* Sidebar list */
+        .req-item { padding:10px; border:1px solid var(--border); border-left:4px solid var(--accent-red); border-radius:8px; margin-bottom:8px; font-size:13px; cursor:pointer; background:white; }
+        .req-item:hover { background:#f8fafc; }
+        .req-item .t { font-weight:800; }
+        .req-item .s { font-size:12px; color:var(--text-muted); }
+        .badge { display:inline-block; padding:1px 8px; border-radius:20px; font-size:10px; font-weight:800; margin:4px 4px 0 0; }
+        .b-urgent { background:rgba(245,158,11,0.12); color:#92400e; border:1px solid var(--accent-amber); }
+        .b-desired { background:#fff7e6; color:#b45309; }
+        .empty-note { text-align:center; padding:16px; color:var(--text-muted); font-size:13px; }
 
-        @media (max-width: 900px) {
-            .cal-cell { min-height:56px; padding:4px; }
-            .cal-day-num { font-size:11px; }
-            .cal-dot { width:6px; height:6px; }
-        }
-
-        /* Sidebar */
-        .sidebar-section { display:flex; flex-direction:column; gap:12px; }
-        .sidebar-card { background:var(--card); border-radius:var(--radius); padding:14px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
-        .sidebar-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--primary); }
-
-        .mini-card {
-            background:#f8fafc; border-radius:10px; padding:10px 12px; margin-bottom:8px;
-            border-left:4px solid var(--border); cursor:pointer; transition:all 0.2s;
-        }
-        .mini-card:hover { box-shadow:0 2px 8px rgba(0,0,0,0.08); }
-        .mini-card.stripe-new { border-left-color:var(--accent-red); }
-        .mini-card.stripe-assigned { border-left-color:var(--accent-purple); }
-        .mini-card.stripe-progress { border-left-color:var(--accent-blue); }
-        .mini-card.stripe-done { border-left-color:var(--accent-green); }
-        .mini-card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:6px; margin-bottom:4px; }
-        .mini-card-client { font-size:13px; font-weight:700; }
-        .mini-card-vehicle { font-size:12px; color:var(--text-muted); }
-        .mini-card-badges { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
-
-        .badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }
-        .b-new { background:rgba(228,30,43,0.1); color:#c41820; }
-        .b-assigned { background:#ede9fe; color:#5b21b6; }
-        .b-progress { background:#dbeafe; color:#1e40af; }
-        .b-done { background:#d1fae5; color:#065f46; }
-        .b-urgent { background:#fef3c7; color:#92400e; border:1px solid var(--accent-amber); }
-
-        .empty-mini { text-align:center; padding:16px; color:var(--text-muted); font-size:12px; }
-
-        /* Workload bars */
-        .workload-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-        .workload-name { font-size:12px; font-weight:600; width:110px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .workload-bar-track { flex:1; height:10px; background:var(--bg); border-radius:6px; overflow:hidden; }
-        .workload-bar-fill { height:100%; border-radius:6px; transition:width 0.3s; }
-        .wl-green { background:var(--accent-green); }
-        .wl-amber { background:var(--accent-amber); }
-        .wl-red { background:var(--accent-red); }
-        .workload-count { font-size:11px; font-weight:700; width:18px; text-align:right; flex-shrink:0; }
+        /* Day modal */
+        .overlay { position:fixed; inset:0; background:rgba(13,31,82,0.45); z-index:1000; display:none; align-items:center; justify-content:center; padding:10px; }
+        .overlay.open { display:flex; }
+        .day-modal { background:white; border-radius:16px; width:100%; max-width:1200px; height:94vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.25); overflow:hidden; }
+        .day-head { display:flex; align-items:center; gap:8px; padding:12px 14px; border-bottom:1px solid var(--border); }
+        .day-head .title { flex:1; font-size:17px; font-weight:800; color:var(--primary); }
+        .day-head .sub { font-size:12px; color:var(--text-muted); font-weight:600; }
+        .day-head button { border:1.5px solid var(--border); background:white; border-radius:8px; padding:7px 12px; font-weight:700; cursor:pointer; color:var(--primary); }
+        .day-head .close { border:none; font-size:22px; color:var(--text-muted); }
+        .day-hint { padding:6px 14px; font-size:12px; color:var(--text-muted); background:#f8fafc; border-bottom:1px solid var(--border); }
+        .day-scroll { flex:1; overflow:auto; position:relative; }
+        .day-grid { display:grid; position:relative; min-width:100%; }
+        .col-head { position:sticky; top:0; z-index:5; background:var(--primary); color:white; font-size:12px; font-weight:700; text-align:center; padding:8px 4px; border-right:1px solid rgba(255,255,255,0.2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .col-head .load { display:block; font-size:10px; font-weight:600; opacity:0.85; }
+        .time-head { position:sticky; left:0; top:0; z-index:6; background:var(--primary-dark); }
+        .time-col { position:sticky; left:0; z-index:4; background:#f8fafc; }
+        .time-cell { background:#f8fafc; font-size:11px; color:var(--text-muted); text-align:right; padding:0 6px; height:var(--row); line-height:var(--row); border-bottom:1px solid #eef2f7; border-right:1px solid var(--border); }
+        .time-cell.hour { font-weight:800; color:var(--text); }
+        .slot { height:var(--row); border-bottom:1px solid #f1f4f8; border-right:1px solid #eef2f7; }
+        .slot.hour { border-bottom-color:#e3e8ef; }
+        .slot.can-add:hover { background:rgba(26,58,143,0.06); cursor:copy; }
+        .slot.can-add:hover::after { content:'+'; display:block; text-align:center; color:var(--primary); font-weight:800; line-height:var(--row); }
+        .slot.drop-target { background:rgba(16,185,129,0.15); }
+        .col-body { position:relative; }
+        .block { position:absolute; left:3px; right:3px; border-radius:7px; padding:3px 6px; font-size:11px; color:white; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.15); cursor:pointer; z-index:3; line-height:1.25; }
+        .block .bt { font-weight:800; }
+        .block.draggable { cursor:grab; }
+        .block.conflict { outline:3px solid var(--accent-red); outline-offset:-1px; }
+        .block.done { opacity:0.55; }
+        .now-line { position:absolute; left:0; right:0; height:2px; background:var(--accent-red); z-index:4; pointer-events:none; }
 
         /* Popup */
-        .schedule-popup-overlay {
-            position:fixed; inset:0; background:rgba(0,0,0,0.4);
-            z-index:1000; display:flex; align-items:center; justify-content:center; padding:16px;
-        }
-        .schedule-popup {
-            background:white; border-radius:16px; padding:0;
-            max-width:500px; width:100%; max-height:85vh; overflow-y:auto;
-            box-shadow:0 20px 60px rgba(0,0,0,0.2); animation:popupIn 0.2s ease;
-        }
-        @keyframes popupIn { from { transform:scale(0.92); opacity:0; } to { transform:scale(1); opacity:1; } }
-        .popup-header {
-            display:flex; justify-content:space-between; align-items:center;
-            padding:16px 20px; border-bottom:1px solid var(--border);
-            font-size:16px; font-weight:700; position:sticky; top:0; background:white; border-radius:16px 16px 0 0;
-        }
-        .popup-header button { background:var(--bg); border:none; width:28px; height:28px; border-radius:8px; font-size:14px; cursor:pointer; color:var(--text-muted); }
-        .popup-body { padding:20px; }
-        .popup-row { margin-bottom:12px; }
-        .popup-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin-bottom:4px; }
-        .popup-value { font-size:14px; color:var(--text); }
-        .popup-desc { font-size:13px; color:var(--text-muted); padding:8px; background:#f8fafc; border-radius:8px; border-left:3px solid var(--border); }
+        .popup { background:white; border-radius:16px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
+        .popup-head { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid var(--border); font-size:16px; font-weight:800; color:var(--primary); }
+        .popup-head button { background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); }
+        .popup-body { padding:16px 18px 20px; display:flex; flex-direction:column; gap:12px; }
+        .fld { display:flex; flex-direction:column; gap:4px; font-size:12px; font-weight:700; color:var(--text-muted); }
+        .fld select, .fld input { padding:10px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; font-family:inherit; color:var(--text); background:#f8fafc; }
+        .fld-row { display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:8px; }
+        .mech-checks { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+        .mech-checks label { display:flex; align-items:center; gap:8px; padding:8px 10px; border:1.5px solid var(--border); border-radius:8px; font-size:13px; font-weight:600; color:var(--text); cursor:pointer; }
+        .mech-checks label:has(input:checked) { border-color:var(--accent-purple); background:rgba(124,58,237,0.06); }
+        .mech-checks input { accent-color:var(--accent-purple); width:16px; height:16px; }
+        .info-grid { display:grid; grid-template-columns:110px 1fr; gap:4px 10px; font-size:13px; }
+        .info-grid .k { color:var(--text-muted); font-weight:600; }
+        .btn-main { padding:12px; border:none; border-radius:10px; background:linear-gradient(135deg,var(--accent-purple),#5b21b6); color:white; font-size:15px; font-weight:800; cursor:pointer; box-shadow:0 3px 0 #4c1d95; }
+        .btn-sec { padding:10px; border:1.5px solid var(--border); border-radius:10px; background:white; color:var(--primary); font-size:14px; font-weight:700; cursor:pointer; text-align:center; text-decoration:none; }
+        .warn-box { padding:8px 10px; border-radius:8px; background:rgba(228,30,43,0.08); color:#c41820; font-size:12px; font-weight:700; display:none; }
 
-        .mechanic-list { display:flex; flex-direction:column; gap:4px; margin-bottom:8px; }
-        .mechanic-item { display:flex; align-items:center; gap:10px; padding:8px 12px; border:1.5px solid var(--border); border-radius:8px; cursor:pointer; transition:all 0.2s; background:#f8fafc; }
-        .mechanic-item:has(input:checked) { border-color:var(--accent-purple); background:rgba(124,58,237,0.05); }
-        .mechanic-item input[type="checkbox"] { width:18px; height:18px; accent-color:var(--accent-purple); flex-shrink:0; margin:0; vertical-align:middle; }
-        .mechanic-item span { font-size:14px; vertical-align:middle; line-height:1.4; }
-        .responsible-select { width:100%; padding:10px 14px; border:1.5px solid var(--accent-amber); border-radius:8px; font-size:14px; color:var(--text); background:rgba(245,158,11,0.05); appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; margin-bottom:8px; }
-        .assigned-display { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
-        .assigned-tag { padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(124,58,237,0.08); border:1px solid rgba(124,58,237,0.2); color:var(--accent-purple); }
-        .assigned-tag.responsible { background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.3); color:var(--accent-amber); }
-        .assign-btn { width:100%; padding:12px; border:none; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; background:linear-gradient(135deg,var(--primary),var(--primary-light)); color:white; margin-top:6px; }
-        .assign-btn:active { transform:scale(0.98); }
+        .loading { text-align:center; padding:30px; color:var(--text-muted); }
+        .toast { position:fixed; top:16px; left:50%; transform:translateX(-50%) translateY(-140%); z-index:3000; max-width:92%; width:520px; padding:13px 18px; border-radius:12px; font-size:14px; font-weight:700; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.2); transition:transform 0.3s; color:white; }
+        .toast.show { transform:translateX(-50%) translateY(0); }
+        .toast.success { background:#059669; } .toast.error { background:#e41e2b; }
 
-        .status { display:none; }
-        .status.show { display:block; padding:10px 14px; border-radius:8px; font-size:13px; font-weight:600; margin-bottom:12px; }
-        .status.success { display:block; background:rgba(16,185,129,0.1); color:#065f46; }
-        .status.error { display:block; background:rgba(228,30,43,0.1); color:#c41820; }
-
-        /* Bottom nav */
         .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:white; border-top:1px solid var(--border); display:flex; z-index:100; box-shadow:0 -2px 10px rgba(0,0,0,0.06); }
-        .bottom-nav a { flex:1; display:flex; flex-direction:column; align-items:center; padding:8px 0 10px; text-decoration:none; font-size:11px; font-weight:600; color:var(--text-muted); transition:all 0.2s; position:relative; }
+        .bottom-nav a { flex:1; display:flex; flex-direction:column; align-items:center; padding:8px 0 10px; text-decoration:none; font-size:11px; font-weight:600; color:var(--text-muted); }
         .bottom-nav a.active { color:var(--primary); }
         .bottom-nav a .nav-icon { font-size:20px; margin-bottom:2px; }
         .bottom-nav a.active::after { content:''; display:block; width:24px; height:3px; background:var(--accent-red); border-radius:2px; margin-top:2px; }
     </style>
+<script src="datepicker.js"></script>
 </head>
 <body>
 
 <div class="header">
-    <button onclick="window.history.back()" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">← Назад</button>
-    <button onclick="sessionStorage.clear(); localStorage.clear(); if (window.caches) { caches.keys().then(names => names.forEach(name => caches.delete(name))); } window.location.href = 'login.html';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Изход</button>
+    <button class="hdr-btn" style="left:12px;" onclick="window.history.back()">← Назад</button>
+    <button class="hdr-btn" style="right:12px;font-size:11px;" onclick="sessionStorage.clear(); localStorage.clear(); window.location.href='login.html';">Изход</button>
     <div class="header-top">
         <img src="Repairs.png" alt="Logo">
         <h1>ГРАФИК ЗА ИЗПЪЛНЕНИЕ</h1>
     </div>
     <div class="header-sub">Ар Си Техник ООД</div>
-    <div class="header-user" id="headerUser">Ръководител сервизна дейност</div>
+    <div class="header-user" id="headerUser">График</div>
 </div>
 
-<div style="padding:12px 12px 0;">
-    <div id="readOnlyBanner" style="display:none;">👁 Режим за преглед — само за наблюдение</div>
-</div>
+<div class="readonly-banner">👁 Режим за преглед — само за наблюдение</div>
 
-<div class="schedule-container">
-    <div class="calendar-section">
-        <div class="cal-nav">
-            <button onclick="prevMonth()">◀</button>
-            <span id="calMonthYear">—</span>
-            <button onclick="nextMonth()">▶</button>
-            <button class="today-btn" onclick="goToday()">Днес</button>
-        </div>
-        <div class="cal-grid" id="calGrid"></div>
-        <div class="legend">
-            <div class="legend-item"><span class="cal-dot dot-new"></span> Нова</div>
-            <div class="legend-item"><span class="cal-dot dot-assigned"></span> Разпределена</div>
-            <div class="legend-item"><span class="cal-dot dot-progress"></span> В изпълнение</div>
-            <div class="legend-item"><span class="cal-dot dot-done"></span> Изпълнена</div>
-            <div class="legend-item">⚠ Претоварен ден (5+ задачи)</div>
+<div class="layout">
+    <div>
+        <div class="card">
+            <div class="cal-nav">
+                <button onclick="shiftMonth(-1)">◀</button>
+                <div class="title" id="monthTitle"></div>
+                <button onclick="shiftMonth(1)">▶</button>
+                <button onclick="goToday()">Днес</button>
+            </div>
+            <div class="cal-grid" id="calGrid"><div class="loading" style="grid-column:1/-1;background:white;">Зареждане…</div></div>
+            <div class="legend">
+                <span style="--c:#7c3aed">Разпределена</span>
+                <span style="--c:#3b82f6">В изпълнение</span>
+                <span style="--c:#10b981">Изпълнена</span>
+                <span style="--c:#f59e0b">Желана дата (непланирана)</span>
+                <span>⚠ застъпване или 5+ задачи</span>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">Натисни ден, за да видиш часовете и да планираш задачи.</div>
         </div>
     </div>
-
-    <div class="sidebar-section">
-        <div class="sidebar-card">
-            <div class="sidebar-title"><span id="selectedDateTitle">Избери ден от календара</span></div>
-            <div id="dayRequests"><div class="empty-mini">Няма избран ден</div></div>
-        </div>
-
-        <div class="sidebar-card">
-            <div class="sidebar-title">📌 Непланирани <span id="unplannedCount" style="background:var(--accent-red);color:white;padding:1px 8px;border-radius:10px;font-size:11px;">0</span></div>
-            <div id="unplannedRequests"><div class="empty-mini">Зареждане...</div></div>
-        </div>
-
-        <div class="sidebar-card">
-            <div class="sidebar-title">👷 Натовареност (избран ден)</div>
-            <div id="mechanicWorkload"><div class="empty-mini">Избери ден, за да видиш натовареността</div></div>
+    <div>
+        <div class="card">
+            <div class="card-title">📌 Непланирани <span id="unplannedCount" style="background:var(--accent-red);color:white;padding:1px 8px;border-radius:10px;font-size:11px;">0</span></div>
+            <div id="unplannedList"><div class="loading">Зареждане…</div></div>
         </div>
     </div>
 </div>
 
-<div id="popupContainer"></div>
+<!-- Day view -->
+<div class="overlay" id="dayOverlay">
+    <div class="day-modal">
+        <div class="day-head">
+            <button onclick="shiftDay(-1)">◀</button>
+            <div class="title"><span id="dayTitle"></span><div class="sub" id="daySub"></div></div>
+            <button onclick="shiftDay(1)">▶</button>
+            <button class="close" onclick="closeDay()">✕</button>
+        </div>
+        <div class="day-hint" id="dayHint"></div>
+        <div class="day-scroll" id="dayScroll"><div class="day-grid" id="dayGrid"></div></div>
+    </div>
+</div>
+
+<!-- Popup (assign / details) -->
+<div class="overlay" id="popupOverlay" onclick="if(event.target===this) closePopup()">
+    <div class="popup">
+        <div class="popup-head"><span id="popupTitle"></span><button onclick="closePopup()">✕</button></div>
+        <div class="popup-body" id="popupBody"></div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <nav class="bottom-nav" id="bottomNav">
-    <a href="requests.html"><span class="nav-icon">📝</span>Нова заявка</a>
+    <a href="requests.html"><span class="nav-icon">📝</span>Заявки</a>
     <a href="assign.html"><span class="nav-icon">📋</span>Разпределяне</a>
     <a href="history.html"><span class="nav-icon">📊</span>Преглед</a>
     <a href="schedule.html" class="active"><span class="nav-icon">📅</span>График</a>
@@ -250,431 +205,472 @@
 </nav>
 
 <script>
-function sanitize(s){if(!s)return s;var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function sanitize(s){if(s===null||s===undefined)return '';var d=document.createElement('div');d.textContent=String(s);return d.innerHTML;}
 const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
 
-let allRequests = [];
+const WORK_START = 7, WORK_END = 19;           // работно време в дневния изглед
+const SLOT_MIN = 30;                           // стъпка в минути
+const OVERLOAD_TASKS = 5;
+const DURATIONS = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+const FIELDS = 'id,request_number,client_name,company_name,client_phone,vehicle,brand,model,reg_number,description,status,priority,activity_type,assigned_mechanics,responsible_mechanic,desired_date,scheduled_at,estimated_hours,created_at';
+const MONTHS_BG = ['Януари','Февруари','Март','Април','Май','Юни','Юли','Август','Септември','Октомври','Ноември','Декември'];
+const DAYS_BG = ['Неделя','Понеделник','Вторник','Сряда','Четвъртък','Петък','Събота'];
+const STATUS_COLOR = { 'Нова':'#e41e2b', 'Разпределена':'#7c3aed', 'В изпълнение':'#3b82f6', 'Изпълнена':'#10b981' };
+
+let viewYear, viewMonth;          // месечен изглед
+let dayDate = null;               // отворен ден (Date, 00:00)
+let scheduled = [];               // заявки с планиран час в зареденият диапазон
+let unplanned = [];               // отворени заявки без план
 let mechanics = [];
-let currentMonth = new Date().getMonth();
-let currentYear = new Date().getFullYear();
-let selectedDate = null;
+let loadedFrom = null, loadedTo = null;
+let readOnly = false;
+let dragInfo = null;
 
-const MONTH_NAMES = ['Януари','Февруари','Март','Април','Май','Юни','Юли','Август','Септември','Октомври','Ноември','Декември'];
-const DAY_NAMES = ['Пн','Вт','Ср','Чт','Пт','Сб','Нд'];
+// ---------- helpers ----------
+const p2 = n => String(n).padStart(2, '0');
+function iso(d) { return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); }
+function day0(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function addHours(d, h) { return new Date(new Date(d).getTime() + h * 3600000); }
+function fmtTime(d) { d = new Date(d); return p2(d.getHours()) + ':' + p2(d.getMinutes()); }
+function fmtDate(d) { d = new Date(d); return p2(d.getDate()) + '.' + p2(d.getMonth() + 1) + '.' + d.getFullYear(); }
+function fmtDur(h) { h = parseFloat(h); if (!h) return '—'; return h < 1 ? Math.round(h * 60) + ' мин' : String(h).replace('.', ',') + ' ч'; }
+function durOf(r) { return parseFloat(r.estimated_hours) || 1; }
+function machine(r) { return (r.brand || r.model) ? ((r.brand || '') + ' ' + (r.model || '')).trim() : (r.vehicle || ''); }
+function clientName(r) { return r.company_name || r.client_name || ''; }
 
-// --- Auth ---
+async function api(path, method = 'GET', body) {
+    const res = await fetch(API_URL, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ path, method, body }) });
+    if (!res.ok && res.status !== 204) throw new Error(method + ' ' + path.split('?')[0] + ': ' + res.status);
+    return res.status === 204 ? null : res.json();
+}
+
+function toast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast ' + type + ' show';
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.className = 'toast ' + type, 5000);
+}
+
+// ---------- auth & nav ----------
 function checkAuth() {
     const auth = sessionStorage.getItem('workcard_auth');
     const role = sessionStorage.getItem('workcard_role');
-    if (auth !== 'true' || !['coordinator','manager','admin'].includes(role)) {
-        window.location.href = 'login.html';
-        return;
-    }
+    if (auth !== 'true' || !['coordinator', 'manager', 'admin'].includes(role)) { window.location.href = 'login.html'; return false; }
+    readOnly = role === 'coordinator';
+    if (readOnly) document.body.classList.add('read-only');
     const user = sessionStorage.getItem('workcard_user');
     if (user) document.getElementById('headerUser').textContent = user;
-    if (role === 'coordinator') {
-        document.body.classList.add('read-only');
-        document.getElementById('readOnlyBanner').style.display = 'block';
-    }
-}
-
-function canEdit() {
-    const role = sessionStorage.getItem('workcard_role');
-    return role === 'manager' || role === 'admin';
-}
-
-function updateNav() {
-    const role = sessionStorage.getItem('workcard_role');
-    const nav = document.getElementById('bottomNav');
-    if (!nav) return;
-    const links = nav.querySelectorAll('a');
-    links.forEach(link => {
-        const href = link.getAttribute('href');
-        if (role === 'coordinator') {
-            link.style.display = (href === 'requests.html' || href === 'assign.html' || href === 'history.html' || href === 'schedule.html' || href === 'dashboard.html') ? 'flex' : 'none';
-        } else if (role === 'manager') {
-            link.style.display = (href === 'assign.html' || href === 'history.html' || href === 'schedule.html' || href === 'dashboard.html') ? 'flex' : 'none';
-        } else if (role === 'admin') {
-            link.style.display = 'flex';
-        }
+    document.querySelectorAll('#bottomNav a').forEach(a => {
+        const h = a.getAttribute('href');
+        if (role === 'manager') a.style.display = ['assign.html','history.html','schedule.html','dashboard.html'].includes(h) ? 'flex' : 'none';
     });
+    return true;
 }
 
-// --- API ---
-async function apiCall(path, method = 'GET', body = undefined) {
-    const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path, method, body })
-    });
-    if (!res.ok && res.status !== 204) throw new Error(`${method} ${path}: ${res.status}`);
-    if (res.status === 204) return null;
-    return res.json();
-}
-
+// ---------- data ----------
 async function loadMechanics() {
-    try {
-        mechanics = await apiCall('nomenclatures?group_name=eq.mechanics&is_active=eq.true&order=sort_order');
-    } catch(e) { console.error(e); }
+    try { mechanics = (await api('nomenclatures?group_name=eq.mechanics&is_active=eq.true&order=sort_order&select=value')).map(m => m.value); }
+    catch (e) { mechanics = []; }
 }
 
-async function loadSchedule() {
+async function loadData(from, to) {
+    loadedFrom = from; loadedTo = to;
+    const [sch, unp] = await Promise.all([
+        api('service_requests?select=' + FIELDS + '&scheduled_at=gte.' + from.toISOString() + '&scheduled_at=lt.' + to.toISOString() + '&order=scheduled_at.asc'),
+        api('service_requests?select=' + FIELDS + '&scheduled_at=is.null&status=in.(Нова,Разпределена,В изпълнение)&order=created_at.asc')
+    ]);
+    scheduled = sch; unplanned = unp;
+}
+
+async function reload() {
+    const first = new Date(viewYear, viewMonth, 1);
+    const from = addDays(first, -7), to = addDays(new Date(viewYear, viewMonth + 1, 1), 14);
     try {
-        allRequests = await apiCall('service_requests?order=created_at.desc');
-        renderCalendar();
-        renderUnplanned();
-        if (selectedDate) {
-            renderDayRequests(selectedDate);
-            renderMechanicWorkload(selectedDate);
-        }
-    } catch(e) {
-        console.error(e);
+        await loadData(from, to);
+        renderMonth(); renderUnplanned();
+        if (dayDate) renderDay();
+    } catch (e) {
+        console.error(e); toast('Грешка при зареждане: ' + e.message, 'error');
     }
 }
 
-// --- Date helpers ---
-function pad(n) { return String(n).padStart(2, '0'); }
-function dateToStr(y, m, d) { return `${y}-${pad(m+1)}-${pad(d)}`; }
-function todayStr() { const t = new Date(); return dateToStr(t.getFullYear(), t.getMonth(), t.getDate()); }
-
-function requestsForDate(dateStr) {
-    return allRequests.filter(r => r.desired_date === dateStr);
+function tasksOn(d) {
+    const a = day0(d), b = addDays(a, 1);
+    return scheduled.filter(r => { const s = new Date(r.scheduled_at); return s >= a && s < b; });
 }
 
-function checkOverloaded(dateStr) {
-    return requestsForDate(dateStr).length >= 5;
+function conflictIds(tasks) {
+    const ids = new Set();
+    for (let i = 0; i < tasks.length; i++) for (let j = i + 1; j < tasks.length; j++) {
+        const a = tasks[i], b = tasks[j];
+        if (a.status === 'Изпълнена' || b.status === 'Изпълнена') continue;
+        const as = new Date(a.scheduled_at), ae = addHours(as, durOf(a));
+        const bs = new Date(b.scheduled_at), be = addHours(bs, durOf(b));
+        const common = (a.assigned_mechanics || []).some(m => (b.assigned_mechanics || []).includes(m));
+        if (common && as < be && bs < ae) { ids.add(a.id); ids.add(b.id); }
+    }
+    return ids;
 }
 
-// --- Calendar rendering ---
-function renderCalendar() {
-    document.getElementById('calMonthYear').textContent = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
+// ---------- month ----------
+function renderMonth() {
+    document.getElementById('monthTitle').textContent = MONTHS_BG[viewMonth] + ' ' + viewYear;
     const grid = document.getElementById('calGrid');
-
-    let html = DAY_NAMES.map(d => `<div class="cal-header-cell">${d}</div>`).join('');
-
-    const firstOfMonth = new Date(currentYear, currentMonth, 1);
-    // Monday = 0 ... Sunday = 6
-    let startOffset = (firstOfMonth.getDay() + 6) % 7;
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
-
-    const todayS = todayStr();
-    const cells = [];
-
-    // Leading days from previous month
-    for (let i = startOffset - 1; i >= 0; i--) {
-        const d = daysInPrevMonth - i;
-        const m = currentMonth === 0 ? 11 : currentMonth - 1;
-        const y = currentMonth === 0 ? currentYear - 1 : currentYear;
-        cells.push({ d, m, y, otherMonth: true });
+    const first = new Date(viewYear, viewMonth, 1);
+    const offset = (first.getDay() + 6) % 7;                 // понеделник = 0
+    const start = addDays(first, -offset);
+    const today = iso(new Date());
+    let html = ['Пн','Вт','Ср','Чт','Пт','Сб','Нд'].map(d => '<div class="cal-head">' + d + '</div>').join('');
+    for (let i = 0; i < 42; i++) {
+        const d = addDays(start, i);
+        if (i >= 35 && d.getMonth() !== viewMonth) break;
+        const ds = iso(d);
+        const list = tasksOn(d);
+        const desired = unplanned.filter(r => r.desired_date === ds).length;
+        const conflicts = conflictIds(list).size > 0;
+        const over = list.length >= OVERLOAD_TASKS || conflicts;
+        const cls = ['cal-cell', d.getMonth() !== viewMonth ? 'other' : '', ds === today ? 'today' : '', (d.getDay() === 0 || d.getDay() === 6) ? 'weekend' : '', over ? 'overloaded' : ''].join(' ');
+        const dots = list.slice(0, 12).map(r => '<span class="cal-dot" style="background:' + (STATUS_COLOR[r.status] || '#94a3b8') + '"></span>').join('');
+        html += '<div class="' + cls + '" onclick="openDay(\'' + ds + '\')">' +
+            '<div class="cal-num">' + d.getDate() + '</div>' +
+            (over ? '<span class="cal-warn" title="Застъпване или много задачи">⚠</span>' : '') +
+            (list.length ? '<div class="cal-count">' + list.length + (list.length === 1 ? ' задача' : ' задачи') + '</div>' : '') +
+            '<div class="cal-dots">' + dots + '</div>' +
+            (desired ? '<div class="cal-desired">● ' + desired + ' желани</div>' : '') +
+        '</div>';
     }
-    // Current month days
-    for (let d = 1; d <= daysInMonth; d++) {
-        cells.push({ d, m: currentMonth, y: currentYear, otherMonth: false });
-    }
-    // Trailing days to complete the grid (multiple of 7)
-    let trailing = 1;
-    while (cells.length % 7 !== 0) {
-        const m = currentMonth === 11 ? 0 : currentMonth + 1;
-        const y = currentMonth === 11 ? currentYear + 1 : currentYear;
-        cells.push({ d: trailing++, m, y, otherMonth: true });
-    }
-
-    cells.forEach(c => {
-        const dateStr = dateToStr(c.y, c.m, c.d);
-        const dayReqs = requestsForDate(dateStr);
-        const isToday = dateStr === todayS;
-        const isSelected = dateStr === selectedDate;
-        const overloaded = dayReqs.length >= 5;
-
-        let classes = 'cal-cell';
-        if (c.otherMonth) classes += ' other-month';
-        if (isToday) classes += ' today';
-        if (isSelected) classes += ' selected';
-        if (overloaded) classes += ' overloaded';
-
-        const dots = dayReqs.slice(0, 3).map(r => {
-            const cls = r.status === 'Нова' ? 'dot-new' : r.status === 'Разпределена' ? 'dot-assigned' : r.status === 'В изпълнение' ? 'dot-progress' : 'dot-done';
-            return `<span class="cal-dot ${cls}"></span>`;
-        }).join('');
-        const countBadge = dayReqs.length > 3 ? `<span class="cal-count">+${dayReqs.length - 3}</span>` : '';
-        const warning = overloaded ? '<span class="cal-warning">⚠</span>' : '';
-
-        html += `<div class="${classes}" data-date="${dateStr}" onclick="selectDay('${dateStr}')" ondragover="event.preventDefault()" ondrop="dropRequest(event, '${dateStr}')">
-            ${warning}
-            <div class="cal-day-num">${c.d}</div>
-            <div class="cal-dots">${dots}${countBadge}</div>
-        </div>`;
-    });
-
     grid.innerHTML = html;
 }
 
-function prevMonth() {
-    currentMonth--;
-    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-    renderCalendar();
-}
-function nextMonth() {
-    currentMonth++;
-    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-    renderCalendar();
-}
-function goToday() {
-    const t = new Date();
-    currentMonth = t.getMonth();
-    currentYear = t.getFullYear();
-    selectDay(todayStr());
-}
+function shiftMonth(n) { const d = new Date(viewYear, viewMonth + n, 1); viewYear = d.getFullYear(); viewMonth = d.getMonth(); reload(); }
+function goToday() { const n = new Date(); viewYear = n.getFullYear(); viewMonth = n.getMonth(); reload(); }
 
-function selectDay(dateStr) {
-    selectedDate = dateStr;
-    renderCalendar();
-    renderDayRequests(dateStr);
-    renderMechanicWorkload(dateStr);
-}
-
-// --- Sidebar: day requests ---
-function formatDateHuman(dateStr) {
-    const [y,m,d] = dateStr.split('-');
-    return `${d}.${m}.${y}`;
-}
-
-function miniCardHtml(r, draggable) {
-    const stripeClass = r.status === 'Нова' ? 'stripe-new' : r.status === 'Разпределена' ? 'stripe-assigned' : r.status === 'В изпълнение' ? 'stripe-progress' : 'stripe-done';
-    const statusBadge = r.status === 'Нова' ? '<span class="badge b-new">Нова</span>' : r.status === 'Разпределена' ? '<span class="badge b-assigned">Разпределена</span>' : r.status === 'В изпълнение' ? '<span class="badge b-progress">В изпълнение</span>' : '<span class="badge b-done">Изпълнена</span>';
-    const urgentBadge = r.priority === 'Спешен' ? '<span class="badge b-urgent">🔥</span>' : '';
-    const dragAttr = draggable && canEdit() ? `draggable="true" ondragstart="dragRequest(event, '${r.id}')"` : '';
-    return `<div class="mini-card ${stripeClass}" ${dragAttr} onclick="openPopup('${r.id}')">
-        <div class="mini-card-top">
-            <div class="mini-card-client">${r.client_name || '—'}</div>
-        </div>
-        <div class="mini-card-vehicle">${r.vehicle || ''} ${r.reg_number ? '— ' + r.reg_number : ''}</div>
-        <div class="mini-card-badges">${statusBadge}${urgentBadge}</div>
-    </div>`;
-}
-
-function renderDayRequests(dateStr) {
-    document.getElementById('selectedDateTitle').textContent = '📅 ' + formatDateHuman(dateStr);
-    const list = requestsForDate(dateStr);
-    const el = document.getElementById('dayRequests');
-    if (list.length === 0) {
-        el.innerHTML = '<div class="empty-mini">Няма заявки за този ден</div>';
-        return;
-    }
-    el.innerHTML = list.map(r => miniCardHtml(r, true)).join('');
-}
-
+// ---------- unplanned ----------
 function renderUnplanned() {
-    const list = allRequests.filter(r => !r.desired_date);
-    document.getElementById('unplannedCount').textContent = list.length;
-    const el = document.getElementById('unplannedRequests');
-    if (list.length === 0) {
-        el.innerHTML = '<div class="empty-mini">Няма непланирани заявки</div>';
-        return;
-    }
-    el.innerHTML = list.map(r => miniCardHtml(r, true)).join('');
+    document.getElementById('unplannedCount').textContent = unplanned.length;
+    const box = document.getElementById('unplannedList');
+    if (!unplanned.length) { box.innerHTML = '<div class="empty-note">✓ Всички отворени заявки са планирани</div>'; return; }
+    box.innerHTML = unplanned.map(r =>
+        '<div class="req-item" style="border-left-color:' + (STATUS_COLOR[r.status] || '#e41e2b') + '" onclick="openAssign(\'' + r.id + '\')">' +
+            '<div class="t">' + sanitize(clientName(r)) + '</div>' +
+            '<div class="s">' + sanitize(machine(r)) + ' — ' + sanitize(r.reg_number) + '</div>' +
+            '<div>' + (r.priority === 'Спешен' ? '<span class="badge b-urgent">🔥 Спешна</span>' : '') +
+                (r.desired_date ? '<span class="badge b-desired">Желана: ' + fmtDate(r.desired_date + 'T00:00:00') + '</span>' : '') +
+                '<span class="badge" style="background:#eef2f7;color:#1a3a8f;">' + sanitize(r.status) + '</span></div>' +
+        '</div>').join('');
 }
 
-function renderMechanicWorkload(dateStr) {
-    const dayReqs = requestsForDate(dateStr);
-    const mechCounts = {};
-    dayReqs.forEach(r => {
-        (r.assigned_mechanics || []).forEach(m => {
-            mechCounts[m] = (mechCounts[m] || 0) + 1;
-        });
+// ---------- day view ----------
+function openDay(ds) {
+    dayDate = new Date(ds + 'T00:00:00');
+    document.getElementById('dayOverlay').classList.add('open');
+    ensureLoaded().then(renderDay);
+}
+function closeDay() { dayDate = null; document.getElementById('dayOverlay').classList.remove('open'); }
+function shiftDay(n) { dayDate = addDays(dayDate, n); ensureLoaded().then(renderDay); }
+
+async function ensureLoaded() {
+    if (dayDate >= loadedFrom && addDays(dayDate, 1) <= loadedTo) return;
+    viewYear = dayDate.getFullYear(); viewMonth = dayDate.getMonth();
+    await reload();
+}
+
+function renderDay() {
+    const d = dayDate;
+    document.getElementById('dayTitle').textContent = DAYS_BG[d.getDay()] + ', ' + fmtDate(d);
+    const list = tasksOn(d);
+    const conflicts = conflictIds(list);
+    const desiredHere = unplanned.filter(r => r.desired_date === iso(d));
+    document.getElementById('daySub').textContent = list.length + (list.length === 1 ? ' планирана задача' : ' планирани задачи') +
+        (desiredHere.length ? ' · ' + desiredHere.length + ' непланирани с желана дата днес' : '') +
+        (conflicts.size ? ' · ⚠ има застъпване' : '');
+    document.getElementById('dayHint').textContent = readOnly
+        ? 'Режим за преглед. Натисни задача за подробности.'
+        : 'Натисни свободен час, за да планираш задача · Влачи задача, за да я преместиш в друг час или при друг механик';
+
+    // колони: активните механици + исторически имена, ако имат задача този ден
+    const cols = mechanics.slice();
+    list.forEach(r => (r.assigned_mechanics || []).forEach(m => { if (!cols.includes(m)) cols.push(m); }));
+
+    const rows = (WORK_END - WORK_START) * 60 / SLOT_MIN;
+    const grid = document.getElementById('dayGrid');
+    grid.style.gridTemplateColumns = '58px repeat(' + cols.length + ', minmax(140px, 1fr))';
+
+    let html = '<div class="col-head time-head"></div>';
+    cols.forEach(m => {
+        const mine = list.filter(r => (r.assigned_mechanics || []).includes(m) && r.status !== 'Изпълнена');
+        const hrs = mine.reduce((s, r) => s + durOf(r), 0);
+        html += '<div class="col-head">' + sanitize(m) + '<span class="load">' + (hrs ? fmtDur(hrs) + ' заето' : 'свободен') + '</span></div>';
     });
 
-    const el = document.getElementById('mechanicWorkload');
-    const names = mechanics.length ? mechanics.map(m => m.label) : Object.keys(mechCounts);
-    const activeNames = names.filter(n => mechCounts[n] || mechanics.length);
-
-    if (activeNames.length === 0) {
-        el.innerHTML = '<div class="empty-mini">Няма данни за избрания ден</div>';
-        return;
+    // време + слотове: първа колона часове, после по колона на механик
+    let timeCol = '';
+    for (let i = 0; i < rows; i++) {
+        const mins = WORK_START * 60 + i * SLOT_MIN;
+        const isHour = mins % 60 === 0;
+        timeCol += '<div class="time-cell' + (isHour ? ' hour' : '') + '">' + (isHour ? p2(mins / 60) + ':00' : '') + '</div>';
     }
+    html += '<div class="time-col">' + timeCol + '</div>';
 
-    const maxForWidth = 6;
-    el.innerHTML = activeNames.map(name => {
-        const count = mechCounts[name] || 0;
-        const barClass = count >= 5 ? 'wl-red' : count >= 3 ? 'wl-amber' : count >= 1 ? 'wl-green' : '';
-        const width = Math.min(100, (count / maxForWidth) * 100);
-        return `<div class="workload-row">
-            <div class="workload-name" title="${name}">${name}</div>
-            <div class="workload-bar-track"><div class="workload-bar-fill ${barClass}" style="width:${width}%"></div></div>
-            <div class="workload-count">${count}</div>
-        </div>`;
-    }).join('');
+    cols.forEach((m, ci) => {
+        let slots = '';
+        for (let i = 0; i < rows; i++) {
+            const mins = WORK_START * 60 + i * SLOT_MIN;
+            slots += '<div class="slot' + (mins % 60 === 30 ? ' hour' : '') + (readOnly ? '' : ' can-add') + '" data-col="' + ci + '" data-min="' + mins + '"></div>';
+        }
+        const blocks = list.filter(r => (r.assigned_mechanics || []).includes(m)).map(r => blockHtml(r, m, conflicts.has(r.id))).join('');
+        html += '<div class="col-body" data-col="' + ci + '">' + slots + blocks + '</div>';
+    });
+    grid.innerHTML = html;
+    grid.dataset.cols = JSON.stringify(cols);
+
+    // текущ час
+    const now = new Date();
+    if (iso(now) === iso(d)) {
+        const mins = now.getHours() * 60 + now.getMinutes();
+        if (mins >= WORK_START * 60 && mins <= WORK_END * 60) {
+            const top = (mins - WORK_START * 60) / SLOT_MIN * rowPx();
+            grid.querySelectorAll('.col-body').forEach(cb => { const l = document.createElement('div'); l.className = 'now-line'; l.style.top = top + 'px'; cb.appendChild(l); });
+        }
+    }
+    bindDayEvents(grid);
 }
 
-// --- Drag & drop ---
-function dragRequest(e, id) {
-    e.dataTransfer.setData('requestId', id);
+function rowPx() { return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--row')) || 30; }
+
+function blockHtml(r, mech, conflict) {
+    const s = new Date(r.scheduled_at);
+    let startMin = s.getHours() * 60 + s.getMinutes();
+    const durMin = durOf(r) * 60;
+    let top = (startMin - WORK_START * 60) / SLOT_MIN * rowPx();
+    let height = durMin / SLOT_MIN * rowPx() - 2;
+    const maxH = (WORK_END - WORK_START) * 60 / SLOT_MIN * rowPx();
+    if (top < 0) { height += top; top = 0; }
+    if (top + height > maxH) height = Math.max(18, maxH - top);
+    const canDrag = !readOnly && r.status === 'Разпределена';
+    const star = r.responsible_mechanic === mech ? '★ ' : '';
+    return '<div class="block' + (conflict ? ' conflict' : '') + (r.status === 'Изпълнена' ? ' done' : '') + (canDrag ? ' draggable' : '') + '"' +
+        ' style="top:' + top + 'px;height:' + Math.max(height, 18) + 'px;background:' + (STATUS_COLOR[r.status] || '#64748b') + ';"' +
+        (canDrag ? ' draggable="true" data-drag="' + r.id + '" data-from="' + sanitize(mech) + '"' : '') +
+        ' data-open="' + r.id + '">' +
+        '<div class="bt">' + fmtTime(s) + '–' + fmtTime(addHours(s, durOf(r))) + ' ' + star + (r.priority === 'Спешен' ? '🔥' : '') + '</div>' +
+        '<div>' + sanitize(clientName(r)) + '</div>' +
+        '<div style="opacity:0.9;">' + sanitize(machine(r)) + ' · ' + sanitize(r.reg_number) + '</div>' +
+    '</div>';
 }
 
-async function dropRequest(e, date) {
-    e.preventDefault();
-    if (!canEdit()) return;
+function bindDayEvents(grid) {
+    const cols = JSON.parse(grid.dataset.cols || '[]');
 
-    const id = e.dataTransfer.getData('requestId');
-    if (!id) return;
-    const dateStr = formatDateHuman(date);
+    grid.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); openDetails(b.dataset.open); }));
 
-    const existingCount = requestsForDate(date).length;
-    if (existingCount >= 5) {
-        if (!confirm('Внимание! Този ден вече има ' + existingCount + ' задачи. Продължаваш ли?')) return;
-    }
-    if (!confirm('Сигурен ли си, че искаш да преместиш заявката на ' + dateStr + '?')) return;
+    if (readOnly) return;
 
-    try {
-        await apiCall('service_requests?id=eq.' + id, 'PATCH', {
-            desired_date: date,
-            updated_at: new Date().toISOString()
+    grid.querySelectorAll('.slot').forEach(sl => sl.addEventListener('click', () => {
+        const m = cols[+sl.dataset.col];
+        const t = new Date(dayDate); t.setMinutes(+sl.dataset.min);
+        openAssign(null, m, t);
+    }));
+
+    grid.querySelectorAll('[data-drag]').forEach(b => {
+        b.addEventListener('dragstart', e => {
+            dragInfo = { id: b.dataset.drag, from: b.dataset.from };
+            e.dataTransfer.effectAllowed = 'move';
+            try { e.dataTransfer.setData('text/plain', b.dataset.drag); } catch (x) {}
         });
-        await apiCall('request_log', 'POST', {
-            request_id: id,
-            action: 'rescheduled',
-            performed_by: sessionStorage.getItem('workcard_user') || 'Ръководител',
-            details: 'Преместена на ' + dateStr
+        b.addEventListener('dragend', () => { dragInfo = null; grid.querySelectorAll('.drop-target').forEach(x => x.classList.remove('drop-target')); });
+    });
+    grid.querySelectorAll('.slot').forEach(sl => {
+        sl.addEventListener('dragover', e => { if (dragInfo) { e.preventDefault(); sl.classList.add('drop-target'); } });
+        sl.addEventListener('dragleave', () => sl.classList.remove('drop-target'));
+        sl.addEventListener('drop', e => {
+            e.preventDefault(); sl.classList.remove('drop-target');
+            if (!dragInfo) return;
+            const to = cols[+sl.dataset.col];
+            const t = new Date(dayDate); t.setMinutes(+sl.dataset.min);
+            moveTask(dragInfo.id, dragInfo.from, to, t);
+            dragInfo = null;
         });
-        await loadSchedule();
-    } catch(err) {
-        alert('Грешка: ' + err.message);
-    }
+    });
 }
 
-// --- Popup ---
-function updateResponsibleOptionsPopup(requestId) {
-    const checked = Array.from(document.querySelectorAll(`input[name="pmech-${requestId}"]:checked`)).map(cb => cb.value);
-    const select = document.getElementById(`presp-${requestId}`);
-    if (!select) return;
-    select.innerHTML = '<option value="">— Избери отговорник —</option>';
-    checked.forEach(m => { select.innerHTML += `<option value="${m}">★ ${m}</option>`; });
-    if (checked.length === 1) select.value = checked[0];
+// ---------- conflicts against DB ----------
+async function findConflicts(mechs, start, durH, excludeId) {
+    const a = day0(start), b = addDays(a, 1);
+    const rows = await api('service_requests?select=id,client_name,company_name,assigned_mechanics,scheduled_at,estimated_hours&status=in.(Разпределена,В изпълнение)&scheduled_at=gte.' + a.toISOString() + '&scheduled_at=lt.' + b.toISOString());
+    const end = addHours(start, durH), out = [];
+    rows.forEach(x => {
+        if (x.id === excludeId) return;
+        const xs = new Date(x.scheduled_at), xe = addHours(xs, parseFloat(x.estimated_hours) || 1);
+        const common = (x.assigned_mechanics || []).filter(m => mechs.includes(m));
+        if (common.length && xs < end && xe > start) out.push(common.join(', ') + ' — ' + (x.company_name || x.client_name || '') + ' ' + fmtTime(xs) + '–' + fmtTime(xe));
+    });
+    return out;
 }
 
-function openPopup(requestId) {
-    const r = allRequests.find(x => x.id === requestId);
+// ---------- move (drag & drop) ----------
+async function moveTask(id, fromMech, toMech, start) {
+    const r = scheduled.find(x => x.id === id);
     if (!r) return;
-
-    const statusBadge = r.status === 'Нова' ? '<span class="badge b-new">Нова</span>' : r.status === 'Разпределена' ? '<span class="badge b-assigned">Разпределена</span>' : r.status === 'В изпълнение' ? '<span class="badge b-progress">В изпълнение</span>' : '<span class="badge b-done">Изпълнена</span>';
-    const urgentBadge = r.priority === 'Спешен' ? '<span class="badge b-urgent">🔥 Спешна</span>' : '';
-    const activityBadges = (r.activity_type || []).map(a => `<span class="badge ${a === 'РЕМОНТ' || a === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'b-new' : 'b-progress'}">${a}</span>`).join('');
-
-    let assignSection = '';
-    if (r.status === 'Нова' && canEdit()) {
-        const mechChecks = mechanics.map(m => `<label class="mechanic-item"><input type="checkbox" name="pmech-${r.id}" value="${m.value}" onchange="updateResponsibleOptionsPopup('${r.id}')"><span>${m.label}</span></label>`).join('');
-        assignSection = `
-            <div class="popup-row">
-                <div class="popup-label">Назначи механик(ци)</div>
-                <div class="mechanic-list">${mechChecks}</div>
-                <div class="popup-label">★ Отговорник</div>
-                <select class="responsible-select" id="presp-${r.id}"><option value="">— Избери отговорник —</option></select>
-                <button class="assign-btn" onclick="assignFromPopup('${r.id}')">✓ Разпредели</button>
-            </div>`;
-    } else if (r.status === 'Разпределена' || r.status === 'В изпълнение' || r.status === 'Изпълнена') {
-        const assignedTags = (r.assigned_mechanics || []).map(m => `<span class="assigned-tag ${m === r.responsible_mechanic ? 'responsible' : ''}">${m === r.responsible_mechanic ? '★ ' : ''}${m}</span>`).join('');
-        assignSection = `
-            <div class="popup-row">
-                <div class="popup-label">Назначени</div>
-                <div class="assigned-display">${assignedTags || '—'}</div>
-            </div>`;
+    let mechs = (r.assigned_mechanics || []).slice();
+    let resp = r.responsible_mechanic;
+    if (toMech !== fromMech) {
+        if (mechs.includes(toMech)) { toast(toMech + ' вече участва в тази задача', 'error'); return; }
+        mechs = mechs.map(m => m === fromMech ? toMech : m);
+        if (resp === fromMech) resp = toMech;
     }
-
-    const photoHtml = r.photo_data ? `<div class="popup-row">
-        <div class="popup-label">📷 Снимка на талон</div>
-        <img src="${r.photo_data}" alt="Талон" style="max-width:100%;max-height:220px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;" onclick="window.open(this.src,'_blank')">
-    </div>` : '';
-
-    const clientTypeLabel = r.client_type === 'ЮЛ' ? `ЮЛ — ${r.company_name || ''} (ЕИК: ${r.bulstat || '—'})` : 'ФЛ';
-
-    const html = `
-    <div class="schedule-popup-overlay" onclick="closePopup()">
-        <div class="schedule-popup" onclick="event.stopPropagation()">
-            <div class="popup-header">
-                <span>📋 Детайли на заявка</span>
-                <button onclick="closePopup()">✕</button>
-            </div>
-            <div class="popup-body">
-                <div class="popup-row">
-                    <div class="popup-label">Клиент</div>
-                    <div class="popup-value">${r.client_name || '—'} <span style="color:var(--text-muted);font-size:12px;">(${clientTypeLabel})</span></div>
-                    <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">📞 ${r.client_phone || '—'} ${r.client_email ? '· 📧 ' + r.client_email : ''}</div>
-                </div>
-                <div class="popup-row">
-                    <div class="popup-label">Машина</div>
-                    <div class="popup-value">${r.vehicle || '—'} — ${r.reg_number || '—'}</div>
-                </div>
-                ${r.description ? `<div class="popup-row">
-                    <div class="popup-label">Описание на проблема</div>
-                    <div class="popup-desc">${r.description}</div>
-                </div>` : ''}
-                <div class="popup-row">
-                    <div class="popup-label">Вид дейност / Приоритет / Статус</div>
-                    <div class="mini-card-badges">${activityBadges}${statusBadge}${urgentBadge}</div>
-                </div>
-                ${photoHtml}
-                ${assignSection}
-            </div>
-        </div>
-    </div>`;
-
-    document.getElementById('popupContainer').innerHTML = html;
-}
-
-function closePopup() {
-    document.getElementById('popupContainer').innerHTML = '';
-}
-
-async function assignFromPopup(requestId) {
-    const checked = Array.from(document.querySelectorAll(`input[name="pmech-${requestId}"]:checked`)).map(cb => cb.value);
-    const respSelect = document.getElementById(`presp-${requestId}`);
-    const responsible = respSelect ? respSelect.value : '';
-
-    if (checked.length === 0) { alert('Избери поне един механик'); return; }
-    if (!responsible) { alert('Избери отговорник'); return; }
-
-    const mechNames = checked.join(', ');
-    if (!confirm('Сигурен ли си?\n\nНазначаване към: ' + mechNames + '\nОтговорник: ' + responsible)) return;
-
+    const dur = durOf(r);
+    let conf = [];
+    try { conf = await findConflicts(mechs, start, dur, id); } catch (e) {}
+    const msg = 'Преместване на задачата „' + clientName(r) + '“\n\n' +
+        'Нов час: ' + DAYS_BG[start.getDay()] + ' ' + fmtDate(start) + ', ' + fmtTime(start) + '–' + fmtTime(addHours(start, dur)) +
+        (toMech !== fromMech ? '\nМеханик: ' + fromMech + ' → ' + toMech : '') +
+        (conf.length ? '\n\n⚠ ЗАСТЪПВАНЕ:\n• ' + conf.join('\n• ') + '\n\nПродължаваш ли?' : '\n\nСигурен ли си?');
+    if (!confirm(msg)) return;
     try {
-        await apiCall(`service_requests?id=eq.${requestId}`, 'PATCH', {
-            assigned_mechanics: checked,
-            responsible_mechanic: responsible,
-            status: 'Разпределена',
-            assigned_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        });
-        await apiCall('request_log', 'POST', {
-            request_id: requestId,
-            action: 'assigned',
-            performed_by: sessionStorage.getItem('workcard_user') || 'Ръководител',
-            details: `Назначени: ${checked.join(', ')}. Отговорник: ${responsible}`
-        });
-        closePopup();
-        await loadSchedule();
-    } catch(e) {
-        console.error(e);
-        alert('Грешка при разпределяне: ' + e.message);
+        await api('service_requests?id=eq.' + id, 'PATCH', { scheduled_at: start.toISOString(), assigned_mechanics: mechs, responsible_mechanic: resp, updated_at: new Date().toISOString() });
+        api('request_log', 'POST', { request_id: id, action: 'rescheduled', performed_by: sessionStorage.getItem('workcard_user') || 'Ръководител',
+            details: 'Нов час ' + fmtDate(start) + ' ' + fmtTime(start) + (toMech !== fromMech ? '; ' + fromMech + ' → ' + toMech : '') }).catch(() => {});
+        toast('✓ Задачата е преместена', 'success');
+        await reload();
+    } catch (e) { toast('Грешка: ' + e.message, 'error'); }
+}
+
+// ---------- popup: details ----------
+function openDetails(id) {
+    const r = scheduled.find(x => x.id === id) || unplanned.find(x => x.id === id);
+    if (!r) return;
+    const s = r.scheduled_at ? new Date(r.scheduled_at) : null;
+    document.getElementById('popupTitle').textContent = '📋 ' + (r.request_number || 'Заявка');
+    const mechs = (r.assigned_mechanics || []).map(m => (m === r.responsible_mechanic ? '★ ' : '') + m).join(', ');
+    let body = '<div class="info-grid">' +
+        '<span class="k">Клиент</span><span><strong>' + sanitize(clientName(r)) + '</strong>' + (r.client_phone ? ' · ' + sanitize(r.client_phone) : '') + '</span>' +
+        '<span class="k">Машина</span><span>' + sanitize(machine(r)) + ' — ' + sanitize(r.reg_number) + '</span>' +
+        '<span class="k">Вид дейност</span><span>' + sanitize((r.activity_type || []).join(', ')) + '</span>' +
+        '<span class="k">Статус</span><span><strong style="color:' + (STATUS_COLOR[r.status] || '#333') + '">' + sanitize(r.status) + '</strong>' + (r.priority === 'Спешен' ? ' · 🔥 Спешна' : '') + '</span>' +
+        '<span class="k">Механици</span><span>' + sanitize(mechs || '—') + '</span>' +
+        '<span class="k">Планирано</span><span>' + (s ? DAYS_BG[s.getDay()] + ' ' + fmtDate(s) + ', ' + fmtTime(s) + '–' + fmtTime(addHours(s, durOf(r))) + ' (' + fmtDur(durOf(r)) + ')' : '—') + '</span>' +
+        '<span class="k">Желана дата</span><span>' + (r.desired_date ? fmtDate(r.desired_date + 'T00:00:00') : '—') + '</span>' +
+    '</div>' +
+    (r.description ? '<div style="font-size:13px;padding:8px;background:#f8fafc;border-radius:8px;border-left:3px solid var(--accent-amber);">' + sanitize(r.description) + '</div>' : '');
+    if (!readOnly && r.status === 'Разпределена') {
+        body += '<button class="btn-main" onclick="openAssign(\'' + r.id + '\')">🕒 Промени час / механици</button>';
     }
+    body += '<a class="btn-sec" href="history.html">📊 Отвори в Преглед</a>';
+    document.getElementById('popupBody').innerHTML = body;
+    document.getElementById('popupOverlay').classList.add('open');
 }
 
-// --- Auto refresh ---
-let refreshInterval;
-function startAutoRefresh() {
-    refreshInterval = setInterval(() => { loadSchedule(); }, 30000);
+// ---------- popup: assign / re-plan ----------
+function timeOptions(sel) {
+    let o = '';
+    for (let h = WORK_START; h < WORK_END; h++) for (const m of [0, 30]) {
+        const v = p2(h) + ':' + p2(m);
+        o += '<option value="' + v + '"' + (v === sel ? ' selected' : '') + '>' + v + '</option>';
+    }
+    return o;
 }
 
-// --- Init ---
+function openAssign(requestId, presetMech, presetStart) {
+    if (readOnly) { if (requestId) openDetails(requestId); return; }
+    const existing = requestId ? (scheduled.find(x => x.id === requestId) || unplanned.find(x => x.id === requestId)) : null;
+    const candidates = unplanned.filter(r => r.status === 'Нова' || !r.scheduled_at);
+    if (!existing && !candidates.length) { toast('Няма непланирани заявки за разпределяне', 'error'); return; }
+
+    const start = presetStart || (existing && existing.scheduled_at ? new Date(existing.scheduled_at)
+        : (existing && existing.desired_date ? new Date(existing.desired_date + 'T08:00:00') : (dayDate ? addHours(dayDate, 8) : addHours(day0(new Date()), 8))));
+    const preMechs = existing && existing.assigned_mechanics && existing.assigned_mechanics.length ? existing.assigned_mechanics : (presetMech ? [presetMech] : []);
+    const preResp = existing && existing.responsible_mechanic ? existing.responsible_mechanic : (presetMech || '');
+    const preDur = existing ? durOf(existing) : 1;
+
+    document.getElementById('popupTitle').textContent = existing && existing.scheduled_at ? '🕒 Промяна на плана' : '📋 Планиране и разпределяне';
+
+    const reqSelect = existing
+        ? '<div class="fld">Заявка<div style="font-size:14px;color:var(--text);font-weight:700;">' + sanitize(clientName(existing)) + ' — ' + sanitize(machine(existing)) + ' (' + sanitize(existing.reg_number) + ')</div></div><input type="hidden" id="aReq" value="' + existing.id + '">'
+        : '<label class="fld">Заявка *<select id="aReq">' + candidates.map(r => '<option value="' + r.id + '">' +
+            sanitize(clientName(r) + ' — ' + machine(r) + ' (' + (r.reg_number || '') + ')' + (r.priority === 'Спешен' ? ' 🔥' : '') + (r.desired_date ? ' · желана ' + fmtDate(r.desired_date + 'T00:00:00') : '')) + '</option>').join('') + '</select></label>';
+
+    const allMechs = mechanics.slice();
+    preMechs.forEach(m => { if (!allMechs.includes(m)) allMechs.push(m); });
+
+    document.getElementById('popupBody').innerHTML = reqSelect +
+        '<div class="fld">Механици *<div class="mech-checks">' + allMechs.map(m =>
+            '<label><input type="checkbox" class="aMech" value="' + sanitize(m) + '"' + (preMechs.includes(m) ? ' checked' : '') + ' onchange="refreshResp()"> ' + sanitize(m) + '</label>').join('') + '</div></div>' +
+        '<label class="fld">★ Отговорник *<select id="aResp"></select></label>' +
+        '<div class="fld-row">' +
+            '<label class="fld">Дата *<input type="date" id="aDate" value="' + iso(start) + '"></label>' +
+            '<label class="fld">Час *<select id="aTime">' + timeOptions(fmtTime(start)) + '</select></label>' +
+            '<label class="fld">Продължителност *<select id="aDur">' + DURATIONS.map(d => '<option value="' + d + '"' + (d === preDur ? ' selected' : '') + '>' + fmtDur(d) + '</option>').join('') + '</select></label>' +
+        '</div>' +
+        '<div class="warn-box" id="aWarn"></div>' +
+        '<button class="btn-main" onclick="saveAssign()">✓ ' + (existing && existing.status !== 'Нова' ? 'Запази плана' : 'Планирай и разпредели') + '</button>';
+    document.getElementById('popupOverlay').classList.add('open');
+    refreshResp(preResp);
+}
+
+function refreshResp(pre) {
+    const sel = document.getElementById('aResp');
+    if (!sel) return;
+    const cur = pre || sel.value;
+    const checked = Array.from(document.querySelectorAll('.aMech:checked')).map(c => c.value);
+    sel.innerHTML = '<option value="">— избери —</option>' + checked.map(m => '<option value="' + sanitize(m) + '"' + (m === cur ? ' selected' : '') + '>★ ' + sanitize(m) + '</option>').join('');
+    if (checked.length === 1) sel.value = checked[0];
+}
+
+async function saveAssign() {
+    const id = document.getElementById('aReq').value;
+    const mechs = Array.from(document.querySelectorAll('.aMech:checked')).map(c => c.value);
+    const resp = document.getElementById('aResp').value;
+    const date = document.getElementById('aDate').value;
+    const time = document.getElementById('aTime').value;
+    const dur = parseFloat(document.getElementById('aDur').value);
+    const warn = document.getElementById('aWarn');
+    warn.style.display = 'none';
+    if (!id || !mechs.length || !resp || !date || !time || !dur) { warn.textContent = 'Попълни заявка, механици, отговорник, дата, час и продължителност.'; warn.style.display = 'block'; return; }
+    const start = new Date(date + 'T' + time + ':00');
+    const r = scheduled.find(x => x.id === id) || unplanned.find(x => x.id === id);
+
+    let conf = [];
+    try { conf = await findConflicts(mechs, start, dur, id); } catch (e) {}
+    const msg = (r ? clientName(r) + ' — ' + machine(r) + '\n\n' : '') +
+        'Механици: ' + mechs.join(', ') + '\nОтговорник: ' + resp +
+        '\nПланирано: ' + DAYS_BG[start.getDay()] + ' ' + fmtDate(start) + ', ' + time + '–' + fmtTime(addHours(start, dur)) + ' (' + fmtDur(dur) + ')' +
+        (conf.length ? '\n\n⚠ ЗАСТЪПВАНЕ:\n• ' + conf.join('\n• ') + '\n\nПродължаваш ли?' : '\n\nСигурен ли си?');
+    if (!confirm(msg)) return;
+
+    const wasNew = r && r.status === 'Нова';
+    const patch = { assigned_mechanics: mechs, responsible_mechanic: resp, scheduled_at: start.toISOString(), estimated_hours: dur, updated_at: new Date().toISOString() };
+    if (wasNew) { patch.status = 'Разпределена'; patch.assigned_at = new Date().toISOString(); }
+    try {
+        await api('service_requests?id=eq.' + id, 'PATCH', patch);
+        api('request_log', 'POST', {
+            request_id: id, action: wasNew ? 'assigned' : 'rescheduled', performed_by: sessionStorage.getItem('workcard_user') || 'Ръководител',
+            details: (wasNew ? 'Назначени: ' + mechs.join(', ') + '. Отговорник: ' + resp + '. ' : '') + 'Планирано: ' + fmtDate(start) + ' ' + time + ' (' + fmtDur(dur) + ')'
+        }).catch(() => {});
+        closePopup();
+        toast(wasNew ? '✓ Заявката е планирана и разпределена' : '✓ Планът е обновен', 'success');
+        await reload();
+    } catch (e) { warn.textContent = 'Грешка: ' + e.message; warn.style.display = 'block'; }
+}
+
+function closePopup() { document.getElementById('popupOverlay').classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (document.getElementById('popupOverlay').classList.contains('open')) closePopup(); else closeDay(); } });
+
+// ---------- init ----------
+setInterval(() => {
+    if (document.getElementById('popupOverlay').classList.contains('open') || dragInfo) return;
+    reload();
+}, 30000);
+
 document.addEventListener('DOMContentLoaded', async () => {
-    checkAuth();
-    updateNav();
+    if (!checkAuth()) return;
+    const n = new Date(); viewYear = n.getFullYear(); viewMonth = n.getMonth();
     await loadMechanics();
-    await loadSchedule();
-    selectDay(todayStr());
-    startAutoRefresh();
+    await reload();
 });
 </script>
-
+<script>
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(() => {}); }
+</script>
 </body>
 </html>
