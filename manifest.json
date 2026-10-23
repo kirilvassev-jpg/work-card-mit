@@ -2,7 +2,7 @@
   "name": "Работна Карта — МиТ",
   "short_name": "Работна Карта",
   "description": "Проследяване на дейности на механици от МиТ",
-  "start_url": "/work-card-mit/index.html",
+  "start_url": "/work-card-mit/login.html",
   "display": "standalone",
   "background_color": "#f0f4f8",
   "theme_color": "#1a3a8f",
