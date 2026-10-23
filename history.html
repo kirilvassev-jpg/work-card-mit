@@ -86,6 +86,12 @@
         }
         .req-status-tab.active { color:white; background:var(--primary); }
         .req-details.open { display: block !important; }
+        .req-card { cursor:pointer; }
+        .req-card .req-toggle-hint, .req-card .req-toggle-hint * { cursor:pointer; }
+        .req-card .req-toggle-hint:hover { background:rgba(26,58,143,0.12) !important; }
+        .req-card .req-details { cursor:default; }
+        .req-card .req-details input, .req-card .req-details textarea { cursor:text; }
+        .req-card .req-details button, .req-card .req-details img, .req-card .req-details .badge { cursor:pointer; }
         @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.85; } }
 
         /* Request timeline */
