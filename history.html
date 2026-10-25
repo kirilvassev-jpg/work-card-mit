@@ -86,6 +86,8 @@
         }
         .req-status-tab.active { color:white; background:var(--primary); }
         .req-details.open { display: block !important; }
+        .btn-del-req { width:100%; padding:10px; margin:0 0 8px; background:#fff; color:#c41820; border:1.5px solid #e41e2b; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; }
+        .btn-del-req:hover { background:rgba(228,30,43,0.06); }
         .times-box:empty { display:none; }
         .times-box { margin:10px 0; padding:12px; border-radius:10px; background:#f8fafc; border:1px solid var(--border); border-left:4px solid #1a3a8f; font-size:12px; }
         .times-title { font-size:13px; font-weight:800; color:#1a3a8f; margin-bottom:8px; }
@@ -858,7 +860,7 @@ function renderCards(cards) {
                     <div class="card-badges">${actBadge}${matBadge}${hoursBadge}${kmBadge}${requestBadge}</div>
                 </div>
             </div></div>
-            <div class="card-details" id="details-${i}">${details}${isCoordinator() ? '' : `<button type="button" class="btn btn-outline" style="width:100%;margin-top:10px;" onclick="event.stopPropagation(); editCard(${i})">✏️ Редактирай</button><button type="button" class="btn-delete" onclick="deleteCard('${c.id}', event)">🗑 Изтрий</button>`}<button type="button" style="width:100%;margin-top:6px;background:linear-gradient(135deg, #1a3a8f, #0d1f52);color:white;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 0 #0d1f52, 0 6px 16px rgba(26,58,143,0.4), 0 0 20px rgba(26,58,143,0.15);border-top:1px solid rgba(255,255,255,0.3);" onclick="exportCardPDF(${i}, event)">📄 Експорт в PDF</button></div>
+            <div class="card-details" id="details-${i}">${details}${isCoordinator() ? '' : `<button type="button" class="btn btn-outline" style="width:100%;margin-top:10px;" onclick="event.stopPropagation(); editCard(${i})">✏️ Редактирай</button>${isManager() ? `<button type="button" class="btn-delete" onclick="deleteCard('${c.id}', event)">🗑 Изтрий</button>` : ''}`}<button type="button" style="width:100%;margin-top:6px;background:linear-gradient(135deg, #1a3a8f, #0d1f52);color:white;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 0 #0d1f52, 0 6px 16px rgba(26,58,143,0.4), 0 0 20px rgba(26,58,143,0.15);border-top:1px solid rgba(255,255,255,0.3);" onclick="exportCardPDF(${i}, event)">📄 Експорт в PDF</button></div>
         </div>`;
     }).join('');
 }
@@ -993,27 +995,44 @@ function closeEditModal() {
     editingOldCard = null;
 }
 
+function isManager() {
+    return sessionStorage.getItem('workcard_role') === 'manager';
+}
+
 async function deleteCard(cardId, event) {
-    event.stopPropagation();
-    if (!confirm('Сигурен ли си, че искаш да изтриеш тази работна карта? Действието е необратимо!')) return;
+    if (event) event.stopPropagation();
+    if (!isManager()) { showStatus('Само Ръководител сервизна дейност може да изтрива работни карти', 'error'); return; }
+    const c = (allCards || []).find(x => x.id === cardId) || {};
+    const mech = Array.isArray(c.mechanic) ? c.mechanic.join(', ') : (c.mechanic || '');
+    const summary = [c.work_date ? formatDate(c.work_date) : '', c.vehicle, c.reg_number, mech].filter(Boolean).join(' · ');
+    if (!confirm('Изтриване на работна карта\n\n' + summary + '\n\nДействието е необратимо. Продължаваш ли?')) return;
+
+    const token = sessionStorage.getItem('workcard_token');
+    if (!token) { showStatus('Влез отново с Microsoft акаунта, за да изтриеш карта', 'error'); return; }
+    const user = sessionStorage.getItem('workcard_user') || 'Ръководител';
+
     try {
-        await fetch(API_URL, {
+        // Едно действие: материалите се трият автоматично, заявката се откача, историята остава
+        const res = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                path: 'work_card_log',
-                method: 'POST',
-                body: {
-                    work_card_id: cardId,
-                    action: 'deleted',
-                    performed_by: sessionStorage.getItem('workcard_user') || 'Неизвестен',
-                    details: 'Работната карта е изтрита'
-                }
-            })
+            body: JSON.stringify({ path: 'work_cards?id=eq.' + cardId, method: 'DELETE', token: token })
         });
-        await supabaseDelete('work_card_materials', `work_card_id=eq.${cardId}`);
-        await supabaseDelete('work_cards', `id=eq.${cardId}`);
-        showStatus('✓ Картата е изтрита успешно', 'success');
+        if (res.status === 401) { showStatus('Сесията е изтекла — излез и влез отново с Microsoft акаунта', 'error'); return; }
+        if (res.status === 403) { showStatus('Само Ръководител сервизна дейност може да изтрива работни карти', 'error'); return; }
+        if (!res.ok) { const t = await res.text(); throw new Error(res.status + ' ' + t.slice(0, 160)); }
+        const deleted = res.status === 204 ? [{}] : await res.json().catch(() => [{}]);
+        if (Array.isArray(deleted) && deleted.length === 0) { showStatus('Картата вече не съществува', 'error'); await loadCards(); return; }
+
+        // Следа в историята (остава и след изтриването)
+        fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'work_card_log', method: 'POST', body: { work_card_id: null, action: 'deleted', performed_by: user, details: 'Изтрита работна карта: ' + summary } }) }).catch(() => {});
+        if (c.request_id) {
+            fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: 'request_log', method: 'POST', body: { request_id: c.request_id, action: 'edited', performed_by: user, details: 'Работната карта по заявката е изтрита (' + summary + ')' } }) }).catch(() => {});
+        }
+
+        showStatus('✓ Работната карта е изтрита', 'success');
         await loadCards();
     } catch (e) {
         console.error('Грешка при изтриване:', e);
@@ -1481,6 +1500,8 @@ function renderServiceRequests(requests) {
                         (isCoordinatorOrAdmin() ? '<div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:8px;">' +
                             '<button onclick="event.stopPropagation();editRequest(\'' + r.id + '\')" style="width:100%;padding:10px;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 0 #92400e,0 4px 10px rgba(245,158,11,0.25);border-top:1px solid rgba(255,255,255,0.3);">✏️ Редактирай заявка</button>' +
                         '</div>' : '') +
+                        // Delete button — only for Сервизен координатор
+                        (isCoordinator() ? '<button type="button" class="btn-del-req" onclick="event.stopPropagation();deleteRequest(\'' + r.id + '\')">🗑 Изтрий заявка</button>' : '') +
                         // Created by
                         (r.created_by ? '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Регистрирал: ' + r.created_by + '</div>' : '') +
                         // Timeline
@@ -1677,6 +1698,50 @@ async function renderRequestTimes(requestId, logs) {
     }
     html += '<div class="times-legend">Закъснението се отчита спрямо желаната дата на клиента и спрямо плана на Ръководителя · видимо само за Управител</div>';
     box.innerHTML = html;
+}
+
+async function deleteRequest(requestId) {
+    if (!isCoordinator()) { showStatus('Само Сервизен координатор може да изтрива заявки', 'error'); return; }
+    const r = (allServiceRequests || []).find(x => x.id === requestId);
+    if (!r) return;
+    const client = r.company_name || r.client_name || '';
+    const summary = [r.request_number, client, r.vehicle, r.reg_number].filter(Boolean).join(' · ');
+    let warn = '';
+    if (r.status === 'В изпълнение') warn = '\n\n⚠ Заявката е В ИЗПЪЛНЕНИЕ — механиците работят по нея.';
+    if (r.status === 'Изпълнена') warn = '\n\n⚠ Заявката е ИЗПЪЛНЕНА. Работната карта по нея ще остане, но без връзка към заявка.';
+    if (r.status === 'Разпределена') warn = '\n\n⚠ Заявката е разпределена — ще изчезне от таблото на механиците.';
+    if (!confirm('Изтриване на заявка\n\n' + summary + '\nСтатус: ' + r.status + warn + '\n\nДействието е необратимо. Продължаваш ли?')) return;
+
+    const token = sessionStorage.getItem('workcard_token');
+    if (!token) { showStatus('Влез отново с Microsoft акаунта, за да изтриеш заявка', 'error'); return; }
+    const user = sessionStorage.getItem('workcard_user') || 'Сервизен координатор';
+
+    try {
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'service_requests?id=eq.' + requestId, method: 'DELETE', token: token })
+        });
+        if (res.status === 401) { showStatus('Сесията е изтекла — излез и влез отново с Microsoft акаунта', 'error'); return; }
+        if (res.status === 403) { showStatus('Само Сервизен координатор може да изтрива заявки', 'error'); return; }
+        if (!res.ok) { const t = await res.text(); throw new Error(res.status + ' ' + t.slice(0, 160)); }
+        const deleted = res.status === 204 ? [{}] : await res.json().catch(() => [{}]);
+        if (Array.isArray(deleted) && deleted.length === 0) { showStatus('Заявката вече не съществува', 'error'); await loadServiceRequests(); return; }
+
+        // Следа в историята (остава и след изтриването)
+        fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'request_log', method: 'POST', body: { request_id: null, action: 'deleted', performed_by: user, details: 'Изтрита заявка: ' + summary + ' (статус: ' + r.status + ')' } }) }).catch(() => {});
+        if (r.work_card_id) {
+            fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: 'work_card_log', method: 'POST', body: { work_card_id: r.work_card_id, action: 'edited', performed_by: user, details: 'Заявката към картата е изтрита (' + summary + ')' } }) }).catch(() => {});
+        }
+
+        showStatus('✓ Заявката е изтрита', 'success');
+        await loadServiceRequests();
+    } catch (e) {
+        console.error('Грешка при изтриване на заявка:', e);
+        showStatus('Грешка при изтриване: ' + e.message, 'error');
+    }
 }
 
 function isCoordinatorOrAdmin() {
