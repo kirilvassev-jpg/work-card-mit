@@ -2,7 +2,7 @@
 <html lang="bg">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Табло — Ар Си Техник</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a3a8f">
@@ -202,6 +202,38 @@
 .mechanic-card { border:1px solid var(--border); box-shadow:none; min-height:150px; }
 .mechanic-card-name { font-size:19px !important; }
 #soundBar { display:none; }
+button, .task-card { touch-action: manipulation; }
+.task-card { cursor:pointer; }
+.task-content::after { content:'Натисни картата за подробности ›'; display:block; margin-top:12px; font-size:13px; font-weight:600; color:var(--primary); }
+
+/* ===== Задача на цял екран ===== */
+.td-overlay { position:fixed; inset:0; z-index:4000; background:var(--bg); display:none; flex-direction:column; }
+.td-overlay.open { display:flex; }
+.td-bar { height:60px; flex-shrink:0; background:var(--navy); color:#fff; display:flex; align-items:center; gap:8px; padding:0 10px; }
+.td-bar .td-back { min-width:48px; height:48px; border:none; background:rgba(255,255,255,0.12); color:#fff; border-radius:12px; font-size:16px; font-weight:700; display:flex; align-items:center; gap:6px; padding:0 14px; cursor:pointer; }
+.td-bar .td-title { flex:1; font-size:18px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.td-body { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px 14px 24px; }
+.td-wrap { max-width:720px; margin:0 auto; }
+.td-plate { background:linear-gradient(180deg,#f7f9fb,#edf1f6); border:1.5px solid #c6cfdb; border-radius:14px; padding:16px; position:relative; text-align:center; margin-bottom:14px; }
+.td-plate::before, .td-plate::after { content:''; position:absolute; top:10px; width:8px; height:8px; border-radius:50%; background:#b6c0cd; box-shadow:inset 0 0 0 1px #9eaaba; }
+.td-plate::before { left:10px; } .td-plate::after { right:10px; }
+.td-client { font-size:16px; font-weight:600; color:var(--text-muted); }
+.td-reg { font-size:34px; font-weight:700; letter-spacing:2px; margin:4px 0 2px; font-variant-numeric:tabular-nums; color:var(--text); }
+.td-machine { font-size:20px; font-weight:600; color:var(--text); }
+.td-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; text-align:left; }
+.td-grid div { background:rgba(255,255,255,0.75); border-radius:9px; padding:8px 10px; font-size:17px; font-weight:600; }
+.td-grid span { display:block; font-size:13px; font-weight:600; color:var(--text-muted); }
+.td-section { background:#fff; border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:12px; }
+.td-label { font-size:14px; font-weight:700; color:var(--navy); margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.td-desc { font-size:20px; line-height:1.45; color:var(--text); }
+.td-plan .task-plan { font-size:20px !important; margin-top:0 !important; }
+.td-chips { display:flex; flex-wrap:wrap; gap:8px; }
+.td-chips span { font-size:17px; font-weight:600; padding:6px 14px; border-radius:20px; background:#eef2fb; color:var(--primary); }
+.td-chips span.resp { background:#fff3cc; color:#6f4c00; }
+.td-photo { width:100%; max-height:360px; object-fit:contain; border-radius:10px; background:#f1f4f8; }
+.td-actions .action-btn { font-size:20px !important; min-height:64px; margin-bottom:10px; }
+.td-actions .info-banner { font-size:17px !important; }
+@media (max-width:420px) { .td-reg { font-size:28px; } .td-grid div { font-size:16px; } }
 #soundBar[style*="flex"] { display:flex !important; }
 @media (max-width:600px) {
     .app-bar .title small { display:none; }
@@ -544,7 +576,7 @@ function renderTasks() {
         }
 
         return `
-        <div class="task-card ${urgentClass} ${newClass}" style="animation-delay:${i*0.05}s">
+        <div class="task-card ${urgentClass} ${newClass}" data-task-id="${t.id}" style="animation-delay:${i*0.05}s">
             <div class="task-main">
                 <div class="task-stripe ${stripeClass}"></div>
                 <div class="task-content">
@@ -672,6 +704,109 @@ setInterval(() => {
         loadMechanicScreen();
     }
 }, 15000);
+
+// ===== Задача на цял екран (едър шрифт) =====
+let detailTaskId = null;
+
+function tdEsc(v) { return (v === null || v === undefined) ? '' : String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+function ensureDetailOverlay() {
+    let ov = document.getElementById('taskDetail');
+    if (ov) return ov;
+    ov = document.createElement('div');
+    ov.id = 'taskDetail';
+    ov.className = 'td-overlay';
+    ov.setAttribute('role', 'dialog');
+    ov.setAttribute('aria-modal', 'true');
+    ov.innerHTML = '<div class="td-bar"><button type="button" class="td-back" onclick="closeTaskDetail()">' + UI.icon('back') + 'Назад</button><div class="td-title" id="tdTitle"></div></div>' +
+        '<div class="td-body"><div class="td-wrap" id="tdContent"></div></div>';
+    document.body.appendChild(ov);
+    return ov;
+}
+
+function renderTaskDetail() {
+    const t = (allTasks || []).find(x => x.id === detailTaskId);
+    const card = document.querySelector('.task-card[data-task-id="' + detailTaskId + '"]');
+    if (!t || !card) { hideTaskDetail(); return; }
+    const machine = (t.brand || t.model) ? ((t.brand || '') + ' ' + (t.model || '')).trim() : (t.vehicle || '');
+    const cell = (label, val) => val ? '<div><span>' + label + '</span>' + tdEsc(val) + '</div>' : '';
+    const mechs = (t.assigned_mechanics || []).map(m =>
+        '<span class="' + (m === t.responsible_mechanic ? 'resp' : '') + '">' + (m === t.responsible_mechanic ? '★ ' : '') + tdEsc(m) + '</span>').join('');
+
+    document.getElementById('tdTitle').textContent = t.company_name || t.client_name || 'Задача';
+    let h = '<div class="td-plate">' +
+        '<div class="td-client">' + tdEsc(t.company_name || t.client_name) + '</div>' +
+        '<div class="td-reg">' + tdEsc(t.reg_number || '—') + '</div>' +
+        '<div class="td-machine">' + tdEsc(machine) + '</div>' +
+        '<div class="td-grid">' + cell('Година', t.year_of_manufacture) + cell('Рама №', t.frame_number) + cell('Км / мч', t.km_hours) + cell('Вид дейност', (t.activity_type || []).join(', ')) + '</div>' +
+    '</div>';
+    h += '<div class="td-section td-plan"><div class="td-label">' + UI.icon('clock', 'sm') + 'Планирано</div>' + planLine(t) +
+        (t.priority === 'Спешен' ? '<div style="margin-top:8px;font-size:18px;font-weight:700;color:#c41820;">' + UI.icon('flame', 'sm') + ' Спешна задача</div>' : '') + '</div>';
+    if (t.description) h += '<div class="td-section"><div class="td-label">' + UI.icon('note', 'sm') + 'Описание на проблема</div><div class="td-desc">' + tdEsc(t.description) + '</div></div>';
+    if (mechs) h += '<div class="td-section"><div class="td-label">' + UI.icon('users', 'sm') + 'Механици</div><div class="td-chips">' + mechs + '</div></div>';
+    if (t.photo_data) h += '<div class="td-section"><div class="td-label">' + UI.icon('photo', 'sm') + 'Снимка на талон</div><img class="td-photo" src="' + tdEsc(t.photo_data) + '" alt="Талон" onclick="window.open(this.src,\'_blank\')"></div>';
+
+    // Действията са огледало на бутоните в картата — натискането задейства оригиналния бутон
+    const acts = card.querySelector('.task-actions');
+    if (acts) {
+        let a = '<div class="td-actions">';
+        acts.querySelectorAll('.action-btn').forEach((b, i) => {
+            a += '<button type="button" class="action-btn ' + tdEsc(b.className.replace('action-btn', '').trim()) + '" data-mirror="' + i + '">' + b.innerHTML + '</button>';
+        });
+        const info = acts.querySelector('.info-banner');
+        if (info) a += '<div class="info-banner">' + info.innerHTML + '</div>';
+        h += a + '</div>';
+    }
+    const box = document.getElementById('tdContent');
+    box.innerHTML = h;
+    box.querySelectorAll('[data-mirror]').forEach(btn => btn.addEventListener('click', () => {
+        const live = document.querySelector('.task-card[data-task-id="' + detailTaskId + '"] .task-actions');
+        const orig = live ? live.querySelectorAll('.action-btn')[+btn.dataset.mirror] : null;
+        hideTaskDetail();
+        if (orig) orig.click();
+    }));
+}
+
+function openTaskDetail(id) {
+    detailTaskId = id;
+    const ov = ensureDetailOverlay();
+    renderTaskDetail();
+    if (!detailTaskId) return;
+    ov.classList.add('open');
+    ov.querySelector('.td-body').scrollTop = 0;
+    document.body.style.overflow = 'hidden';
+    try { history.pushState({ tabletDetail: true }, ''); } catch (e) {}
+}
+
+function hideTaskDetail() {
+    detailTaskId = null;
+    const ov = document.getElementById('taskDetail');
+    if (ov) ov.classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function closeTaskDetail() {
+    if (history.state && history.state.tabletDetail) history.back();   // затваря и при бутона „Назад“ на телефона
+    else hideTaskDetail();
+}
+
+window.addEventListener('popstate', () => { if (detailTaskId) hideTaskDetail(); });
+
+// Натискане върху картата (не върху бутон или поле) отваря цял екран
+document.addEventListener('click', e => {
+    const card = e.target.closest('#tasksList .task-card');
+    if (!card) return;
+    if (e.target.closest('button, a, select, input, textarea, label')) return;
+    openTaskDetail(card.dataset.taskId);
+});
+
+// При автоматичното обновяване — обнови и отворения изглед
+const _origRenderTasks = renderTasks;
+renderTasks = function () {
+    const r = _origRenderTasks.apply(this, arguments);
+    if (detailTaskId) renderTaskDetail();
+    return r;
+};
 
 // Update clock every second
 setInterval(updateClock, 1000);
