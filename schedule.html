@@ -29,7 +29,33 @@
         .readonly-banner { display:none; max-width:1200px; margin:12px auto 0; padding:10px 14px; background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.2); border-radius:var(--radius); text-align:center; font-size:13px; color:#1e40af; font-weight:600; }
         .read-only .readonly-banner { display:block; }
 
-        .layout { display:grid; grid-template-columns:1fr 320px; gap:12px; max-width:1200px; margin:0 auto; padding:12px; }
+        .layout { display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:12px; max-width:1400px; margin:0 auto; padding:0 12px 12px; align-items:start; }
+        .side-col { position:sticky; top:118px; max-height:calc(100vh - 140px); overflow-y:auto; }
+        .toolbar { max-width:1400px; margin:12px auto; padding:0 12px; display:flex; align-items:center; gap:8px; }
+        .seg-view { display:flex; background:white; border:1px solid var(--border); border-radius:10px; padding:3px; }
+        .seg-view button { border:none; background:none; padding:8px 18px; border-radius:7px; font-weight:700; font-size:14px; color:var(--text-muted); cursor:pointer; font-family:inherit; }
+        .seg-view button.on { background:var(--primary); color:white; }
+        .tb-btn { border:1.5px solid var(--border); background:white; border-radius:8px; padding:8px 12px; font-weight:700; cursor:pointer; color:var(--primary); font-family:inherit; }
+        .tb-title { flex:1; text-align:center; font-size:18px; font-weight:800; color:var(--primary); }
+        .hint-line { font-size:12px; color:var(--text-muted); margin-top:8px; }
+        .cal-cell.selected { box-shadow:inset 0 0 0 3px var(--primary); background:rgba(26,58,143,0.05); }
+        .cal-cell { user-select:none; }
+        .day-card { padding:0; overflow:hidden; }
+        .day-card .day-scroll { height:calc(100vh - 210px); min-height:460px; }
+        .side-head { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:10px; }
+        .side-title { font-size:15px; font-weight:800; color:var(--primary); }
+        .side-sub { font-size:12px; color:var(--text-muted); margin-top:2px; }
+        .btn-hours { border:none; background:var(--primary); color:white; border-radius:8px; padding:8px 12px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap; font-family:inherit; }
+        .group-label { font-size:11px; font-weight:800; color:var(--text-muted); margin:10px 0 6px; }
+        .day-item { display:flex; gap:10px; padding:9px 10px; border:1px solid var(--border); border-left:4px solid var(--border); border-radius:8px; margin-bottom:7px; cursor:pointer; background:white; font-size:13px; }
+        .day-item:hover { background:#f8fafc; }
+        .day-item .tm { font-weight:800; font-variant-numeric:tabular-nums; min-width:44px; color:var(--primary); }
+        .day-item .t { font-weight:700; }
+        .day-item .s { font-size:12px; color:var(--text-muted); }
+        .day-item.conflict { border-color:var(--accent-red); }
+        [draggable="true"].req-item, [draggable="true"].day-item { cursor:grab; }
+        .block.flash { animation:blockFlash 1.2s ease 2; outline:3px solid #f59e0b; outline-offset:-1px; }
+        @keyframes blockFlash { 50% { transform:scale(1.03); box-shadow:0 0 0 6px rgba(245,158,11,0.35); } }
         @media (max-width:900px) { .layout { grid-template-columns:1fr; } }
         .card { background:var(--card); border-radius:var(--radius); box-shadow:0 1px 3px rgba(0,0,0,0.06); padding:14px; }
         .card + .card { margin-top:12px; }
@@ -144,15 +170,20 @@
 
 <div class="readonly-banner">👁 Режим за преглед — само за наблюдение</div>
 
+<div class="toolbar">
+    <div class="seg-view">
+        <button type="button" id="vMonth" class="on" onclick="setView('month')">Месец</button>
+        <button type="button" id="vDay" onclick="setView('day')">Ден</button>
+    </div>
+    <button type="button" class="tb-btn" onclick="navPrev()" aria-label="Назад">◀</button>
+    <div class="tb-title" id="tbTitle"></div>
+    <button type="button" class="tb-btn" onclick="navNext()" aria-label="Напред">▶</button>
+    <button type="button" class="tb-btn" onclick="goToday()">Днес</button>
+</div>
+
 <div class="layout">
-    <div>
-        <div class="card">
-            <div class="cal-nav">
-                <button onclick="shiftMonth(-1)">◀</button>
-                <div class="title" id="monthTitle"></div>
-                <button onclick="shiftMonth(1)">▶</button>
-                <button onclick="goToday()">Днес</button>
-            </div>
+    <div class="main-col">
+        <div class="card" id="monthView">
             <div class="cal-grid" id="calGrid"><div class="loading" style="grid-column:1/-1;background:white;">Зареждане…</div></div>
             <div class="legend">
                 <span style="--c:#7c3aed">Разпределена</span>
@@ -161,28 +192,28 @@
                 <span style="--c:#f59e0b">Желана дата (непланирана)</span>
                 <span>⚠ застъпване или 5+ задачи</span>
             </div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">Натисни ден, за да видиш часовете и да планираш задачи.</div>
+            <div class="hint-line">Едно натискане — заявките за деня вдясно · Двойно натискане — разпределение по часове</div>
+        </div>
+        <div class="card day-card" id="dayView" style="display:none;">
+            <div class="day-hint" id="dayHint"></div>
+            <div class="day-scroll" id="dayScroll"><div class="day-grid" id="dayGrid"></div></div>
         </div>
     </div>
-    <div>
+    <div class="side-col">
+        <div class="card">
+            <div class="side-head">
+                <div>
+                    <div class="side-title" id="sideTitle">Избран ден</div>
+                    <div class="side-sub" id="sideSub"></div>
+                </div>
+                <button type="button" class="btn-hours" id="btnHours" onclick="setView('day')">🕒 По часове</button>
+            </div>
+            <div id="dayList"><div class="loading">Зареждане…</div></div>
+        </div>
         <div class="card">
             <div class="card-title">📌 Непланирани <span id="unplannedCount" style="background:var(--accent-red);color:white;padding:1px 8px;border-radius:10px;font-size:11px;">0</span></div>
             <div id="unplannedList"><div class="loading">Зареждане…</div></div>
         </div>
-    </div>
-</div>
-
-<!-- Day view -->
-<div class="overlay" id="dayOverlay">
-    <div class="day-modal">
-        <div class="day-head">
-            <button onclick="shiftDay(-1)">◀</button>
-            <div class="title"><span id="dayTitle"></span><div class="sub" id="daySub"></div></div>
-            <button onclick="shiftDay(1)">▶</button>
-            <button class="close" onclick="closeDay()">✕</button>
-        </div>
-        <div class="day-hint" id="dayHint"></div>
-        <div class="day-scroll" id="dayScroll"><div class="day-grid" id="dayGrid"></div></div>
     </div>
 </div>
 
@@ -218,7 +249,8 @@ const DAYS_BG = ['Неделя','Понеделник','Вторник','Сря�
 const STATUS_COLOR = { 'Нова':'#e41e2b', 'Разпределена':'#7c3aed', 'В изпълнение':'#3b82f6', 'Изпълнена':'#10b981' };
 
 let viewYear, viewMonth;          // месечен изглед
-let dayDate = null;               // отворен ден (Date, 00:00)
+let view = 'month';               // 'month' | 'day'
+let selectedDate = day0(new Date()); // избран ден
 let scheduled = [];               // заявки с планиран час в зареденият диапазон
 let unplanned = [];               // отворени заявки без план
 let mechanics = [];
@@ -287,8 +319,8 @@ async function reload() {
     const from = addDays(first, -7), to = addDays(new Date(viewYear, viewMonth + 1, 1), 14);
     try {
         await loadData(from, to);
-        renderMonth(); renderUnplanned();
-        if (dayDate) renderDay();
+        renderMonth(); renderSidebar(); updateTitle();
+        if (view === 'day') renderDay();
     } catch (e) {
         console.error(e); toast('Грешка при зареждане: ' + e.message, 'error');
     }
@@ -314,7 +346,6 @@ function conflictIds(tasks) {
 
 // ---------- month ----------
 function renderMonth() {
-    document.getElementById('monthTitle').textContent = MONTHS_BG[viewMonth] + ' ' + viewYear;
     const grid = document.getElementById('calGrid');
     const first = new Date(viewYear, viewMonth, 1);
     const offset = (first.getDay() + 6) % 7;                 // понеделник = 0
@@ -329,9 +360,9 @@ function renderMonth() {
         const desired = unplanned.filter(r => r.desired_date === ds).length;
         const conflicts = conflictIds(list).size > 0;
         const over = list.length >= OVERLOAD_TASKS || conflicts;
-        const cls = ['cal-cell', d.getMonth() !== viewMonth ? 'other' : '', ds === today ? 'today' : '', (d.getDay() === 0 || d.getDay() === 6) ? 'weekend' : '', over ? 'overloaded' : ''].join(' ');
+        const cls = ['cal-cell', d.getMonth() !== viewMonth ? 'other' : '', ds === today ? 'today' : '', ds === iso(selectedDate) ? 'selected' : '', (d.getDay() === 0 || d.getDay() === 6) ? 'weekend' : '', over ? 'overloaded' : ''].join(' ');
         const dots = list.slice(0, 12).map(r => '<span class="cal-dot" style="background:' + (STATUS_COLOR[r.status] || '#94a3b8') + '"></span>').join('');
-        html += '<div class="' + cls + '" onclick="openDay(\'' + ds + '\')">' +
+        html += '<div class="' + cls + '" data-day="' + ds + '" onclick="selectDay(\'' + ds + '\')" ondblclick="openDay(\'' + ds + '\')">' +
             '<div class="cal-num">' + d.getDate() + '</div>' +
             (over ? '<span class="cal-warn" title="Застъпване или много задачи">⚠</span>' : '') +
             (list.length ? '<div class="cal-count">' + list.length + (list.length === 1 ? ' задача' : ' задачи') + '</div>' : '') +
@@ -343,50 +374,149 @@ function renderMonth() {
 }
 
 function shiftMonth(n) { const d = new Date(viewYear, viewMonth + n, 1); viewYear = d.getFullYear(); viewMonth = d.getMonth(); reload(); }
+function goToday() {
+    const n = new Date(); selectedDate = day0(n); viewYear = n.getFullYear(); viewMonth = n.getMonth();
+    reload();
+}
+function navPrev() { view === 'day' ? shiftDay(-1) : shiftMonth(-1); }
+function navNext() { view === 'day' ? shiftDay(1) : shiftMonth(1); }
+
+function setView(v) {
+    view = v;
+    document.getElementById('vMonth').classList.toggle('on', v === 'month');
+    document.getElementById('vDay').classList.toggle('on', v === 'day');
+    document.getElementById('monthView').style.display = v === 'month' ? 'block' : 'none';
+    document.getElementById('dayView').style.display = v === 'day' ? 'block' : 'none';
+    document.getElementById('btnHours').style.display = v === 'day' ? 'none' : 'inline-block';
+    try { sessionStorage.setItem('sched_view', JSON.stringify({ v: view, d: iso(selectedDate) })); } catch (e) {}
+    if (v === 'day') ensureLoaded().then(() => { renderDay(); renderSidebar(); updateTitle(); scrollToWorkStart(); });
+    else { viewYear = selectedDate.getFullYear(); viewMonth = selectedDate.getMonth(); reload(); }
+}
+
+function updateTitle() {
+    document.getElementById('tbTitle').textContent = view === 'day'
+        ? DAYS_BG[selectedDate.getDay()] + ', ' + fmtDate(selectedDate)
+        : MONTHS_BG[viewMonth] + ' ' + viewYear;
+}
+
+function selectDay(ds) {
+    selectedDate = new Date(ds + 'T00:00:00');
+    document.querySelectorAll('.cal-cell.selected').forEach(c => c.classList.remove('selected'));
+    const cell = document.querySelector('.cal-cell[data-day="' + ds + '"]');
+    if (cell) cell.classList.add('selected');
+    try { sessionStorage.setItem('sched_view', JSON.stringify({ v: view, d: ds })); } catch (e) {}
+    renderSidebar();
+}
+
 function goToday() { const n = new Date(); viewYear = n.getFullYear(); viewMonth = n.getMonth(); reload(); }
 
 // ---------- unplanned ----------
-function renderUnplanned() {
+function renderSidebar() {
+    const d = selectedDate, ds = iso(d);
+    const list = tasksOn(d).sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
+    const conflicts = conflictIds(list);
+    const desired = unplanned.filter(r => r.desired_date === ds);
+    document.getElementById('sideTitle').textContent = DAYS_BG[d.getDay()] + ', ' + fmtDate(d);
+    document.getElementById('sideSub').textContent = list.length + (list.length === 1 ? ' планирана задача' : ' планирани задачи') +
+        (desired.length ? ' · ' + desired.length + ' с желана дата' : '') + (conflicts.size ? ' · ⚠ застъпване' : '');
+
+    let h = '';
+    if (!list.length && !desired.length) h = '<div class="empty-note">Няма заявки за този ден</div>';
+    if (list.length) {
+        h += '<div class="group-label">ПЛАНИРАНИ</div>' + list.map(r => {
+            const s = new Date(r.scheduled_at);
+            const mechs = (r.assigned_mechanics || []).map(m => (m === r.responsible_mechanic ? '★ ' : '') + m).join(', ');
+            return '<div class="day-item' + (conflicts.has(r.id) ? ' conflict' : '') + '" style="border-left-color:' + (STATUS_COLOR[r.status] || '#94a3b8') + '" onclick="onListClick(\'' + r.id + '\')">' +
+                '<div class="tm">' + fmtTime(s) + '<div class="s">' + fmtTime(addHours(s, durOf(r))) + '</div></div>' +
+                '<div style="flex:1;min-width:0;"><div class="t">' + sanitize(clientName(r)) + (r.priority === 'Спешен' ? ' 🔥' : '') + '</div>' +
+                '<div class="s">' + sanitize(machine(r)) + ' · ' + sanitize(r.reg_number) + '</div>' +
+                '<div class="s">' + sanitize(mechs) + ' · <strong style="color:' + (STATUS_COLOR[r.status] || '#333') + '">' + sanitize(r.status) + '</strong>' + (conflicts.has(r.id) ? ' · <span style="color:#c41820;font-weight:700;">застъпване</span>' : '') + '</div></div>' +
+            '</div>';
+        }).join('');
+    }
+    if (desired.length) {
+        h += '<div class="group-label">ЖЕЛАНА ДАТА ДНЕС — НЕПЛАНИРАНИ</div>' + desired.map(r => reqItemHtml(r)).join('');
+    }
+    document.getElementById('dayList').innerHTML = h;
+
     document.getElementById('unplannedCount').textContent = unplanned.length;
     const box = document.getElementById('unplannedList');
-    if (!unplanned.length) { box.innerHTML = '<div class="empty-note">✓ Всички отворени заявки са планирани</div>'; return; }
-    box.innerHTML = unplanned.map(r =>
-        '<div class="req-item" style="border-left-color:' + (STATUS_COLOR[r.status] || '#e41e2b') + '" onclick="openAssign(\'' + r.id + '\')">' +
-            '<div class="t">' + sanitize(clientName(r)) + '</div>' +
-            '<div class="s">' + sanitize(machine(r)) + ' — ' + sanitize(r.reg_number) + '</div>' +
-            '<div>' + (r.priority === 'Спешен' ? '<span class="badge b-urgent">🔥 Спешна</span>' : '') +
-                (r.desired_date ? '<span class="badge b-desired">Желана: ' + fmtDate(r.desired_date + 'T00:00:00') + '</span>' : '') +
-                '<span class="badge" style="background:#eef2f7;color:#1a3a8f;">' + sanitize(r.status) + '</span></div>' +
-        '</div>').join('');
+    box.innerHTML = unplanned.length ? unplanned.map(r => reqItemHtml(r)).join('') : '<div class="empty-note">✓ Всички отворени заявки са планирани</div>';
+    bindSidebarDrag();
+}
+
+function reqItemHtml(r) {
+    const canDrag = !readOnly;
+    return '<div class="req-item" style="border-left-color:' + (STATUS_COLOR[r.status] || '#e41e2b') + '"' +
+        (canDrag ? ' draggable="true" data-plan="' + r.id + '"' : '') + ' onclick="openAssign(\'' + r.id + '\')">' +
+        '<div class="t">' + sanitize(clientName(r)) + '</div>' +
+        '<div class="s">' + sanitize(machine(r)) + ' — ' + sanitize(r.reg_number) + '</div>' +
+        '<div>' + (r.priority === 'Спешен' ? '<span class="badge b-urgent">🔥 Спешна</span>' : '') +
+            (r.desired_date ? '<span class="badge b-desired">Желана: ' + fmtDate(r.desired_date + 'T00:00:00') + '</span>' : '') +
+            '<span class="badge" style="background:#eef2f7;color:#1a3a8f;">' + sanitize(r.status) + '</span></div>' +
+    '</div>';
+}
+
+function bindSidebarDrag() {
+    if (readOnly) return;
+    document.querySelectorAll('[data-plan]').forEach(el => {
+        el.addEventListener('dragstart', e => {
+            dragInfo = { kind: 'plan', id: el.dataset.plan };
+            e.dataTransfer.effectAllowed = 'copy';
+            try { e.dataTransfer.setData('text/plain', el.dataset.plan); } catch (x) {}
+            if (view !== 'day') toast('Пусни заявката в час при механик — превключи на „Ден“', 'success');
+        });
+        el.addEventListener('dragend', () => { dragInfo = null; });
+    });
+}
+
+function onListClick(id) {
+    if (view !== 'day') { openDetails(id); return; }
+    const blocks = document.querySelectorAll('#dayGrid .block[data-open="' + id + '"]');
+    if (!blocks.length) { openDetails(id); return; }
+    blocks.forEach(b => { b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash'); });
+    blocks[0].scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+}
+
+function scrollToWorkStart() {
+    const sc = document.getElementById('dayScroll');
+    if (!sc) return;
+    const now = new Date();
+    if (iso(now) === iso(selectedDate)) {
+        const mins = now.getHours() * 60 + now.getMinutes() - WORK_START * 60 - 60;
+        sc.scrollTop = Math.max(0, mins / SLOT_MIN * rowPx());
+    } else sc.scrollTop = 0;
 }
 
 // ---------- day view ----------
 function openDay(ds) {
-    dayDate = new Date(ds + 'T00:00:00');
-    document.getElementById('dayOverlay').classList.add('open');
-    ensureLoaded().then(renderDay);
+    selectedDate = new Date(ds + 'T00:00:00');
+    setView('day');
 }
-function closeDay() { dayDate = null; document.getElementById('dayOverlay').classList.remove('open'); }
-function shiftDay(n) { dayDate = addDays(dayDate, n); ensureLoaded().then(renderDay); }
+
+function closeDay() { setView('month'); }
+
+function shiftDay(n) {
+    selectedDate = addDays(selectedDate, n);
+    try { sessionStorage.setItem('sched_view', JSON.stringify({ v: view, d: iso(selectedDate) })); } catch (e) {}
+    ensureLoaded().then(() => { renderDay(); renderSidebar(); updateTitle(); scrollToWorkStart(); });
+}
 
 async function ensureLoaded() {
-    if (dayDate >= loadedFrom && addDays(dayDate, 1) <= loadedTo) return;
-    viewYear = dayDate.getFullYear(); viewMonth = dayDate.getMonth();
+    if (loadedFrom && selectedDate >= loadedFrom && addDays(selectedDate, 1) <= loadedTo) return;
+    viewYear = selectedDate.getFullYear(); viewMonth = selectedDate.getMonth();
     await reload();
 }
 
 function renderDay() {
-    const d = dayDate;
-    document.getElementById('dayTitle').textContent = DAYS_BG[d.getDay()] + ', ' + fmtDate(d);
+    const d = selectedDate;
     const list = tasksOn(d);
     const conflicts = conflictIds(list);
     const desiredHere = unplanned.filter(r => r.desired_date === iso(d));
-    document.getElementById('daySub').textContent = list.length + (list.length === 1 ? ' планирана задача' : ' планирани задачи') +
-        (desiredHere.length ? ' · ' + desiredHere.length + ' непланирани с желана дата днес' : '') +
-        (conflicts.size ? ' · ⚠ има застъпване' : '');
-    document.getElementById('dayHint').textContent = readOnly
+    document.getElementById('dayHint').textContent = (readOnly
         ? 'Режим за преглед. Натисни задача за подробности.'
-        : 'Натисни свободен час, за да планираш задача · Влачи задача, за да я преместиш в друг час или при друг механик';
+        : 'Натисни свободен час или провлачи заявка отдясно, за да планираш · Влачи задача, за да я преместиш') +
+        (conflicts.size ? ' · ⚠ има застъпване' : '') + (desiredHere.length ? ' · ' + desiredHere.length + ' непланирани с желана дата днес' : '');
 
     // колони: активните механици + исторически имена, ако имат задача този ден
     const cols = mechanics.slice();
@@ -468,13 +598,13 @@ function bindDayEvents(grid) {
 
     grid.querySelectorAll('.slot').forEach(sl => sl.addEventListener('click', () => {
         const m = cols[+sl.dataset.col];
-        const t = new Date(dayDate); t.setMinutes(+sl.dataset.min);
+        const t = new Date(selectedDate); t.setMinutes(+sl.dataset.min);
         openAssign(null, m, t);
     }));
 
     grid.querySelectorAll('[data-drag]').forEach(b => {
         b.addEventListener('dragstart', e => {
-            dragInfo = { id: b.dataset.drag, from: b.dataset.from };
+            dragInfo = { kind: 'move', id: b.dataset.drag, from: b.dataset.from };
             e.dataTransfer.effectAllowed = 'move';
             try { e.dataTransfer.setData('text/plain', b.dataset.drag); } catch (x) {}
         });
@@ -487,8 +617,9 @@ function bindDayEvents(grid) {
             e.preventDefault(); sl.classList.remove('drop-target');
             if (!dragInfo) return;
             const to = cols[+sl.dataset.col];
-            const t = new Date(dayDate); t.setMinutes(+sl.dataset.min);
-            moveTask(dragInfo.id, dragInfo.from, to, t);
+            const t = new Date(selectedDate); t.setMinutes(+sl.dataset.min);
+            if (dragInfo.kind === 'plan') openAssign(dragInfo.id, to, t);
+            else moveTask(dragInfo.id, dragInfo.from, to, t);
             dragInfo = null;
         });
     });
@@ -578,7 +709,7 @@ function openAssign(requestId, presetMech, presetStart) {
     if (!existing && !candidates.length) { toast('Няма непланирани заявки за разпределяне', 'error'); return; }
 
     const start = presetStart || (existing && existing.scheduled_at ? new Date(existing.scheduled_at)
-        : (existing && existing.desired_date ? new Date(existing.desired_date + 'T08:00:00') : (dayDate ? addHours(dayDate, 8) : addHours(day0(new Date()), 8))));
+        : (existing && existing.desired_date ? new Date(existing.desired_date + 'T08:00:00') : addHours(selectedDate, 8)));
     const preMechs = existing && existing.assigned_mechanics && existing.assigned_mechanics.length ? existing.assigned_mechanics : (presetMech ? [presetMech] : []);
     const preResp = existing && existing.responsible_mechanic ? existing.responsible_mechanic : (presetMech || '');
     const preDur = existing ? durOf(existing) : 1;
@@ -654,7 +785,7 @@ async function saveAssign() {
 }
 
 function closePopup() { document.getElementById('popupOverlay').classList.remove('open'); }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (document.getElementById('popupOverlay').classList.contains('open')) closePopup(); else closeDay(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('popupOverlay').classList.contains('open')) closePopup(); });
 
 // ---------- init ----------
 setInterval(() => {
@@ -664,9 +795,14 @@ setInterval(() => {
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!checkAuth()) return;
-    const n = new Date(); viewYear = n.getFullYear(); viewMonth = n.getMonth();
+    try {
+        const sv = JSON.parse(sessionStorage.getItem('sched_view') || 'null');
+        if (sv && sv.d) selectedDate = new Date(sv.d + 'T00:00:00');
+        if (sv && sv.v) view = sv.v;
+    } catch (e) {}
+    viewYear = selectedDate.getFullYear(); viewMonth = selectedDate.getMonth();
     await loadMechanics();
-    await reload();
+    if (view === 'day') setView('day'); else { setView('month'); }
 });
 </script>
 <script>
