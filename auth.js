@@ -59,6 +59,13 @@
     });
   };
 
+  // ── Без пропуск няма достъп до страниците (освен login.html) ──
+  var page = location.pathname.split('/').pop() || 'index.html';
+  if (page !== 'login.html' && !WC.deviceToken() && !WC.officeToken()) {
+    WC.goLogin('Нужен е вход с Microsoft или регистрирано устройство.');
+    return;
+  }
+
   // ── Прихващане на заявките към api-proxy ──
   var origFetch = window.fetch.bind(window);
 
