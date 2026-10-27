@@ -7,6 +7,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a3a8f">
     <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+    <script src="auth.js"></script>
     <style>
         :root {
             --primary: #1a3a8f;
@@ -193,7 +194,7 @@
                     <div class="role-name">Механик</div>
                     <div class="role-desc">Попълване на работни карти</div>
                 </div>
-                <span class="role-badge badge-free">Без парола</span>
+                <span class="role-badge badge-free">Регистриран таблет</span>
             </div>
         </div>
 
@@ -212,6 +213,17 @@
             </select>
             <button class="btn-continue" id="btnContinue" onclick="loginMechanic()" disabled>✓ Продължи</button>
         </div>
+
+        <!-- Регистриране на устройство (еднократно, от администратор) -->
+        <div class="mechanic-section" id="deviceSection">
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;text-align:center;">
+                Това устройство не е регистрирано.<br>Регистрацията се прави еднократно от администратор.
+            </div>
+            <input class="mechanic-select" id="deviceName" type="text" value="Сервизен таблет" placeholder="Име на устройството" style="background-image:none;margin-bottom:10px;">
+            <input class="mechanic-select" id="deviceCode" type="password" inputmode="numeric" maxlength="8" pattern="[0-9]*" placeholder="8-цифрен код" autocomplete="off" style="background-image:none;text-align:center;letter-spacing:4px;margin-bottom:10px;">
+            <button class="btn-continue" onclick="registerDevice()">📲 Регистрирай устройството</button>
+        </div>
+        <div id="deviceInfo" style="display:none;font-size:12px;color:var(--text-muted);text-align:center;margin-top:10px;"></div>
 
         <div class="error-msg" id="errorMsg"></div>
 
@@ -273,13 +285,21 @@ function selectRole(role) {
     const msalSection = document.getElementById('msalSection');
     const mechanicSection = document.getElementById('mechanicSection');
 
+    const deviceSection = document.getElementById('deviceSection');
     if (role === 'mechanic') {
         msalSection.classList.remove('visible');
-        mechanicSection.classList.add('visible');
-        loadMechanics();
+        if (WC_AUTH.deviceToken()) {
+            deviceSection.classList.remove('visible');
+            mechanicSection.classList.add('visible');
+            loadMechanics();
+        } else {
+            mechanicSection.classList.remove('visible');
+            deviceSection.classList.add('visible');
+        }
     } else {
         msalSection.classList.add('visible');
         mechanicSection.classList.remove('visible');
+        deviceSection.classList.remove('visible');
     }
 
     // Hide error
@@ -351,9 +371,44 @@ async function loadMechanics() {
     } catch(e) { console.error(e); }
 }
 
+async function registerDevice() {
+    const name = document.getElementById('deviceName').value.trim();
+    const code = document.getElementById('deviceCode').value.trim();
+    if (!name) { showError('Въведете име на устройството.'); return; }
+    if (!/^\d{8}$/.test(code)) { showError('Кодът е 8 цифри.'); return; }
+    document.getElementById('errorMsg').classList.remove('show');
+    try {
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'register-device', name: name, code: code })
+        });
+        document.getElementById('deviceCode').value = '';
+        const j = await res.json().catch(() => ({}));
+        if (res.status === 200 && j.token) {
+            localStorage.setItem(WC_AUTH.DEVICE_KEY, j.token);
+            localStorage.setItem(WC_AUTH.DEVICE_NAME_KEY, j.name);
+            showDeviceInfo();
+            selectRole('mechanic');
+        } else if (res.status === 423) {
+            showError('Твърде много грешни опити. Опитайте след 15 минути.');
+        } else {
+            showError('Грешно име или код на устройството.');
+        }
+    } catch (e) { showError('Няма връзка. Опитайте отново.'); }
+}
+
+function showDeviceInfo() {
+    const n = WC_AUTH.deviceName();
+    const el = document.getElementById('deviceInfo');
+    if (n && WC_AUTH.deviceToken()) { el.textContent = '📲 Регистрирано устройство: ' + n; el.style.display = 'block'; }
+    else { el.style.display = 'none'; }
+}
+
 function loginMechanic() {
     const name = document.getElementById('mechanicSelect').value;
     if (!name) return;
+    if (!WC_AUTH.deviceToken()) { selectRole('mechanic'); return; }
     sessionStorage.setItem('workcard_role', 'mechanic');
     sessionStorage.setItem('workcard_user', name);
     sessionStorage.setItem('workcard_auth', 'true');
@@ -384,7 +439,7 @@ async function handleRedirect() {
             const res = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: 'user_roles?email=eq.' + encodeURIComponent(email) + '&is_active=eq.true', method: 'GET' })
+                body: JSON.stringify({ path: 'user_roles?email=eq.' + encodeURIComponent(email) + '&is_active=eq.true', method: 'GET', token: response.accessToken })
             });
             const roles = await res.json();
 
@@ -425,7 +480,12 @@ async function handleRedirect() {
     } catch(err) { console.error('Redirect error:', err); }
 }
 
-document.addEventListener('DOMContentLoaded', handleRedirect);
+document.addEventListener('DOMContentLoaded', function () {
+    showDeviceInfo();
+    const msg = sessionStorage.getItem('workcard_login_msg');
+    if (msg) { sessionStorage.removeItem('workcard_login_msg'); showError(msg); }
+    handleRedirect();
+});
 </script>
 
 </body>

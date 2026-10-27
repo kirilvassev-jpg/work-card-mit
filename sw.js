@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const CACHE_NAME = 'work-card-' + CACHE_VERSION;
 
 const urlsToCache = [
@@ -12,6 +12,7 @@ const urlsToCache = [
   '/work-card-mit/tablet.html',
   '/work-card-mit/schedule.html',
   '/work-card-mit/manifest.json',
+  '/work-card-mit/auth.js',
   '/work-card-mit/Repairs.png'
 ];
 
