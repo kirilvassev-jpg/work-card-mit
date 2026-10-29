@@ -2,7 +2,7 @@
 <html lang="bg">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Табло — Ар Си Техник</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a3a8f">
@@ -202,6 +202,18 @@
 .mechanic-card { border:1px solid var(--border); box-shadow:none; min-height:150px; }
 .mechanic-card-name { font-size:19px !important; }
 #soundBar { display:none; }
+/* ===== Хоризонтален режим (завъртян телефон) — същият изглед, по-компактен ===== */
+@media (orientation: landscape) and (max-height: 520px) {
+    .app-bar { height: 48px; }
+    .app-bar .mark { display: none; }
+    .container { max-width: 760px; padding-top: 8px; }
+    .summary { margin-bottom: 8px !important; }
+    .summary-item { padding: 6px 4px !important; }
+    .summary-val { font-size: 22px !important; }
+    .action-btn, .btn-free-card { min-height: 48px !important; }
+    .td-bar { height: 48px; }
+    .td-body { padding-top: 10px; }
+}
 button, .task-card { touch-action: manipulation; }
 .task-card { cursor:pointer; }
 .task-content::after { content:'Натисни картата за подробности ›'; display:block; margin-top:12px; font-size:13px; font-weight:600; color:var(--primary); }
@@ -245,7 +257,6 @@ button, .task-card { touch-action: manipulation; }
     .task-client { font-size:19px !important; }
 }
 </style>
-<script src="auth.js"></script>
 <script src="ui.js"></script>
 </head>
 <body>
