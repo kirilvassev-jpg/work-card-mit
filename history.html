@@ -2,7 +2,7 @@
 <html lang="bg">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Работни карти — Преглед</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a3a8f">
@@ -560,7 +560,7 @@
         </div>
         <div class="field">
             <label>Вид дейност</label>
-            <div id="editActivityTypes" class="radio-group"></div>
+            <div id="editActivityTypes" class="checkbox-group"></div>
         </div>
         <div id="editSectionServices" class="field conditional">
             <label>Обслужване — Филтри</label>
@@ -592,6 +592,16 @@
         <div class="field">
             <label>Забележка</label>
             <textarea id="editWorkNotes" rows="3" placeholder="Забележка, коментар..."></textarea>
+        </div>
+        <div class="field" id="editExtWrap" style="display:none;">
+            <label>Външна услуга</label>
+            <div class="toggle-group" style="display:flex;gap:8px;">
+                <button type="button" class="toggle-btn" id="editExtYes" onclick="setEditExternal(true)">Да</button>
+                <button type="button" class="toggle-btn active-no" id="editExtNo" onclick="setEditExternal(false)">Не</button>
+            </div>
+            <div id="editExtNoteWrap" style="display:none;margin-top:8px;">
+                <textarea id="editExtNote" rows="3" placeholder="Опиши външната услуга — изпълнител, какво е извършено..."></textarea>
+            </div>
         </div>
         <div class="field">
             <label>Време за работа (човекочаса)</label>
@@ -800,15 +810,16 @@ async function loadCards() {
         const to = document.getElementById('filterTo').value;
         const vehicle = document.getElementById('filterVehicle').value.trim();
         if (mechanic) query += `&mechanic=cs.{${encodeURIComponent(mechanic)}}`;
-        if (activity) query += `&activity_type=eq.${encodeURIComponent(activity)}`;
-        if (from) query += `&work_date=gte.${from}`;
+            if (from) query += `&work_date=gte.${from}`;
         if (to) query += `&work_date=lte.${to}`;
 
-        const data = await supabaseGet('work_cards', query);
+        let data = await supabaseGet('work_cards', query);
         if (data.length > 0) {
             const ids = data.map(c => c.id);
             allMaterials = await supabaseGet('work_card_materials', `work_card_id=in.(${ids.join(',')})`);
         } else { allMaterials = []; }
+
+        if (activity) data = data.filter(c => actList(c).includes(activity));
 
         allCards = vehicle ? data.filter(c => (c.vehicle||'').toLowerCase().includes(vehicle.toLowerCase()) || (c.reg_number||'').toLowerCase().includes(vehicle.toLowerCase())) : data;
         updateStats(allCards); renderCards(allCards);
@@ -820,8 +831,8 @@ function updateStats(cards) {
     document.getElementById('statTotal').textContent = cards.length;
     const totalHours = cards.reduce((sum, c) => sum + (parseFloat(c.work_hours) || 0), 0);
     document.getElementById('statHours').textContent = totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
-    document.getElementById('statService').textContent = cards.filter(c => c.activity_type === 'ТО / ППП').length;
-    document.getElementById('statRepair').textContent = cards.filter(c => c.activity_type === 'РЕМОНТ' || c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ').length;
+    document.getElementById('statService').textContent = cards.filter(c => actHasTO(c)).length;
+    document.getElementById('statRepair').textContent = cards.filter(c => actHasRepair(c)).length;
     const totalKm = cards.reduce((sum, c) => sum + (parseInt(c.km_traveled) || 0), 0);
     document.getElementById('statKm').textContent = totalKm;
 }
@@ -832,8 +843,9 @@ function renderCards(cards) {
     if (cards.length === 0) { emptyState.style.display = 'block'; return; }
 
     cardsList.innerHTML = cards.map((c, i) => {
-        const typeClass = c.activity_type === 'ТО / ППП' ? 'type-service' : c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'type-warranty' : 'type-repair';
-        const actBadge = c.activity_type === 'ТО / ППП' ? '<span class="badge badge-service">Обслужване</span>' : c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ' ? '<span class="badge badge-warranty">Гаранционен</span>' : '<span class="badge badge-repair">Ремонт</span>';
+        const acts = actList(c);
+        const typeClass = actHasRepair(c) ? (acts.includes('РЕМОНТ') ? 'type-repair' : 'type-warranty') : 'type-service';
+        const actBadge = acts.map(actBadgeHtml).join('');
         const matBadge = c.has_materials ? '<span class="badge badge-materials">Материали</span>' : '';
         const hoursBadge = c.work_hours ? `<span class="badge badge-hours">${c.work_hours} чч</span>` : '';
         const kmBadge = c.km_traveled ? `<span class="badge b-gray">${c.km_traveled} км</span>` : '';
@@ -841,13 +853,14 @@ function renderCards(cards) {
         const mats = getMaterialsForCard(c.id);
         let details = '';
         const ad = (l,v) => { if(v) details += `<div class="detail-row"><span class="detail-label">${l}</span><span class="detail-value">${v}</span></div>`; };
-        ad('Клиент', c.client); ad('km / м.ч.', c.km_hours);
+        ad('Клиент', c.client); ad('km / м.ч.', c.km_hours); ad('Вид дейност', acts.join(', '));
         if (c.services && c.services.length > 0) ad('Обслужване', c.services.join(', '));
         if (c.repair_systems && c.repair_systems.length > 0) ad('Ремонтни системи', c.repair_systems.join(', '));
         ad('Вид ремонт', c.repair_type); ad('Извършен ремонт', c.repair_description); ad('Масло', mats['Масло']); ad('Антифриз', mats['Антифриз']);
         ad('Крушки', mats['Крушки']); ad('Бързи връзки', mats['Бързи връзки']); ad('Зъби', mats['Зъби']);
         ad('Друго материали', c.other_materials);
         ad('Забележка', c.notes);
+        if (c.external_service) ad('Външна услуга', 'Да' + (c.external_service_note ? ' — ' + c.external_service_note : ''));
         ad('Изминати км', c.km_traveled ? c.km_traveled + ' км' : null);
         ad('Записано', formatDateTime(c.created_at));
 
@@ -867,6 +880,16 @@ function renderCards(cards) {
 
 function toggleDetails(i) { document.getElementById(`details-${i}`).classList.toggle('open'); }
 
+// ===== Вид дейност — може да са няколко, записани като „ТО / ППП, РЕМОНТ“ =====
+function actList(c) { return String((c && c.activity_type) || '').split(',').map(x => x.trim()).filter(Boolean); }
+function actHasTO(c) { return actList(c).includes('ТО / ППП'); }
+function actHasRepair(c) { const l = actList(c); return l.includes('РЕМОНТ') || l.includes('ГАРАНЦИОНЕН РЕМОНТ'); }
+function actBadgeHtml(a) {
+    if (a === 'ТО / ППП') return '<span class="badge badge-service">Обслужване</span>';
+    if (a === 'ГАРАНЦИОНЕН РЕМОНТ') return '<span class="badge badge-warranty">Гаранционен</span>';
+    return '<span class="badge badge-repair">Ремонт</span>';
+}
+
 function exportCardPDF(index, event) {
     event.stopPropagation();
     const c = allCards[index];
@@ -876,24 +899,42 @@ function exportCardPDF(index, event) {
     const printWindow = window.open('', '_blank');
     const mechanics = Array.isArray(c.mechanic) ? c.mechanic.join(', ') : c.mechanic;
 
-    let materialsHTML = '';
+    const td1 = 'padding:7px 12px;border:1px solid #ddd;font-weight:600;width:200px;background:#f8fafc;color:#1a3a8f;';
+    const td2 = 'padding:7px 12px;border:1px solid #ddd;';
+    const row = (k, v) => `<tr><td style="${td1}">${k}</td><td style="${td2}">${v}</td></tr>`;
+
+    // Вложени материали — като част от дейността (Б: общо за картата)
+    const matRows = [];
     if (c.has_materials) {
-        const matItems = [];
-        if (mats['Масло']) matItems.push(`<tr><td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;">Масло</td><td style="padding:6px 12px;border:1px solid #ddd;">${mats['Масло']}</td></tr>`);
-        if (mats['Антифриз']) matItems.push(`<tr><td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;">Антифриз</td><td style="padding:6px 12px;border:1px solid #ddd;">${mats['Антифриз']}</td></tr>`);
-        if (mats['Крушки']) matItems.push(`<tr><td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;">Крушки</td><td style="padding:6px 12px;border:1px solid #ddd;">${mats['Крушки']}</td></tr>`);
-        if (mats['Бързи връзки']) matItems.push(`<tr><td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;">Бързи връзки</td><td style="padding:6px 12px;border:1px solid #ddd;">${mats['Бързи връзки']}</td></tr>`);
-        if (mats['Зъби']) matItems.push(`<tr><td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;">Зъби</td><td style="padding:6px 12px;border:1px solid #ddd;">${mats['Зъби']}</td></tr>`);
-        if (c.other_materials) matItems.push(`<tr><td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;">Друго</td><td style="padding:6px 12px;border:1px solid #ddd;">${c.other_materials}</td></tr>`);
-        if (matItems.length > 0) {
-            materialsHTML = `
-                <h3 style="color:#1a3a8f;margin:20px 0 8px;">Вложени материали</h3>
-                <table style="width:100%;border-collapse:collapse;">${matItems.join('')}</table>`;
-        }
+        ['Масло', 'Антифриз', 'Крушки', 'Бързи връзки', 'Зъби'].forEach(k => { if (mats[k]) matRows.push(row(k, mats[k])); });
+        if (c.other_materials) matRows.push(row('Друго', c.other_materials));
     }
 
+    const acts = actList(c);
     const services = c.services && c.services.length > 0 ? c.services.join(', ') : '';
     const repairSystems = c.repair_systems && c.repair_systems.length > 0 ? c.repair_systems.join(', ') : '';
+    const sections = [];
+    if (acts.includes('ТО / ППП')) sections.push({ title: 'ТО / ППП', rows: services ? [row('Обслужване', services)] : [] });
+    if (actHasRepair(c)) {
+        const t = acts.includes('РЕМОНТ') && acts.includes('ГАРАНЦИОНЕН РЕМОНТ') ? 'Ремонт / Гаранционен ремонт' : acts.includes('ГАРАНЦИОНЕН РЕМОНТ') ? 'Гаранционен ремонт' : 'Ремонт';
+        const r = [];
+        if (repairSystems) r.push(row('Система за ремонт', repairSystems));
+        if (c.repair_type) r.push(row('Вид ремонт', c.repair_type));
+        if (c.repair_description) r.push(row('Извършен ремонт', c.repair_description));
+        sections.push({ title: t, rows: r });
+    }
+    if (!sections.length && (acts.length || matRows.length)) sections.push({ title: acts.join(', ') || 'Дейност', rows: [] });
+    if (matRows.length && sections.length) {
+        const label = sections.length > 1 ? 'Вложени материали (общо)' : 'Вложени материали';
+        sections[sections.length - 1].rows.push(`<tr><td colspan="2" style="padding:7px 12px;border:1px solid #ddd;background:#eef2fb;color:#13296b;font-weight:700;">${label}</td></tr>`);
+        sections[sections.length - 1].rows.push(...matRows);
+    }
+    const activitiesHTML = sections.map(sec => `
+        <h3 style="color:#1a3a8f;margin:20px 0 8px;">${sec.title}</h3>
+        ${sec.rows.length ? `<table class="info-table">${sec.rows.join('')}</table>` : '<div style="color:#5a6577;font-size:13px;">—</div>'}`).join('');
+    const externalHTML = c.external_service ? `
+        <h3 style="color:#1a3a8f;margin:20px 0 8px;">Външна услуга</h3>
+        <table class="info-table">${row('Външна услуга', 'Да')}${c.external_service_note ? row('Описание', c.external_service_note) : ''}</table>` : '';
 
     printWindow.document.write(`
     <!DOCTYPE html>
@@ -904,7 +945,7 @@ function exportCardPDF(index, event) {
         <style>
             body { font-family: Arial, sans-serif; padding: 30px; color: #1a2332; }
             .header { background: linear-gradient(135deg, #0d1f52, #1a3a8f, #2955c7); color: white; padding: 20px 24px; border-radius: 10px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; }
-            .header h1 { font-size: 22px; margin: 0; letter-spacing: 1px; }
+            .header h1 { font-size: 22px; margin: 0; letter-spacing: 1px; white-space: nowrap; }
             .header .subtitle { font-size: 13px; opacity: 0.8; margin-top: 2px; }
             .info-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
             .info-table td { padding: 8px 12px; border: 1px solid #ddd; font-size: 14px; }
@@ -915,18 +956,18 @@ function exportCardPDF(index, event) {
             .badge-red { background: rgba(228,30,43,0.1); color: #e41e2b; }
             .badge-green { background: rgba(16,185,129,0.1); color: #059669; }
             .footer { margin-top: 30px; padding-top: 16px; border-top: 2px solid #e8ecf0; color: #5a6577; font-size: 11px; text-align: center; }
-            @media print { body { padding: 15px; } .no-print { display: none; } }
+            @page { size: A4; margin: 0; }
+            @media print { body { padding: 14mm; } .no-print { display: none; } }
         </style>
     </head>
     <body>
         <div class="header">
             <img src="${window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/Repairs.png')}" alt="Logo" style="width:44px;height:44px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.3);background:rgba(255,255,255,0.15);padding:2px;">
-            <h1>ПЛАТФОРМА ЗА УПРАВЛЕНИЕ НА СЕРВИЗНА ДЕЙНОСТ</h1>
+            <h1>РАБОТНА КАРТА</h1>
         </div>
 
         <div style="margin-bottom:16px;">
-            <span class="badge ${c.activity_type === 'ТО / ППП' ? 'badge-blue' : c.activity_type === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'badge-red' : 'badge-red'}">${c.activity_type}</span>
-            ${c.has_materials ? '<span class="badge badge-green">Вложени материали</span>' : ''}
+            ${acts.map(a => `<span class="badge ${a === 'ТО / ППП' ? 'badge-blue' : 'badge-red'}">${a}</span>`).join('')}
         </div>
 
         <h3 style="color:#1a3a8f;margin-bottom:8px;">Основни данни</h3>
@@ -939,21 +980,9 @@ function exportCardPDF(index, event) {
             <tr><td>Клиент</td><td>${c.client}</td></tr>
         </table>
 
-        ${services ? `
-        <h3 style="color:#1a3a8f;margin:20px 0 8px;">Обслужване</h3>
-        <table class="info-table">
-            <tr><td>Филтри</td><td>${services}</td></tr>
-        </table>` : ''}
+        ${activitiesHTML}
 
-        ${repairSystems || c.repair_type || c.repair_description ? `
-        <h3 style="color:#1a3a8f;margin:20px 0 8px;">Ремонт</h3>
-        <table class="info-table">
-            ${repairSystems ? `<tr><td>Система за ремонт</td><td>${repairSystems}</td></tr>` : ''}
-            ${c.repair_type ? `<tr><td>Вид ремонт</td><td>${c.repair_type}</td></tr>` : ''}
-            ${c.repair_description ? `<tr><td>Извършен ремонт</td><td>${c.repair_description}</td></tr>` : ''}
-        </table>` : ''}
-
-        ${materialsHTML}
+        ${externalHTML}
 
         <h3 style="color:#1a3a8f;margin:20px 0 8px;">Време и километри</h3>
         <table class="info-table">
@@ -962,7 +991,7 @@ function exportCardPDF(index, event) {
         </table>
 
         <div class="footer">
-            Записано: ${formatDateTime(c.created_at)} | Работна карта
+            Записано: ${formatDateTime(c.created_at)}
         </div>
 
         <div class="no-print" style="text-align:center;margin-top:20px;">
@@ -1040,9 +1069,20 @@ async function deleteCard(cardId, event) {
     }
 }
 
-function onEditActivityChange(value) {
-    document.getElementById('editSectionServices').classList.toggle('visible', value === 'ТО / ППП');
-    document.getElementById('editSectionRepair').classList.toggle('visible', value === 'РЕМОНТ' || value === 'ГАРАНЦИОНЕН РЕМОНТ');
+function getEditActivities() { return getEditCheckedValues('editActivityType'); }
+function onEditActivityChange() {
+    const l = getEditActivities();
+    document.getElementById('editSectionServices').classList.toggle('visible', l.includes('ТО / ППП'));
+    document.getElementById('editSectionRepair').classList.toggle('visible', l.includes('РЕМОНТ') || l.includes('ГАРАНЦИОНЕН РЕМОНТ'));
+}
+
+// ===== Външна услуга — само Ръководител сервизна дейност =====
+let editExternal = false;
+function setEditExternal(yes) {
+    editExternal = !!yes;
+    document.getElementById('editExtYes').className = 'toggle-btn' + (editExternal ? ' active-yes' : '');
+    document.getElementById('editExtNo').className = 'toggle-btn' + (!editExternal ? ' active-no' : '');
+    document.getElementById('editExtNoteWrap').style.display = editExternal ? 'block' : 'none';
 }
 
 function editToggleMaterials(yes) {
@@ -1102,8 +1142,8 @@ function buildEditForm(c) {
     const actDiv = document.getElementById('editActivityTypes');
     actDiv.innerHTML = '';
     (allNomenclatures.activity_types || []).forEach(a => {
-        const checked = c.activity_type === a.value ? 'checked' : '';
-        actDiv.innerHTML += `<label class="radio-option"><input type="radio" name="editActivityType" value="${a.value}" ${checked} onchange="onEditActivityChange('${a.value}')"><span>${a.label}</span></label>`;
+        const checked = actList(c).includes(a.value) ? 'checked' : '';
+        actDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="editActivityType" value="${a.value}" ${checked} onchange="onEditActivityChange()"><span>${a.label}</span></label>`;
     });
 
     buildEditCheckboxes('editServicesList', allNomenclatures.services || [], 'editServices', c.services || []);
@@ -1116,7 +1156,10 @@ function buildEditForm(c) {
         repTypeSelect.innerHTML += `<option value="${r.value}" ${selected}>${r.label}</option>`;
     });
     document.getElementById('editRepairDescription').value = c.repair_description || '';
-    onEditActivityChange(c.activity_type);
+    onEditActivityChange();
+    document.getElementById('editExtWrap').style.display = isManager() ? 'block' : 'none';
+    document.getElementById('editExtNote').value = c.external_service_note || '';
+    setEditExternal(!!c.external_service);
 
     const mats = allMaterials.filter(m => m.work_card_id === c.id);
     const matsFor = (cat) => mats.filter(m => m.category === cat);
@@ -1169,6 +1212,8 @@ async function logWorkCardChanges(cardId, oldData, newData, performedBy) {
         { key: 'km_hours', label: 'km/м.ч.' },
         { key: 'client', label: 'Клиент' },
         { key: 'activity_type', label: 'Вид дейност' },
+        { key: 'external_service', label: 'Външна услуга' },
+        { key: 'external_service_note', label: 'Описание външна услуга' },
         { key: 'repair_type', label: 'Вид ремонт' },
         { key: 'repair_description', label: 'Извършен ремонт' },
         { key: 'work_hours', label: 'Човекочасове' },
@@ -1207,7 +1252,10 @@ async function saveEdit() {
     if (!editingCardId) return;
     const oldData = editingOldCard;
     try {
-        const activityType = document.querySelector('input[name="editActivityType"]:checked') ? document.querySelector('input[name="editActivityType"]:checked').value : null;
+        const eActs = getEditActivities();
+        if (!eActs.length) { showStatus('Избери поне един вид дейност', 'error'); return; }
+        const activityType = eActs.join(', ');
+        const eTO = eActs.includes('ТО / ППП'), eRep = eActs.includes('РЕМОНТ') || eActs.includes('ГАРАНЦИОНЕН РЕМОНТ');
         const cardData = {
             mechanic: getEditCheckedValues('editMechanics'),
             work_date: document.getElementById('editWorkDate').value,
@@ -1216,16 +1264,21 @@ async function saveEdit() {
             km_hours: document.getElementById('editKmHours').value.trim() || null,
             client: document.getElementById('editClient').value.trim(),
             activity_type: activityType,
-            services: activityType === 'ТО / ППП' ? getEditCheckedValues('editServices') : [],
-            repair_systems: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? getEditCheckedValues('editRepairSystems') : [],
-            repair_type: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? document.getElementById('editRepairType').value || null : null,
-            repair_description: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? document.getElementById('editRepairDescription').value.trim() || null : null,
+            services: eTO ? getEditCheckedValues('editServices') : [],
+            repair_systems: eRep ? getEditCheckedValues('editRepairSystems') : [],
+            repair_type: eRep ? document.getElementById('editRepairType').value || null : null,
+            repair_description: eRep ? document.getElementById('editRepairDescription').value.trim() || null : null,
             has_materials: editHasMaterials,
             other_materials: editHasMaterials ? document.getElementById('editOtherMaterials').value.trim() || null : null,
             notes: document.getElementById('editWorkNotes').value.trim() || null,
             work_hours: parseFloat(document.getElementById('editWorkHours').value),
             km_traveled: document.getElementById('editKmTraveled').value ? parseInt(document.getElementById('editKmTraveled').value) : null
         };
+        if (isManager()) {
+            if (editExternal && !document.getElementById('editExtNote').value.trim()) { showStatus('Опиши външната услуга или избери „Не“', 'error'); return; }
+            cardData.external_service = editExternal;
+            cardData.external_service_note = editExternal ? document.getElementById('editExtNote').value.trim() : null;
+        }
         await supabasePatch('work_cards', `id=eq.${editingCardId}`, cardData);
         if (oldData) {
             await logWorkCardChanges(editingCardId, oldData, cardData, sessionStorage.getItem('workcard_user') || 'Неизвестен');
@@ -1952,7 +2005,7 @@ function downloadXlsx(sheetName, headers, rows, widths, fileName) {
 async function exportExcel() {
     if (allCards.length === 0) { alert('Няма данни за експорт.'); return; }
     try { await loadXLSX(); } catch (e) { alert(e.message); return; }
-    const headers = ['Механик','Дата','Автомобил/Бус/Машина','рег№/сер№/Инв№','km/м.ч.','Клиент','Вид дейност','Обслужване','Ремонтни системи','Вид ремонт','Извършен ремонт','Вложени материали','Масло','Антифриз','Крушки','Бързи връзки','Зъби','Друго материали','Забележка','Време (чч)','Изминати км','Записано на'];
+    const headers = ['Механик','Дата','Автомобил/Бус/Машина','рег№/сер№/Инв№','km/м.ч.','Клиент','Вид дейност','Обслужване','Ремонтни системи','Вид ремонт','Извършен ремонт','Вложени материали','Масло','Антифриз','Крушки','Бързи връзки','Зъби','Друго материали','Забележка','Външна услуга','Описание външна услуга','Време (чч)','Изминати км','Записано на'];
     const rows = allCards.map(c => {
         const mats = getMaterialsForCard(c.id);
         return [
@@ -1963,11 +2016,12 @@ async function exportExcel() {
             xText(c.repair_type), xText(c.repair_description), xText(c.has_materials ? 'Да' : 'Не'),
             xText(mats['Масло']), xText(mats['Антифриз']), xText(mats['Крушки']), xText(mats['Бързи връзки']), xText(mats['Зъби']),
             xText(c.other_materials), xText(c.notes),
+            xText(c.external_service ? 'Да' : 'Не'), xText(c.external_service_note),
             xNum(c.work_hours), xNum(c.km_traveled),
             xDate(c.created_at, true)
         ];
     });
-    const widths = [24, 11, 22, 16, 12, 22, 16, 30, 24, 22, 36, 10, 22, 18, 18, 18, 14, 24, 30, 10, 11, 16];
+    const widths = [24, 11, 22, 16, 12, 22, 22, 30, 24, 22, 36, 10, 22, 18, 18, 18, 14, 24, 30, 10, 30, 10, 11, 16];
     const from = document.getElementById('filterFrom').value || 'всички';
     const to = document.getElementById('filterTo').value || 'всички';
     downloadXlsx('Работни карти', headers, rows, widths, `Работни_Карти_${from}_${to}.xlsx`);

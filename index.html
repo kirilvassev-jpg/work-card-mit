@@ -526,7 +526,8 @@ textarea { min-height: 90px; }
     <div class="section" data-step="2">
         <div class="section-title"><span class="icon" data-icon="bolt"></span> Вид дейност</div>
         <div class="field" id="fActivity">
-            <div id="activityTypes" class="radio-group"></div>
+            <div id="activityTypes" class="checkbox-group"></div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">Може да избереш една или няколко дейности</div>
             <div class="error-msg">Избери вид дейност</div>
         </div>
     </div>
@@ -777,12 +778,12 @@ function prefillFromRequest(data, requestId) {
     prefillKm(data);
 
     if (data.activity_type && data.activity_type.length > 0) {
-        const firstActivity = data.activity_type[0];
-        const radio = document.querySelector('input[name="activityType"][value="' + firstActivity + '"]');
-        if (radio) {
-            radio.checked = true;
-            onActivityChange(firstActivity);
-        }
+        const list = Array.isArray(data.activity_type) ? data.activity_type : String(data.activity_type).split(',').map(x => x.trim());
+        list.forEach(a => {
+            const cb = document.querySelector('input[name="activityType"][value="' + a + '"]');
+            if (cb) cb.checked = true;
+        });
+        onActivityChange();
     }
 
     if (data.assigned_mechanics && data.assigned_mechanics.length > 0) {
@@ -810,7 +811,7 @@ function buildForm() {
     document.getElementById('workDate').value = new Date().toISOString().split('T')[0];
     const actDiv = document.getElementById('activityTypes');
     (nomenclatures.activity_types || []).forEach(a => {
-        actDiv.innerHTML += `<label class="radio-option"><input type="radio" name="activityType" value="${a.value}" onchange="onActivityChange('${a.value}')"><span>${a.label}</span></label>`;
+        actDiv.innerHTML += `<label class="checkbox-item act-check"><input type="checkbox" name="activityType" value="${a.value}" onchange="onActivityChange()"><span>${a.label}</span></label>`;
     });
     const servDiv = document.getElementById('servicesList');
     (nomenclatures.services || []).forEach(s => { servDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="services" value="${s.value}"><span>${s.label}</span></label>`; });
@@ -897,9 +898,13 @@ document.addEventListener('click', (e) => {
     if (dropdownField && !dropdownField.contains(e.target)) closeMechanicDropdown();
 });
 
-function onActivityChange(value) {
-    document.getElementById('sectionServices').classList.toggle('visible', value === 'ТО / ППП');
-    document.getElementById('sectionRepair').classList.toggle('visible', value === 'РЕМОНТ' || value === 'ГАРАНЦИОНЕН РЕМОНТ');
+function getActivities() { return getCheckedValues('activityType'); }
+function hasTO(acts) { return acts.includes('ТО / ППП'); }
+function hasRepair(acts) { return acts.includes('РЕМОНТ') || acts.includes('ГАРАНЦИОНЕН РЕМОНТ'); }
+function onActivityChange() {
+    const acts = getActivities();
+    document.getElementById('sectionServices').classList.toggle('visible', hasTO(acts));
+    document.getElementById('sectionRepair').classList.toggle('visible', hasRepair(acts));
 }
 let hasMaterials = null;
 function toggleMaterials(yes) {
@@ -966,16 +971,18 @@ async function submitForm() {
     const btn = document.getElementById('submitBtn');
     btn.disabled = true; btn.textContent = 'Записване...';
     try {
-        const activityType = document.querySelector('input[name="activityType"]:checked').value;
+        const acts = getActivities();
+        const activityType = acts.join(', ');
+        const isTO = hasTO(acts), isRep = hasRepair(acts);
         const cardData = {
             mechanic: Array.from(document.querySelectorAll('.ms-option.selected')).map(el => el.dataset.value), work_date: document.getElementById('workDate').value,
             vehicle: document.getElementById('vehicle').value.trim(), reg_number: document.getElementById('regNumber').value.trim(),
             km_hours: document.getElementById('kmHours').value.trim() || null, client: document.getElementById('client').value.trim(),
             activity_type: activityType,
-            services: activityType === 'ТО / ППП' ? getCheckedValues('services') : [],
-            repair_systems: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? getCheckedValues('repairSystems') : [],
-            repair_type: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? document.getElementById('repairType').value || null : null,
-            repair_description: (activityType === 'РЕМОНТ' || activityType === 'ГАРАНЦИОНЕН РЕМОНТ') ? document.getElementById('repairDescription').value.trim() || null : null,
+            services: isTO ? getCheckedValues('services') : [],
+            repair_systems: isRep ? getCheckedValues('repairSystems') : [],
+            repair_type: isRep ? document.getElementById('repairType').value || null : null,
+            repair_description: isRep ? document.getElementById('repairDescription').value.trim() || null : null,
             has_materials: hasMaterials, work_hours: parseFloat(document.getElementById('workHours').value),
             other_materials: hasMaterials ? document.getElementById('otherMaterials').value.trim() || null : null,
             km_traveled: document.getElementById('kmTraveled').value ? parseInt(document.getElementById('kmTraveled').value) : null,
