@@ -1259,20 +1259,6 @@ function clearFilters() {
     loadCards();
 }
 
-function exportExcel() {
-    if (allCards.length === 0) { alert('Няма данни за експорт.'); return; }
-    const headers = ['Механик','Дата','Автомобил/Бус/Машина','рег№/сер№/Инв№','km/м.ч.','Клиент','Вид дейност','Обслужване','Ремонтни системи','Вид ремонт','Извършен ремонт','Вложени материали','Масло','Антифриз','Крушки','Бързи връзки','Зъби','Друго материали','Забележка','Време (чч)','Изминати км','Записано на'];
-    const csvContent = '\uFEFF' + headers.join(';') + '\n' + allCards.map(c => {
-        const mats = getMaterialsForCard(c.id);
-        const row = [Array.isArray(c.mechanic) ? c.mechanic.join(', ') : c.mechanic, formatDate(c.work_date), c.vehicle, c.reg_number, c.km_hours||'', c.client, c.activity_type, (c.services||[]).join(', '), (c.repair_systems||[]).join(', '), c.repair_type||'', c.repair_description||'', c.has_materials?'Да':'Не', mats['Масло']||'', mats['Антифриз']||'', mats['Крушки']||'', mats['Бързи връзки']||'', mats['Зъби']||'', c.other_materials||'', c.notes||'', c.work_hours||'', c.km_traveled||'', formatDateTime(c.created_at)];
-        return row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';');
-    }).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    const from = document.getElementById('filterFrom').value || 'all';
-    const to = document.getElementById('filterTo').value || 'all';
-    a.download = `Работни_Карти_${from}_${to}.csv`; a.click();
-}
 
 function switchTab(tab) {
     document.getElementById('tabWorkCards').style.display = tab === 'workCards' ? 'block' : 'none';
@@ -1919,34 +1905,92 @@ async function addRequestComment(requestId) {
     }
 }
 
-function exportRequestsExcel() {
-    if (allServiceRequests.length === 0) { alert('Няма данни за експорт.'); return; }
-
-    const headers = ['Клиент','Телефон','Имейл','Машина','Рег.номер','Вид дейност','Описание','Приоритет','Статус','Назначени механици','Отговорник','Бележки','Регистрирана','Разпределена','Започната','Изпълнена','Регистрирал'];
-
-    const csvContent = '\uFEFF' + headers.join(';') + '\n' + allServiceRequests.map(r => {
-        const row = [
-            r.client_name || '', r.client_phone || '', r.client_email || '',
-            r.vehicle || '', r.reg_number || '',
-            (r.activity_type || []).join(', '), r.description || '',
-            r.priority || '', r.status || '',
-            (r.assigned_mechanics || []).join(', '), r.responsible_mechanic || '',
-            (r.notes || '').replace(/\n/g, ' | '),
-            r.created_at ? new Date(r.created_at).toLocaleString('bg-BG') : '',
-            r.assigned_at ? new Date(r.assigned_at).toLocaleString('bg-BG') : '',
-            r.started_at ? new Date(r.started_at).toLocaleString('bg-BG') : '',
-            r.completed_at ? new Date(r.completed_at).toLocaleString('bg-BG') : '',
-            r.created_by || ''
-        ];
-        return row.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(';');
-    }).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'Заявки_' + new Date().toISOString().split('T')[0] + '.csv';
-    a.click();
+// ===== Експорт в Excel (.xlsx) — данните се записват точно както са, без корекции =====
+function loadXLSX() {
+    if (window.XLSX) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const sc = document.createElement('script');
+        sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        sc.onload = resolve;
+        sc.onerror = () => reject(new Error('Библиотеката за Excel не се зареди. Провери интернет връзката.'));
+        document.head.appendChild(sc);
+    });
 }
+
+// Текст — записва се 1:1 (водещите нули и номерата не се пипат)
+function xText(v) { return { t: 's', v: (v === null || v === undefined) ? '' : String(v) }; }
+// Число — само ако стойността реално е число; иначе остава текст както е
+function xNum(v) {
+    if (v === null || v === undefined || v === '') return { t: 's', v: '' };
+    const n = Number(v);
+    return isNaN(n) ? xText(v) : { t: 'n', v: n };
+}
+// Дата / дата и час — истинска дата в Excel, показва се дд.мм.гггг
+function xDate(v, withTime) {
+    if (!v) return { t: 's', v: '' };
+    let d;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(v))) { const p = String(v).split('-').map(Number); d = new Date(p[0], p[1] - 1, p[2]); }
+    else d = new Date(v);
+    if (isNaN(d)) return xText(v);
+    const serial = (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), withTime ? d.getHours() : 0, withTime ? d.getMinutes() : 0) - Date.UTC(1899, 11, 30)) / 86400000;
+    return { t: 'n', v: serial, z: withTime ? 'dd.mm.yyyy hh:mm' : 'dd.mm.yyyy' };
+}
+
+function downloadXlsx(sheetName, headers, rows, widths, fileName) {
+    const ws = {};
+    const all = [headers.map(h => xText(h))].concat(rows);
+    all.forEach((row, r) => row.forEach((cell, c) => { ws[XLSX.utils.encode_cell({ r, c })] = cell; }));
+    const range = { s: { r: 0, c: 0 }, e: { r: all.length - 1, c: headers.length - 1 } };
+    ws['!ref'] = XLSX.utils.encode_range(range);
+    ws['!cols'] = widths.map(w => ({ wch: w }));
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }) };
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    XLSX.writeFile(wb, fileName, { bookType: 'xlsx', compression: true });
+}
+
+async function exportExcel() {
+    if (allCards.length === 0) { alert('Няма данни за експорт.'); return; }
+    try { await loadXLSX(); } catch (e) { alert(e.message); return; }
+    const headers = ['Механик','Дата','Автомобил/Бус/Машина','рег№/сер№/Инв№','km/м.ч.','Клиент','Вид дейност','Обслужване','Ремонтни системи','Вид ремонт','Извършен ремонт','Вложени материали','Масло','Антифриз','Крушки','Бързи връзки','Зъби','Друго материали','Забележка','Време (чч)','Изминати км','Записано на'];
+    const rows = allCards.map(c => {
+        const mats = getMaterialsForCard(c.id);
+        return [
+            xText(Array.isArray(c.mechanic) ? c.mechanic.join(', ') : c.mechanic),
+            xDate(c.work_date),
+            xText(c.vehicle), xText(c.reg_number), xText(c.km_hours), xText(c.client), xText(c.activity_type),
+            xText((c.services || []).join(', ')), xText((c.repair_systems || []).join(', ')),
+            xText(c.repair_type), xText(c.repair_description), xText(c.has_materials ? 'Да' : 'Не'),
+            xText(mats['Масло']), xText(mats['Антифриз']), xText(mats['Крушки']), xText(mats['Бързи връзки']), xText(mats['Зъби']),
+            xText(c.other_materials), xText(c.notes),
+            xNum(c.work_hours), xNum(c.km_traveled),
+            xDate(c.created_at, true)
+        ];
+    });
+    const widths = [24, 11, 22, 16, 12, 22, 16, 30, 24, 22, 36, 10, 22, 18, 18, 18, 14, 24, 30, 10, 11, 16];
+    const from = document.getElementById('filterFrom').value || 'всички';
+    const to = document.getElementById('filterTo').value || 'всички';
+    downloadXlsx('Работни карти', headers, rows, widths, `Работни_Карти_${from}_${to}.xlsx`);
+}
+
+async function exportRequestsExcel() {
+    if (allServiceRequests.length === 0) { alert('Няма данни за експорт.'); return; }
+    try { await loadXLSX(); } catch (e) { alert(e.message); return; }
+    const headers = ['Номер','Клиент','Тип клиент','Фирма','Булстат','Телефон','Имейл','Марка','Модел','Рег.номер','Рама №','Км / мч','Година','Вид дейност','Описание','Приоритет','Статус','Желана дата','Планирано','Назначени механици','Отговорник','Бележки','Регистрирана','Разпределена','Започната','Изпълнена','Регистрирал'];
+    const rows = allServiceRequests.map(r => [
+        xText(r.request_number), xText(r.client_name), xText(r.client_type), xText(r.company_name), xText(r.bulstat),
+        xText(r.client_phone), xText(r.client_email), xText(r.brand), xText(r.model), xText(r.reg_number),
+        xText(r.frame_number), xText(r.km_hours), xText(r.year_of_manufacture),
+        xText((r.activity_type || []).join(', ')), xText(r.description), xText(r.priority), xText(r.status),
+        xDate(r.desired_date), xDate(r.scheduled_at, true),
+        xText((r.assigned_mechanics || []).join(', ')), xText(r.responsible_mechanic), xText(r.notes),
+        xDate(r.created_at, true), xDate(r.assigned_at, true), xDate(r.started_at, true), xDate(r.completed_at, true),
+        xText(r.created_by)
+    ]);
+    const widths = [24, 22, 9, 22, 13, 14, 24, 12, 12, 14, 18, 12, 8, 22, 36, 10, 13, 11, 16, 26, 20, 30, 16, 16, 16, 16, 18];
+    downloadXlsx('Заявки', headers, rows, widths, 'Заявки_' + new Date().toISOString().split('T')[0] + '.xlsx');
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
     // Request notification permission
