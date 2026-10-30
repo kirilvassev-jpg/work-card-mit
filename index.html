@@ -563,14 +563,15 @@ textarea { min-height: 90px; }
             <div class="error-msg">Избери Да или Не</div>
         </div>
         <div id="materialsSection" class="conditional">
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="drop"></span>Масло</span><span class="arrow">▼</span></div><div class="material-body"><div id="oilsList" class="checkbox-grid"></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="thermo"></span>Антифриз</span><span class="arrow">▼</span></div><div class="material-body"><div id="antifreezesList" class="checkbox-grid"></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="bulb"></span>Крушки</span><span class="arrow">▼</span></div><div class="material-body"><div id="bulbsList" class="checkbox-grid"></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="link"></span>Бързи връзки</span><span class="arrow">▼</span></div><div class="material-body"><div id="quickCouplingsList" class="checkbox-grid"></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="cog"></span>Зъби</span><span class="arrow">▼</span></div><div class="material-body"><div id="teethList" class="checkbox-grid"></div></div></div>
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="note"></span>Друго</span><span class="arrow">▼</span></div><div class="material-body"><textarea id="otherMaterials" rows="3" placeholder="Опиши допълнителни материали..."></textarea></div></div>
-        </div>
-    </div>
+                        <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="filter"></span>Филтри <span id="fltCount" class="flt-count"></span></span><span class="arrow">▼</span></div>
+                <div class="material-body">
+                    <div class="flt-dd" id="fltDropdown">
+                        <button type="button" class="flt-display" onclick="toggleFilterDropdown(event)"><span id="fltDisplayText">— Избери филтри —</span><span class="flt-arrow">▾</span></button>
+                        <div class="flt-options" id="fltOptions"></div>
+                    </div>
+                    <div id="fltSelected" class="flt-selected"></div>
+                </div>
+            </div>
 
     <div class="section" data-step="3">
         <div class="section-title"><span class="icon" data-icon="note"></span> Забележка</div>
