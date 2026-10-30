@@ -677,6 +677,7 @@
             </div>
         </div>
         <div id="editMaterialsSection" class="conditional">
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">🧰</span>Филтри</span><span class="arrow">▼</span></div><div class="material-body"><div id="editFiltersList" class="checkbox-grid"></div></div></div>
             <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">🛢</span>Масло</span><span class="arrow">▼</span></div><div class="material-body"><div id="editOilsList" class="checkbox-grid"></div></div></div>
             <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">💧</span>Антифриз</span><span class="arrow">▼</span></div><div class="material-body"><div id="editAntifreezesList" class="checkbox-grid"></div></div></div>
             <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon">💡</span>Крушки</span><span class="arrow">▼</span></div><div class="material-body"><div id="editBulbsList" class="checkbox-grid"></div></div></div>
@@ -882,7 +883,7 @@ function getInitials(name) { return name.split(' ').map(n => n[0]).join('').subs
 function getMaterialsForCard(cardId) {
     const mats = allMaterials.filter(m => m.work_card_id === cardId);
     const result = {};
-    const catNames = { oil: 'Масло', antifreeze: 'Антифриз', bulb: 'Крушки', quick_coupling: 'Бързи връзки', teeth: 'Зъби' };
+    const catNames = { filter: 'Филтри', oil: 'Масло', antifreeze: 'Антифриз', bulb: 'Крушки', quick_coupling: 'Бързи връзки', teeth: 'Зъби' };
     Object.keys(catNames).forEach(cat => {
         const catMats = mats.filter(m => m.category === cat);
         if (catMats.length > 0) {
@@ -951,9 +952,9 @@ function renderCards(cards) {
         let details = '';
         const ad = (l,v) => { if(v) details += `<div class="detail-row"><span class="detail-label">${l}</span><span class="detail-value">${v}</span></div>`; };
         ad('Клиент', c.client); ad('km / м.ч.', c.km_hours); ad('Вид дейност', acts.join(', '));
-        if (c.services && c.services.length > 0) ad('Обслужване', c.services.join(', '));
+        if (c.services && c.services.length > 0 && !mats['Филтри']) ad('Обслужване', c.services.join(', '));
         if (c.repair_systems && c.repair_systems.length > 0) ad('Ремонтни системи', c.repair_systems.join(', '));
-        ad('Вид ремонт', c.repair_type); ad('Извършен ремонт', c.repair_description); ad('Масло', mats['Масло']); ad('Антифриз', mats['Антифриз']);
+        ad('Вид ремонт', c.repair_type); ad('Извършен ремонт', c.repair_description); ad('Филтри', mats['Филтри']); ad('Масло', mats['Масло']); ad('Антифриз', mats['Антифриз']);
         ad('Крушки', mats['Крушки']); ad('Бързи връзки', mats['Бързи връзки']); ad('Зъби', mats['Зъби']);
         ad('Друго материали', c.other_materials);
         ad('Забележка', c.notes);
@@ -987,8 +988,8 @@ function normReg(r) {
 function unitShort(u) { const s = String(u || '').toLowerCase(); return s.startsWith('лит') ? 'л' : s.startsWith('бр') ? 'бр.' : (u || ''); }
 function fmtQty(q) { return Number(q).toLocaleString('bg-BG', { maximumFractionDigits: 2 }); }
 function escH(v) { return (v === null || v === undefined) ? '' : String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-const MAT_CAT = { oil: 'Масло', antifreeze: 'Антифриз', bulb: 'Крушки', quick_coupling: 'Бързи връзки', teeth: 'Зъби' };
-const MAT_ORDER = ['oil', 'antifreeze', 'bulb', 'quick_coupling', 'teeth'];
+const MAT_CAT = { filter: 'Филтри', oil: 'Масло', antifreeze: 'Антифриз', bulb: 'Крушки', quick_coupling: 'Бързи връзки', teeth: 'Зъби' };
+const MAT_ORDER = ['filter', 'oil', 'antifreeze', 'bulb', 'quick_coupling', 'teeth'];
 
 async function getMaterialsFor(cardIds) {
     let out = [];
@@ -1112,7 +1113,7 @@ async function openMachine(key) {
             const c = e.c, cm = matsByCard[c.id] || [];
             const matTxt = cm.map(x => (MAT_CAT[x.category] || x.category) + ' ' + x.item_type + ' — ' + fmtQty(x.quantity) + ' ' + unitShort(x.unit)).join('; ') + (c.other_materials ? (cm.length ? '; ' : '') + c.other_materials : '');
             return '<div class="mx-ev card-ev"><div class="top"><span>📝 ' + escH(c.activity_type || 'Работна карта') + '</span><small>' + formatDate(c.work_date) + '</small></div>' +
-                (c.services && c.services.length ? '<div class="row"><span>Обслужване:</span> ' + escH(c.services.join(', ')) + '</div>' : '') +
+                (c.services && c.services.length && !cm.some(x => x.category === 'filter') ? '<div class="row"><span>Обслужване:</span> ' + escH(c.services.join(', ')) + '</div>' : '') +
                 (c.repair_systems && c.repair_systems.length ? '<div class="row"><span>Система:</span> ' + escH(c.repair_systems.join(', ')) + '</div>' : '') +
                 (c.repair_type ? '<div class="row"><span>Вид ремонт:</span> ' + escH(c.repair_type) + '</div>' : '') +
                 (c.repair_description ? '<div class="row"><span>Извършено:</span> ' + escH(c.repair_description) + '</div>' : '') +
@@ -1281,7 +1282,7 @@ function exportCardPDF(index, event) {
     // Вложени материали — като част от дейността (Б: общо за картата)
     const matRows = [];
     if (c.has_materials) {
-        ['Масло', 'Антифриз', 'Крушки', 'Бързи връзки', 'Зъби'].forEach(k => { if (mats[k]) matRows.push(row(k, mats[k])); });
+        ['Филтри', 'Масло', 'Антифриз', 'Крушки', 'Бързи връзки', 'Зъби'].forEach(k => { if (mats[k]) matRows.push(row(k, mats[k])); });
         if (c.other_materials) matRows.push(row('Друго', c.other_materials));
     }
 
@@ -1289,7 +1290,7 @@ function exportCardPDF(index, event) {
     const services = c.services && c.services.length > 0 ? c.services.join(', ') : '';
     const repairSystems = c.repair_systems && c.repair_systems.length > 0 ? c.repair_systems.join(', ') : '';
     const sections = [];
-    if (acts.includes('ТО / ППП')) sections.push({ title: 'ТО / ППП', rows: services ? [row('Обслужване', services)] : [] });
+    if (acts.includes('ТО / ППП')) sections.push({ title: 'ТО / ППП', rows: (services && !mats['Филтри']) ? [row('Обслужване', services)] : [] });
     if (actHasRepair(c)) {
         const t = acts.includes('РЕМОНТ') && acts.includes('ГАРАНЦИОНЕН РЕМОНТ') ? 'Ремонт / Гаранционен ремонт' : acts.includes('ГАРАНЦИОНЕН РЕМОНТ') ? 'Гаранционен ремонт' : 'Ремонт';
         const r = [];
@@ -1447,7 +1448,7 @@ async function deleteCard(cardId, event) {
 function getEditActivities() { return getEditCheckedValues('editActivityType'); }
 function onEditActivityChange() {
     const l = getEditActivities();
-    document.getElementById('editSectionServices').classList.toggle('visible', l.includes('ТО / ППП'));
+    document.getElementById('editSectionServices').classList.remove('visible');   // филтрите са в „Материали → Филтри“
     document.getElementById('editSectionRepair').classList.toggle('visible', l.includes('РЕМОНТ') || l.includes('ГАРАНЦИОНЕН РЕМОНТ'));
 }
 
@@ -1538,6 +1539,10 @@ function buildEditForm(c) {
 
     const mats = allMaterials.filter(m => m.work_card_id === c.id);
     const matsFor = (cat) => mats.filter(m => m.category === cat);
+    // Филтри: от материалите; за стари карти — от „Обслужване“ (по 1 бр.)
+    let fltMats = matsFor('filter');
+    if (!fltMats.length && c.services && c.services.length) fltMats = c.services.map(v => ({ item_type: v, quantity: 1 }));
+    buildEditMaterialCheckboxes('editFiltersList', allNomenclatures.services || [], 'editFilters', fltMats, 'брой', '1');
     buildEditMaterialCheckboxes('editOilsList', allNomenclatures.oils || [], 'editOils', matsFor('oil'), 'литри', '0.1');
     buildEditMaterialCheckboxes('editAntifreezesList', allNomenclatures.antifreezes || [], 'editAntifreezes', matsFor('antifreeze'), 'литри', '0.1');
     buildEditMaterialCheckboxes('editBulbsList', allNomenclatures.bulbs || [], 'editBulbs', matsFor('bulb'), 'брой', '1');
@@ -1556,6 +1561,7 @@ function getEditCheckedValues(name) { return Array.from(document.querySelectorAl
 function collectEditMaterials() {
     const materials = [];
     const cats = [
+        { name: 'editFilters', category: 'filter', unit: 'брой' },
         { name: 'editOils', category: 'oil', unit: 'литри' },
         { name: 'editAntifreezes', category: 'antifreeze', unit: 'литри' },
         { name: 'editBulbs', category: 'bulb', unit: 'брой' },
@@ -1639,7 +1645,7 @@ async function saveEdit() {
             km_hours: document.getElementById('editKmHours').value.trim() || null,
             client: document.getElementById('editClient').value.trim(),
             activity_type: activityType,
-            services: eTO ? getEditCheckedValues('editServices') : [],
+            services: editHasMaterials ? getEditCheckedValues('editFilters') : [],
             repair_systems: eRep ? getEditCheckedValues('editRepairSystems') : [],
             repair_type: eRep ? document.getElementById('editRepairType').value || null : null,
             repair_description: eRep ? document.getElementById('editRepairDescription').value.trim() || null : null,
@@ -2385,7 +2391,7 @@ function downloadXlsx(sheetName, headers, rows, widths, fileName) {
 async function exportExcel() {
     if (allCards.length === 0) { alert('Няма данни за експорт.'); return; }
     try { await loadXLSX(); } catch (e) { alert(e.message); return; }
-    const headers = ['Механик','Дата','Автомобил/Бус/Машина','рег№/сер№/Инв№','km/м.ч.','Клиент','Вид дейност','Обслужване','Ремонтни системи','Вид ремонт','Извършен ремонт','Вложени материали','Масло','Антифриз','Крушки','Бързи връзки','Зъби','Друго материали','Забележка','Външна услуга','Описание външна услуга','Време (чч)','Изминати км','Записано на'];
+    const headers = ['Механик','Дата','Автомобил/Бус/Машина','рег№/сер№/Инв№','km/м.ч.','Клиент','Вид дейност','Обслужване','Ремонтни системи','Вид ремонт','Извършен ремонт','Вложени материали','Филтри','Масло','Антифриз','Крушки','Бързи връзки','Зъби','Друго материали','Забележка','Външна услуга','Описание външна услуга','Време (чч)','Изминати км','Записано на'];
     const rows = allCards.map(c => {
         const mats = getMaterialsForCard(c.id);
         return [
@@ -2394,14 +2400,14 @@ async function exportExcel() {
             xText(c.vehicle), xText(c.reg_number), xText(c.km_hours), xText(c.client), xText(c.activity_type),
             xText((c.services || []).join(', ')), xText((c.repair_systems || []).join(', ')),
             xText(c.repair_type), xText(c.repair_description), xText(c.has_materials ? 'Да' : 'Не'),
-            xText(mats['Масло']), xText(mats['Антифриз']), xText(mats['Крушки']), xText(mats['Бързи връзки']), xText(mats['Зъби']),
+            xText(mats['Филтри']), xText(mats['Масло']), xText(mats['Антифриз']), xText(mats['Крушки']), xText(mats['Бързи връзки']), xText(mats['Зъби']),
             xText(c.other_materials), xText(c.notes),
             xText(c.external_service ? 'Да' : 'Не'), xText(c.external_service_note),
             xNum(c.work_hours), xNum(c.km_traveled),
             xDate(c.created_at, true)
         ];
     });
-    const widths = [24, 11, 22, 16, 12, 22, 22, 30, 24, 22, 36, 10, 22, 18, 18, 18, 14, 24, 30, 10, 30, 10, 11, 16];
+    const widths = [24, 11, 22, 16, 12, 22, 22, 30, 24, 22, 36, 10, 30, 22, 18, 18, 18, 14, 24, 30, 10, 30, 10, 11, 16];
     const from = document.getElementById('filterFrom').value || 'всички';
     const to = document.getElementById('filterTo').value || 'всички';
     downloadXlsx('Работни карти', headers, rows, widths, `Работни_Карти_${from}_${to}.xlsx`);
