@@ -243,6 +243,11 @@ button, .task-card { touch-action: manipulation; }
 .td-chips span { font-size:17px; font-weight:600; padding:6px 14px; border-radius:20px; background:#eef2fb; color:var(--primary); }
 .td-chips span.resp { background:#fff3cc; color:#6f4c00; }
 .td-photo { width:100%; max-height:360px; object-fit:contain; border-radius:10px; background:#f1f4f8; }
+.td-hist-btn { width:100%; min-height:52px; border:1.5px solid var(--primary); background:#fff; color:var(--primary); border-radius:12px; font-size:17px; font-weight:700; cursor:pointer; }
+.td-hist-item { border:1px solid var(--border); border-left:4px solid var(--accent-green); border-radius:10px; padding:10px 12px; margin-bottom:8px; font-size:16px; }
+.td-hist-top { display:flex; justify-content:space-between; gap:8px; font-weight:700; }
+.td-hist-sub { font-size:14px; color:var(--text-muted); margin-top:2px; }
+.td-hist-empty { font-size:15px; color:var(--text-muted); padding:6px 0; }
 .td-actions .action-btn { font-size:20px !important; min-height:64px; margin-bottom:10px; }
 .td-actions .info-banner { font-size:17px !important; }
 @media (max-width:420px) { .td-reg { font-size:28px; } .td-grid div { font-size:16px; } }
@@ -756,6 +761,8 @@ function renderTaskDetail() {
         (t.priority === 'Спешен' ? '<div style="margin-top:8px;font-size:18px;font-weight:700;color:#c41820;">' + UI.icon('flame', 'sm') + ' Спешна задача</div>' : '') + '</div>';
     if (t.description) h += '<div class="td-section"><div class="td-label">' + UI.icon('note', 'sm') + 'Описание на проблема</div><div class="td-desc">' + tdEsc(t.description) + '</div></div>';
     if (mechs) h += '<div class="td-section"><div class="td-label">' + UI.icon('users', 'sm') + 'Механици</div><div class="td-chips">' + mechs + '</div></div>';
+    h += '<div class="td-section"><div class="td-label">' + UI.icon('clock', 'sm') + 'История на машината</div>' +
+        '<div id="tdHistory"><button type="button" class="td-hist-btn" onclick="loadMachineHistory(\'' + tdEsc(t.reg_number || '') + '\')">Покажи последните посещения</button></div></div>';
     if (t.photo_data) h += '<div class="td-section"><div class="td-label">' + UI.icon('photo', 'sm') + 'Снимка на талон</div><img class="td-photo" src="' + tdEsc(t.photo_data) + '" alt="Талон" onclick="window.open(this.src,\'_blank\')"></div>';
 
     // Действията са огледало на бутоните в картата — натискането задейства оригиналния бутон
@@ -777,6 +784,38 @@ function renderTaskDetail() {
         hideTaskDetail();
         if (orig) orig.click();
     }));
+}
+
+// ===== История на машината (последните 5 посещения) =====
+const TD_LAT2CYR = { A:'А', B:'В', C:'С', E:'Е', H:'Н', K:'К', M:'М', O:'О', P:'Р', T:'Т', X:'Х', Y:'У' };
+function tdNormReg(r) { return String(r || '').toUpperCase().replace(/[\s\-\.\/_]/g, '').replace(/[ABCEHKMOPTXY]/g, ch => TD_LAT2CYR[ch] || ch); }
+
+async function loadMachineHistory(reg) {
+    const box = document.getElementById('tdHistory');
+    if (!box) return;
+    const key = tdNormReg(reg);
+    if (!key) { box.innerHTML = '<div class="td-hist-empty">Няма рег. номер</div>'; return; }
+    box.innerHTML = '<div class="td-hist-empty">Зареждане…</div>';
+    try {
+        const cards = await apiCall('work_cards?select=id,work_date,activity_type,services,repair_type,repair_description,mechanic,reg_number,other_materials,has_materials&order=work_date.desc&limit=1000');
+        const mine = cards.filter(c => tdNormReg(c.reg_number) === key).slice(0, 5);
+        if (!mine.length) { box.innerHTML = '<div class="td-hist-empty">Няма предишни работни карти за тази машина</div>'; return; }
+        let mats = [];
+        const ids = mine.filter(c => c.has_materials).map(c => c.id);
+        if (ids.length) mats = await apiCall('work_card_materials?select=work_card_id,item_type,quantity,unit&work_card_id=in.(' + ids.join(',') + ')').catch(() => []);
+        const u = x => String(x || '').toLowerCase().startsWith('лит') ? 'л' : 'бр.';
+        const d = v => { const p = String(v || '').split('-'); return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0] : (v || ''); };
+        box.innerHTML = mine.map(c => {
+            const m = mats.filter(x => x.work_card_id === c.id).map(x => x.item_type + ' ' + x.quantity + ' ' + u(x.unit)).join(', ') + (c.other_materials ? ', ' + c.other_materials : '');
+            const what = [c.repair_type, c.repair_description, (c.services || []).join(', ')].filter(Boolean).join(' — ');
+            return '<div class="td-hist-item"><div class="td-hist-top"><span>' + tdEsc(c.activity_type || '') + '</span><span>' + d(c.work_date) + '</span></div>' +
+                (what ? '<div>' + tdEsc(what) + '</div>' : '') +
+                (m ? '<div class="td-hist-sub">Материали: ' + tdEsc(m.replace(/^, /, '')) + '</div>' : '') +
+                '<div class="td-hist-sub">' + tdEsc(Array.isArray(c.mechanic) ? c.mechanic.join(', ') : (c.mechanic || '')) + '</div></div>';
+        }).join('');
+    } catch (e) {
+        box.innerHTML = '<div class="td-hist-empty">Историята не може да се зареди</div>';
+    }
 }
 
 function openTaskDetail(id) {
