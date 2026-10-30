@@ -209,13 +209,13 @@
     <div class="section-label">📅 За периода <span id="cmpNote" style="font-weight:600;text-transform:none;letter-spacing:0;"></span></div>
     <div class="stats">
         <div class="stat-card clickable" style="border-top-color:var(--primary);" onclick="openDrill('registered')">
-            <div class="stat-icon">📝</div><div class="stat-val" id="kRegistered">-</div><div class="stat-label">Регистрирани</div><div class="stat-cmp" id="cRegistered"></div>
+            <div class="stat-icon">📝</div><div class="stat-val" id="kRegistered">-</div><div class="stat-label">Регистрирани заявки</div><div class="stat-cmp" id="cRegistered"></div>
         </div>
         <div class="stat-card clickable" style="border-top-color:var(--accent-green);" onclick="openDrill('done')">
-            <div class="stat-icon">✅</div><div class="stat-val" id="kDone">-</div><div class="stat-label">Изпълнени</div><div class="stat-cmp" id="cDone"></div>
+            <div class="stat-icon">✅</div><div class="stat-val" id="kDone">-</div><div class="stat-label">Изпълнени заявки</div><div class="stat-cmp" id="cDone"></div>
         </div>
         <div class="stat-card clickable" style="border-top-color:var(--accent-blue);" onclick="openDrill('done')">
-            <div class="stat-icon">⏱</div><div class="stat-val small" id="kAvg">-</div><div class="stat-label">Средно време</div><div class="stat-cmp" id="cAvg"></div>
+            <div class="stat-icon">⏱</div><div class="stat-val small" id="kAvg">-</div><div class="stat-label">Средно време (заявка)</div><div class="stat-cmp" id="cAvg"></div>
         </div>
         <div class="stat-card" style="border-top-color:var(--accent-purple);">
             <div class="stat-icon">👷</div><div class="stat-val" id="kHours">-</div><div class="stat-label">Човекочасове</div><div class="stat-cmp" id="cHours"></div>
@@ -224,6 +224,26 @@
             <div class="stat-icon">🚗</div><div class="stat-val" id="kKm">-</div><div class="stat-label">Изминати км</div><div class="stat-cmp" id="cKm"></div>
         </div>
     </div>
+
+    <div class="section-label">📝 Работни карти за периода</div>
+    <div class="stats">
+        <div class="stat-card" style="border-top-color:var(--primary);">
+            <div class="stat-icon">📝</div><div class="stat-val" id="kCards">-</div><div class="stat-label">Работни карти</div><div class="stat-cmp" id="cCards"></div>
+        </div>
+        <div class="stat-card" style="border-top-color:var(--accent-blue);">
+            <div class="stat-icon">🔧</div><div class="stat-val" id="kCardsTO">-</div><div class="stat-label">ТО / ППП</div><div class="stat-cmp" id="cCardsTO"></div>
+        </div>
+        <div class="stat-card" style="border-top-color:var(--accent-red);">
+            <div class="stat-icon">🛠</div><div class="stat-val" id="kCardsRep">-</div><div class="stat-label">Ремонти</div><div class="stat-cmp" id="cCardsRep"></div>
+        </div>
+        <div class="stat-card" style="border-top-color:var(--accent-purple);">
+            <div class="stat-icon">📋</div><div class="stat-val" id="kCardsReq">-</div><div class="stat-label">По заявка</div><div class="stat-cmp"></div>
+        </div>
+        <div class="stat-card" style="border-top-color:#94a3b8;">
+            <div class="stat-icon">✍️</div><div class="stat-val" id="kCardsFree">-</div><div class="stat-label">Без заявка</div><div class="stat-cmp"></div>
+        </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);margin:2px 2px 6px;">Карта с няколко дейности (напр. ТО + Ремонт) се брои и в двете.</div>
 
     <div class="section-label">🔴 В момента <span id="nowNote" style="font-weight:600;text-transform:none;letter-spacing:0;"></span></div>
     <div class="stats">
@@ -304,7 +324,7 @@ function sanitize(s){if(s===null||s===undefined)return '';var d=document.createE
 const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
 
 const REQ_FIELDS = 'id,request_number,client_name,company_name,vehicle,brand,model,reg_number,status,priority,activity_type,assigned_mechanics,responsible_mechanic,desired_date,created_at,assigned_at,started_at,completed_at';
-const CARD_FIELDS = 'id,mechanic,work_date,work_hours,km_traveled,reg_number,vehicle,activity_type,client,repair_type';
+const CARD_FIELDS = 'id,mechanic,work_date,work_hours,km_traveled,reg_number,vehicle,activity_type,client,repair_type,request_id';
 const URGENT_HOURS = 4;
 const REPEAT_DAYS = 30;
 const OPEN_STATUSES = ['Нова', 'Разпределена', 'В изпълнение'];
@@ -638,6 +658,19 @@ function renderKpis(regCur, regPrev, doneCur, donePrev, cardsCur, cardsPrev, ope
     const kCur = sumKm(cardsCur), kPrev = sumKm(cardsPrev);
     set('kKm', fmtNum(kCur));
     setCmp('cKm', cmpHtml(kCur, kPrev, false));
+
+    // Работни карти за периода
+    const acts = c => String(c.activity_type || '').split(',').map(x => x.trim());
+    const isTO = c => acts(c).includes('ТО / ППП');
+    const isRep = c => acts(c).some(a => a === 'РЕМОНТ' || a === 'ГАРАНЦИОНЕН РЕМОНТ');
+    set('kCards', cardsCur.length);
+    setCmp('cCards', cmpHtml(cardsCur.length, cardsPrev.length, false));
+    const toC = cardsCur.filter(isTO).length, toP = cardsPrev.filter(isTO).length;
+    set('kCardsTO', toC); setCmp('cCardsTO', cmpHtml(toC, toP, false));
+    const rC = cardsCur.filter(isRep).length, rP = cardsPrev.filter(isRep).length;
+    set('kCardsRep', rC); setCmp('cCardsRep', cmpHtml(rC, rP, false));
+    set('kCardsReq', cardsCur.filter(c => c.request_id).length);
+    set('kCardsFree', cardsCur.filter(c => !c.request_id).length);
 
     set('kNew', openReqs.filter(r => r.status === 'Нова').length);
     set('kAssigned', openReqs.filter(r => r.status === 'Разпределена').length);
