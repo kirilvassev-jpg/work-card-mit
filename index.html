@@ -438,23 +438,6 @@ textarea { min-height: 90px; }
 .req-machine .rm-grid { grid-template-columns:1fr 1fr !important; gap:6px !important; }
 .req-machine .rm-grid > div { padding:7px 9px !important; font-size:14px !important; }
 .status { display:none !important; }
-.flt-dd { position:relative; }
-.flt-display { width:100%; min-height:50px; display:flex; justify-content:space-between; align-items:center; padding:0 14px; border:1.5px solid var(--border); border-radius:11px; background:#fbfcfd; font-size:16px; font-family:inherit; color:var(--text); cursor:pointer; }
-.flt-dd.open .flt-display { border-color:var(--primary-light); }
-.flt-arrow { color:var(--text-muted); transition:transform .2s; }
-.flt-dd.open .flt-arrow { transform:rotate(180deg); }
-.flt-options { display:none; position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:60; background:#fff; border:1.5px solid var(--border); border-radius:11px; box-shadow:0 10px 24px rgba(19,41,107,0.15); max-height:300px; overflow-y:auto; padding:4px; }
-.flt-dd.open .flt-options { display:block; }
-.flt-opt { display:flex; align-items:center; gap:10px; min-height:46px; padding:0 10px; border-radius:8px; font-size:15px; cursor:pointer; }
-.flt-opt:hover { background:#f3f6fb; }
-.flt-opt input { width:20px; height:20px; accent-color:var(--primary); }
-.flt-selected { margin-top:8px; display:flex; flex-direction:column; gap:6px; }
-.flt-row { display:flex; align-items:center; gap:8px; background:#eef2fb; border-radius:10px; padding:6px 8px 6px 12px; }
-.flt-name { flex:1; font-weight:600; font-size:15px; color:var(--primary); }
-.flt-qty { width:72px !important; flex:0 0 72px; padding:6px !important; min-height:40px !important; text-align:center; border:1.5px solid var(--border); border-radius:8px; font-size:16px; }
-.flt-unit { font-size:13px; color:var(--text-muted); }
-.flt-x { width:36px; height:36px; border:none; border-radius:8px; background:#fff; color:#c41820; font-size:22px; cursor:pointer; line-height:1; }
-.flt-count { font-weight:600; color:var(--primary); }
 /* ===== Хоризонтален режим (завъртян телефон) — същият изглед, по-компактен ===== */
 @media (orientation: landscape) and (max-height: 520px) {
     .app-bar { height: 46px; }
@@ -580,15 +563,7 @@ textarea { min-height: 90px; }
             <div class="error-msg">Избери Да или Не</div>
         </div>
         <div id="materialsSection" class="conditional">
-            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="filter"></span>Филтри <span id="fltCount" class="flt-count"></span></span><span class="arrow">▼</span></div>
-                <div class="material-body">
-                    <div class="flt-dd" id="fltDropdown">
-                        <button type="button" class="flt-display" onclick="toggleFilterDropdown(event)"><span id="fltDisplayText">— Избери филтри —</span><span class="flt-arrow">▾</span></button>
-                        <div class="flt-options" id="fltOptions"></div>
-                    </div>
-                    <div id="fltSelected" class="flt-selected"></div>
-                </div>
-            </div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="filter"></span>Филтри</span><span class="arrow">▼</span></div><div class="material-body"><div id="filtersList" class="checkbox-grid"></div></div></div>
             <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="drop"></span>Масло</span><span class="arrow">▼</span></div><div class="material-body"><div id="oilsList" class="checkbox-grid"></div></div></div>
             <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="thermo"></span>Антифриз</span><span class="arrow">▼</span></div><div class="material-body"><div id="antifreezesList" class="checkbox-grid"></div></div></div>
             <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="bulb"></span>Крушки</span><span class="arrow">▼</span></div><div class="material-body"><div id="bulbsList" class="checkbox-grid"></div></div></div>
@@ -845,57 +820,13 @@ function buildForm() {
     (nomenclatures.repair_systems || []).forEach(r => { repSysDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="repairSystems" value="${r.value}"><span>${r.label}</span></label>`; });
     const repTypeSelect = document.getElementById('repairType');
     (nomenclatures.repair_types || []).forEach(r => { repTypeSelect.innerHTML += `<option value="${r.value}">${r.label}</option>`; });
-    buildFilterOptions(nomenclatures.services || []);
+    buildCheckboxes('filtersList', nomenclatures.services || [], 'filters', 'брой', '1');
     buildCheckboxes('oilsList', nomenclatures.oils || [], 'oils', 'литри', '0.1');
     buildCheckboxes('antifreezesList', nomenclatures.antifreezes || [], 'antifreezes', 'литри', '0.1');
     buildCheckboxes('bulbsList', nomenclatures.bulbs || [], 'bulbs', 'брой', '1');
     buildCheckboxes('quickCouplingsList', nomenclatures.quick_couplings || [], 'quick_couplings', 'брой', '1');
     buildCheckboxes('teethList', nomenclatures.teeth || [], 'teeth', 'брой', '1');
 }
-// ===== Филтри — падащо меню с избор на няколко, всеки с количество =====
-let filterQty = {};
-function buildFilterOptions(items) {
-    const box = document.getElementById('fltOptions');
-    box.innerHTML = items.map(it =>
-        `<label class="flt-opt"><input type="checkbox" name="filters" value="${it.value}" onchange="onFilterToggle(this)"><span>${it.label}</span></label>`).join('');
-}
-function toggleFilterDropdown(e) {
-    if (e) e.stopPropagation();
-    document.getElementById('fltDropdown').classList.toggle('open');
-}
-document.addEventListener('click', e => {
-    const dd = document.getElementById('fltDropdown');
-    if (dd && !dd.contains(e.target)) dd.classList.remove('open');
-});
-function selectedFilters() { return Array.from(document.querySelectorAll('input[name="filters"]:checked')).map(cb => cb.value); }
-function onFilterToggle(cb) {
-    if (cb.checked && !filterQty[cb.value]) filterQty[cb.value] = 1;
-    if (!cb.checked) delete filterQty[cb.value];
-    renderSelectedFilters();
-}
-function removeFilter(v) {
-    const cb = Array.from(document.querySelectorAll('input[name="filters"]')).find(x => x.value === v);
-    if (cb) cb.checked = false;
-    delete filterQty[v];
-    renderSelectedFilters();
-}
-function setFilterQty(v, q) { filterQty[v] = Math.max(0, parseInt(q) || 0); }
-function renderSelectedFilters() {
-    const sel = selectedFilters();
-    document.getElementById('fltDisplayText').textContent = sel.length ? 'Избрани: ' + sel.length : '— Избери филтри —';
-    document.getElementById('fltCount').textContent = sel.length ? '(' + sel.length + ')' : '';
-    document.getElementById('fltSelected').innerHTML = sel.map(v =>
-        `<div class="flt-row"><span class="flt-name">${sanitize(v)}</span>` +
-        `<input type="number" class="flt-qty" min="1" step="1" value="${filterQty[v] || 1}" oninput="setFilterQty(this.dataset.v, this.value)" data-v="${sanitize(v)}"><span class="flt-unit">бр.</span>` +
-        `<button type="button" class="flt-x" onclick="removeFilter(this.dataset.v)" data-v="${sanitize(v)}" aria-label="Премахни">×</button></div>`).join('');
-}
-function resetFilters() {
-    document.querySelectorAll('input[name="filters"]').forEach(cb => cb.checked = false);
-    filterQty = {};
-    renderSelectedFilters();
-    document.getElementById('fltDropdown').classList.remove('open');
-}
-
 function buildCheckboxes(containerId, items, groupName, unit, step) {
     const container = document.getElementById(containerId);
     items.forEach(item => {
@@ -1013,13 +944,13 @@ function getCheckedValues(name) { return Array.from(document.querySelectorAll(`i
 function collectMaterials() {
     const materials = [];
     const cats = [
+        { name: 'filters', category: 'filter', unit: 'брой' },
         { name: 'oils', category: 'oil', unit: 'литри' },
         { name: 'antifreezes', category: 'antifreeze', unit: 'литри' },
         { name: 'bulbs', category: 'bulb', unit: 'брой' },
         { name: 'quick_couplings', category: 'quick_coupling', unit: 'брой' },
         { name: 'teeth', category: 'teeth', unit: 'брой' },
     ];
-    selectedFilters().forEach(v => materials.push({ category: 'filter', item_type: v, quantity: filterQty[v] || 1, unit: 'брой' }));
     cats.forEach(cat => {
         const checked = document.querySelectorAll(`input[name="${cat.name}"]:checked`);
         checked.forEach(cb => {
@@ -1051,7 +982,7 @@ async function submitForm() {
             vehicle: document.getElementById('vehicle').value.trim(), reg_number: document.getElementById('regNumber').value.trim(),
             km_hours: document.getElementById('kmHours').value.trim() || null, client: document.getElementById('client').value.trim(),
             activity_type: activityType,
-            services: hasMaterials ? selectedFilters() : [],   // за архива в SharePoint (колона „Обслужване“)
+            services: hasMaterials ? getCheckedValues('filters') : [],   // за архива в SharePoint (колона „Обслужване“)
             repair_systems: isRep ? getCheckedValues('repairSystems') : [],
             repair_type: isRep ? document.getElementById('repairType').value || null : null,
             repair_description: isRep ? document.getElementById('repairDescription').value.trim() || null : null,
@@ -1144,7 +1075,6 @@ function showStatus(msg, type) {
     if (window.UI) UI.toast(msg, type === 'success' ? 'success' : type === 'error' ? 'error' : 'info');
 }
 function resetForm() {
-    if (typeof resetFilters === 'function') resetFilters();
     const rm = document.getElementById('requestMachine'); if (rm && !window._currentRequestId) rm.remove();
     const mechs = Array.from(document.querySelectorAll('.ms-option.selected')).map(el => el.dataset.value); const date = document.getElementById('workDate').value;
     document.querySelectorAll('input[type="text"], input[type="number"]').forEach(i => i.value = '');
