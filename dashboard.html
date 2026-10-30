@@ -336,6 +336,7 @@ const MONTHS_BG = ['Януари','Февруари','Март','Април','М
 let typeChart = null;
 let mechanicNames = [];
 let drillSets = {};
+let lastDashSig = '';   // тихо обновяване: подпис на последните показани данни
 
 // ---------- Auth & navigation ----------
 function checkAuth() {
@@ -587,6 +588,12 @@ async function loadDashboard() {
             apiCall(cardQuery),
             apiCall('request_log?created_at=gte.' + start.toISOString() + '&created_at=lt.' + toTs + '&order=created_at.desc&limit=15')
         ]);
+
+        // Тихо обновяване: ако данните (и часът) са същите — не пипай екрана
+        const nowD = new Date();
+        const sig = JSON.stringify([range.label, range.startDate, range.endDate, isoDate(nowD), nowD.getHours(), openReqs, createdReqs, completedReqs, cards, logs]);
+        if (sig === lastDashSig) return;
+        lastDashSig = sig;
 
         const inCur = v => v && new Date(v) >= start && new Date(v) < end;
         const inPrev = v => prevStart && v && new Date(v) >= prevStart && new Date(v) < range.prevEnd;

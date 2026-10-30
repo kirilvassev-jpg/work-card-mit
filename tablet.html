@@ -326,6 +326,16 @@ button, .task-card { touch-action: manipulation; }
 
 <script>
 function sanitize(s){if(!s)return s;var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+// ===== Тихо обновяване: екранът се пипа само ако съдържанието наистина е различно =====
+function setHTML(el, html) {
+    if (!el) return false;
+    const c = el.__sh;
+    if (c && c.html === html && el.firstChild === c.first && el.childNodes.length === c.n) return false;
+    el.innerHTML = html;
+    el.__sh = { html: html, first: el.firstChild, n: el.childNodes.length };
+    return true;
+}
+
 const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
 
 let allTasks = [];
@@ -448,7 +458,7 @@ async function loadMechanicScreen() {
         if (selectedMechanic) return;
 
         const grid = document.getElementById('mechanicGrid');
-        grid.innerHTML = mechs.map(m => {
+        setHTML(grid, mechs.map(m => {
             const count = mechanicTaskCounts[m.value] || 0;
             const hasTasksClass = count > 0 ? 'has-tasks' : 'no-tasks';
             const initials = m.value.split(' ').map(n => n[0]).join('').substring(0, 2);
@@ -459,7 +469,7 @@ async function loadMechanicScreen() {
                 '<div class="mechanic-card-name">' + m.value + '</div>' +
                 (count > 0 ? '<div style="font-size:14px;color:var(--accent-red);font-weight:600;margin-top:4px;">' + count + ' задачи</div>' : '<div style="font-size:14px;color:var(--text-muted);margin-top:4px;">Няма задачи</div>') +
             '</div>';
-        }).join('');
+        }).join(''));
     } catch(e) {
         console.error(e);
     }
@@ -559,10 +569,10 @@ function renderTasks() {
     const list = document.getElementById('tasksList');
     const empty = document.getElementById('emptyState');
 
-    if (allTasks.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+    if (allTasks.length === 0) { setHTML(list, ''); empty.style.display = 'block'; return; }
     empty.style.display = 'none';
 
-    list.innerHTML = allTasks.map((t, i) => {
+    setHTML(list, allTasks.map((t, i) => {
         const stripeClass = t.status === 'Нова' ? 'stripe-new' : t.status === 'Разпределена' ? 'stripe-assigned' : 'stripe-progress';
         const statusBadge = t.status === 'Нова' ? '<span class="badge b-new">Нова</span>' : t.status === 'Разпределена' ? '<span class="badge b-assigned">Разпределена</span>' : '<span class="badge b-progress">В изпълнение</span>';
         const urgentBadge = t.priority === 'Спешен' ? '<span class="badge b-urgent">🔥 Спешна</span>' : '';
@@ -610,7 +620,7 @@ function renderTasks() {
                 </div>
             </div>
         </div>`;
-    }).join('');
+    }).join(''));
 }
 
 // Claim task
@@ -777,7 +787,7 @@ function renderTaskDetail() {
         h += a + '</div>';
     }
     const box = document.getElementById('tdContent');
-    box.innerHTML = h;
+    if (!setHTML(box, h)) return;   // нищо ново — не пипай отворения изглед
     box.querySelectorAll('[data-mirror]').forEach(btn => btn.addEventListener('click', () => {
         const live = document.querySelector('.task-card[data-task-id="' + detailTaskId + '"] .task-actions');
         const orig = live ? live.querySelectorAll('.action-btn')[+btn.dataset.mirror] : null;

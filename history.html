@@ -734,6 +734,16 @@ function safeNotify(title, options) {
     } catch (e) { console.log('Notification skipped:', e.message); }
 }
 
+// ===== Тихо обновяване: екранът се пипа само ако съдържанието наистина е различно =====
+function setHTML(el, html) {
+    if (!el) return false;
+    const c = el.__sh;
+    if (c && c.html === html && el.firstChild === c.first && el.childNodes.length === c.n) return false;
+    el.innerHTML = html;
+    el.__sh = { html: html, first: el.firstChild, n: el.childNodes.length };
+    return true;
+}
+
 const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
 
 let allCards = [];
@@ -1710,8 +1720,10 @@ function switchTab(tab) {
 async function loadServiceRequests() {
     const reqList = document.getElementById('reqList');
     const reqEmpty = document.getElementById('reqEmpty');
-    reqList.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-    reqEmpty.style.display = 'none';
+    if (!reqList.__sh) {   // индикатор само при първо зареждане
+        reqList.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+        reqEmpty.style.display = 'none';
+    }
 
     try {
         let query = 'order=created_at.desc';
@@ -1818,10 +1830,10 @@ function renderServiceRequests(requests) {
     const reqList = document.getElementById('reqList');
     const reqEmpty = document.getElementById('reqEmpty');
 
-    if (requests.length === 0) { reqList.innerHTML = ''; reqEmpty.style.display = 'block'; return; }
+    if (requests.length === 0) { setHTML(reqList, ''); reqEmpty.style.display = 'block'; return; }
     reqEmpty.style.display = 'none';
 
-    reqList.innerHTML = requests.map((r, i) => {
+    setHTML(reqList, requests.map((r, i) => {
         const statusColors = { 'Нова':'#e41e2b', 'Разпределена':'#7c3aed', 'В изпълнение':'#3b82f6', 'Изпълнена':'#10b981' };
         const statusBadges = { 'Нова':'background:rgba(228,30,43,0.1);color:#c41820', 'Разпределена':'background:#ede9fe;color:#5b21b6', 'В изпълнение':'background:#dbeafe;color:#1e40af', 'Изпълнена':'background:#d1fae5;color:#065f46' };
         const stripeColor = statusColors[r.status] || '#d8dfe8';
@@ -1938,7 +1950,7 @@ function renderServiceRequests(requests) {
                 '</div>' +
             '</div>' +
         '</div>';
-    }).join('');
+    }).join(''));
 }
 
 function toggleReqDetails(cardEl, requestId) {
@@ -2447,7 +2459,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Auto-refresh requests every 30 seconds
 setInterval(() => {
-    if (allServiceRequests.length >= 0 && document.getElementById('tabRequests').style.display !== 'none') {
+    const busy = document.querySelector('#reqList .req-details.open') || document.getElementById('editReqOverlay');
+    if (!busy && document.getElementById('tabRequests').style.display !== 'none') {
         loadServiceRequests();
     }
 }, 30000);

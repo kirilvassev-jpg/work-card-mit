@@ -2,7 +2,7 @@
 <html lang="bg">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>График — Ар Си Техник</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a3a8f">
@@ -153,7 +153,6 @@
         .bottom-nav a .nav-icon { font-size:20px; margin-bottom:2px; }
         .bottom-nav a.active::after { content:''; display:block; width:24px; height:3px; background:var(--accent-red); border-radius:2px; margin-top:2px; }
     </style>
-<script src="auth.js"></script>
 <script src="datepicker.js"></script>
 </head>
 <body>
@@ -238,6 +237,16 @@
 
 <script>
 function sanitize(s){if(s===null||s===undefined)return '';var d=document.createElement('div');d.textContent=String(s);return d.innerHTML;}
+// ===== Тихо обновяване: екранът се пипа само ако съдържанието наистина е различно =====
+function setHTML(el, html) {
+    if (!el) return false;
+    const c = el.__sh;
+    if (c && c.html === html && el.firstChild === c.first && el.childNodes.length === c.n) return false;
+    el.innerHTML = html;
+    el.__sh = { html: html, first: el.firstChild, n: el.childNodes.length };
+    return true;
+}
+
 const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
 
 const WORK_START = 7, WORK_END = 19;           // работно време в дневния изглед
@@ -371,7 +380,7 @@ function renderMonth() {
             (desired ? '<div class="cal-desired">● ' + desired + ' желани</div>' : '') +
         '</div>';
     }
-    grid.innerHTML = html;
+    setHTML(grid, html);
 }
 
 function shiftMonth(n) { const d = new Date(viewYear, viewMonth + n, 1); viewYear = d.getFullYear(); viewMonth = d.getMonth(); reload(); }
@@ -438,12 +447,12 @@ function renderSidebar() {
     if (desired.length) {
         h += '<div class="group-label">ЖЕЛАНА ДАТА ДНЕС — НЕПЛАНИРАНИ</div>' + desired.map(r => reqItemHtml(r)).join('');
     }
-    document.getElementById('dayList').innerHTML = h;
+    const chA = setHTML(document.getElementById('dayList'), h);
 
     document.getElementById('unplannedCount').textContent = unplanned.length;
     const box = document.getElementById('unplannedList');
-    box.innerHTML = unplanned.length ? unplanned.map(r => reqItemHtml(r)).join('') : '<div class="empty-note">✓ Всички отворени заявки са планирани</div>';
-    bindSidebarDrag();
+    const chB = setHTML(box, unplanned.length ? unplanned.map(r => reqItemHtml(r)).join('') : '<div class="empty-note">✓ Всички отворени заявки са планирани</div>');
+    if (chA || chB) bindSidebarDrag();
 }
 
 function reqItemHtml(r) {
@@ -461,6 +470,8 @@ function reqItemHtml(r) {
 function bindSidebarDrag() {
     if (readOnly) return;
     document.querySelectorAll('[data-plan]').forEach(el => {
+        if (el.dataset.dragBound) return;
+        el.dataset.dragBound = '1';
         el.addEventListener('dragstart', e => {
             dragInfo = { kind: 'plan', id: el.dataset.plan };
             e.dataTransfer.effectAllowed = 'copy';
@@ -552,10 +563,11 @@ function renderDay() {
         const blocks = list.filter(r => (r.assigned_mechanics || []).includes(m)).map(r => blockHtml(r, m, conflicts.has(r.id))).join('');
         html += '<div class="col-body" data-col="' + ci + '">' + slots + blocks + '</div>';
     });
-    grid.innerHTML = html;
+    const changed = setHTML(grid, html);
     grid.dataset.cols = JSON.stringify(cols);
 
-    // текущ час
+    // текущ час (обновява се винаги, без да пипа задачите)
+    grid.querySelectorAll('.now-line').forEach(l => l.remove());
     const now = new Date();
     if (iso(now) === iso(d)) {
         const mins = now.getHours() * 60 + now.getMinutes();
@@ -564,7 +576,7 @@ function renderDay() {
             grid.querySelectorAll('.col-body').forEach(cb => { const l = document.createElement('div'); l.className = 'now-line'; l.style.top = top + 'px'; cb.appendChild(l); });
         }
     }
-    bindDayEvents(grid);
+    if (changed) bindDayEvents(grid);
 }
 
 function rowPx() { return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--row')) || 30; }

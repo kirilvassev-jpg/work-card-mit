@@ -2,7 +2,7 @@
 <html lang="bg">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Разпределяне — Ар Си Техник</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a3a8f">
@@ -183,7 +183,6 @@
         .bottom-nav a.active::after { content:''; display:block; width:24px; height:3px; background:var(--accent-red); border-radius:2px; margin-top:2px; }
         .nav-badge { position:absolute; top:2px; right:calc(50% - 20px); background:var(--accent-red); color:white; font-size:9px; font-weight:800; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
     </style>
-<script src="auth.js"></script>
 <script src="datepicker.js"></script>
 </head>
 <body>
@@ -258,6 +257,16 @@ function safeNotify(title, options) {
             new Notification(title, options);
         }
     } catch (e) { console.log('Notification skipped:', e.message); }
+}
+
+// ===== Тихо обновяване: екранът се пипа само ако съдържанието наистина е различно =====
+function setHTML(el, html) {
+    if (!el) return false;
+    const c = el.__sh;
+    if (c && c.html === html && el.firstChild === c.first && el.childNodes.length === c.n) return false;
+    el.innerHTML = html;
+    el.__sh = { html: html, first: el.firstChild, n: el.childNodes.length };
+    return true;
 }
 
 const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
@@ -412,9 +421,11 @@ async function loadMechanics() {
 // Load requests
 async function loadRequests() {
     const formState = saveAssignState();
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('requestsList').innerHTML = '';
-    document.getElementById('emptyState').style.display = 'none';
+    const firstLoad = !document.getElementById('requestsList').children.length;
+    if (firstLoad) {
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('emptyState').style.display = 'none';
+    }
 
     try {
         allRequests = await apiCall('service_requests?order=created_at.desc');
@@ -463,10 +474,10 @@ function renderRequests() {
     const empty = document.getElementById('emptyState');
     const filtered = currentFilter === 'all' ? allRequests : allRequests.filter(r => r.status === currentFilter);
 
-    if (filtered.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+    if (filtered.length === 0) { setHTML(list, ''); empty.style.display = 'block'; return; }
     empty.style.display = 'none';
 
-    list.innerHTML = filtered.map((r, i) => {
+    setHTML(list, filtered.map((r, i) => {
         const stripeClass = r.status === 'Нова' ? 'stripe-new' : r.status === 'Разпределена' ? 'stripe-assigned' : r.status === 'В изпълнение' ? 'stripe-progress' : 'stripe-done';
         const statusBadge = r.status === 'Нова' ? '<span class="badge b-new">Нова</span>' : r.status === 'Разпределена' ? '<span class="badge b-assigned">Разпределена</span>' : r.status === 'В изпълнение' ? '<span class="badge b-progress">В изпълнение</span>' : '<span class="badge b-done">Изпълнена</span>';
         const urgentBadge = r.priority === 'Спешен' ? '<span class="badge b-urgent">🔥 Спешна</span>' : '';
@@ -544,7 +555,7 @@ function renderRequests() {
                 </div>
             </div>
         </div>`;
-    }).join('');
+    }).join(''));
     openFullInfo.forEach(id => {
         const box = document.getElementById('full-' + id);
         if (box) { box.style.display = 'block'; const t = box.previousElementSibling; if (t) t.textContent = '▴ Скрий информацията'; }
