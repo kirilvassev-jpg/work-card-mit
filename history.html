@@ -752,6 +752,40 @@ function setHTML(el, html) {
     return true;
 }
 
+// ===== Преглед на снимка в страницата (работи и за стари снимки, записани като data URL) =====
+function openPhoto(src) {
+    if (!src) return;
+    let ov = document.getElementById('photoViewer');
+    if (!ov) {
+        ov = document.createElement('div');
+        ov.id = 'photoViewer';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(10,16,32,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;padding:56px 12px 16px;';
+        ov.innerHTML =
+            '<button type="button" id="pvClose" aria-label="Затвори" style="position:absolute;top:10px;right:12px;width:44px;height:44px;border:none;border-radius:10px;background:rgba(255,255,255,0.15);color:#fff;font-size:24px;cursor:pointer;">✕</button>' +
+            '<button type="button" id="pvTab" style="position:absolute;top:10px;left:12px;height:44px;padding:0 14px;border:none;border-radius:10px;background:rgba(255,255,255,0.15);color:#fff;font-size:14px;font-weight:700;cursor:pointer;">↗ Отвори в нов раздел</button>' +
+            '<img id="pvImg" alt="Снимка" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.5);">' +
+            '<div id="pvErr" style="display:none;color:#fff;font-size:15px;text-align:center;max-width:520px;">Снимката не може да се зареди. Възможно е файлът да липсва в хранилището.</div>';
+        document.body.appendChild(ov);
+        const close = () => { ov.style.display = 'none'; document.body.style.overflow = ''; };
+        ov.addEventListener('click', e => { if (e.target === ov) close(); });
+        ov.querySelector('#pvClose').addEventListener('click', close);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && ov.style.display === 'flex') close(); });
+        ov.querySelector('#pvImg').addEventListener('error', () => { ov.querySelector('#pvImg').style.display = 'none'; ov.querySelector('#pvErr').style.display = 'block'; });
+        ov.querySelector('#pvTab').addEventListener('click', async () => {
+            const s = ov.dataset.src;
+            if (s.startsWith('data:')) {               // браузърите блокират data URL в нов раздел → отваряме като файл
+                try { const b = await (await fetch(s)).blob(); window.open(URL.createObjectURL(b), '_blank'); } catch (e) {}
+            } else window.open(s, '_blank');
+        });
+    }
+    ov.dataset.src = src;
+    const img = ov.querySelector('#pvImg');
+    img.style.display = 'block'; ov.querySelector('#pvErr').style.display = 'none';
+    img.src = src;
+    ov.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
 const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
 
 let allCards = [];
@@ -1929,7 +1963,7 @@ function renderServiceRequests(requests) {
                             (r.km_hours ? '<div><span style="color:var(--text-muted);">км / мч:</span> <strong>' + r.km_hours + '</strong></div>' : '') +
                         '</div>' +
                         // Photo
-                        (r.photo_data ? '<div style="margin-bottom:12px;"><img src="' + r.photo_data + '" alt="Талон" style="max-width:100%;max-height:250px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;" onclick="event.stopPropagation();window.open(this.src,\'_blank\')"><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">📷 Натисни за увеличаване</div></div>' : '') +
+                        (r.photo_data ? '<div style="margin-bottom:12px;"><img src="' + r.photo_data + '" alt="Талон" style="max-width:100%;max-height:250px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;" onclick="event.stopPropagation();openPhoto(this.src)"><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">📷 Натисни за увеличаване</div></div>' : '') +
                         // Notes
                         '<div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:8px;">' +
                             '<div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;">💬 Бележки:</div>' +
@@ -2235,7 +2269,7 @@ async function onEditReqPhoto(input) {
     try {
         editReqPhoto = await compressImage(f, 1200, 0.7);
         document.getElementById('editReqPhotoBox').innerHTML =
-            '<img src="' + editReqPhoto + '" alt="Нова снимка" class="erp-img"><div class="erp-note new">Нова снимка — ще се запази с „Запази промените“</div>';
+            '<img src="' + editReqPhoto + '" alt="Нова снимка" class="erp-img" onclick="openPhoto(this.src)"><div class="erp-note new">Нова снимка — ще се запази с „Запази промените“</div>';
     } catch (e) { alert(e.message); }
 }
 
@@ -2301,7 +2335,7 @@ function editRequest(requestId) {
                 '</select></div>' +
             '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Снимка на талон</label>' +
                 '<div id="editReqPhotoBox" class="erp-box">' + (r.photo_data
-                    ? '<img src="' + escAttr(r.photo_data) + '" alt="Талон" class="erp-img" onclick="window.open(this.src,\'_blank\')"><div class="erp-note">Текуща снимка — може да я смениш</div>'
+                    ? '<img src="' + escAttr(r.photo_data) + '" alt="Талон" class="erp-img" onclick="openPhoto(this.src)"><div class="erp-note">Текуща снимка — може да я смениш</div>'
                     : '<div class="erp-empty">Няма качена снимка</div>') + '</div>' +
                 '<div class="erp-btns">' +
                     '<label class="erp-btn">📷 Снимай<input type="file" accept="image/*" capture="environment" hidden onchange="onEditReqPhoto(this)"></label>' +
