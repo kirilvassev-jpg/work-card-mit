@@ -145,6 +145,14 @@
         }
         .req-status-tab.active { color:white; background:var(--primary); }
         .req-details.open { display: block !important; }
+        .erp-box { border:1.5px dashed var(--border); border-radius:10px; padding:10px; text-align:center; background:#f8fafc; }
+        .erp-img { max-width:100%; max-height:220px; border-radius:8px; cursor:pointer; }
+        .erp-note { font-size:11px; color:var(--text-muted); margin-top:4px; }
+        .erp-note.new { color:#0f8a5f; font-weight:700; }
+        .erp-empty { font-size:13px; color:var(--text-muted); padding:14px 0; }
+        .erp-btns { display:flex; gap:8px; margin-top:8px; }
+        .erp-btn { flex:1; text-align:center; padding:10px; border:1.5px solid var(--primary); color:var(--primary); background:#fff; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; }
+        .erp-btn:hover { background:#eef2fb; }
         .btn-del-req { width:100%; padding:10px; margin:0 0 8px; background:#fff; color:#c41820; border:1.5px solid #e41e2b; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; }
         .btn-del-req:hover { background:rgba(228,30,43,0.06); }
         .times-box:empty { display:none; }
@@ -2199,9 +2207,42 @@ function setEditClientType(type) {
     document.getElementById('editUlFields').style.display = type === 'ЮЛ' ? 'flex' : 'none';
 }
 
+// ===== Снимка на талон при редакция (ако е пропусната при регистрацията) =====
+let editReqPhoto = null;
+function compressImage(file, maxSize, quality) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Файлът не може да се прочете'));
+        reader.onload = e => {
+            const img = new Image();
+            img.onerror = () => reject(new Error('Файлът не е снимка'));
+            img.onload = () => {
+                let w = img.width, h = img.height;
+                if (w > maxSize || h > maxSize) { const k = maxSize / Math.max(w, h); w = Math.round(w * k); h = Math.round(h * k); }
+                const c = document.createElement('canvas'); c.width = w; c.height = h;
+                c.getContext('2d').drawImage(img, 0, 0, w, h);
+                resolve(c.toDataURL('image/jpeg', quality));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+async function onEditReqPhoto(input) {
+    const f = input.files && input.files[0];
+    input.value = '';
+    if (!f) return;
+    try {
+        editReqPhoto = await compressImage(f, 1200, 0.7);
+        document.getElementById('editReqPhotoBox').innerHTML =
+            '<img src="' + editReqPhoto + '" alt="Нова снимка" class="erp-img"><div class="erp-note new">Нова снимка — ще се запази с „Запази промените“</div>';
+    } catch (e) { alert(e.message); }
+}
+
 function editRequest(requestId) {
     const r = allServiceRequests.find(req => req.id === requestId);
     if (!r) return;
+    editReqPhoto = null;
     const isUL = r.client_type === 'ЮЛ';
     editClientType = isUL ? 'ЮЛ' : 'ФЛ';
 
@@ -2258,6 +2299,14 @@ function editRequest(requestId) {
                     '<option value="Нормален"' + (r.priority !== 'Спешен' ? ' selected' : '') + '>Нормален</option>' +
                     '<option value="Спешен"' + (r.priority === 'Спешен' ? ' selected' : '') + '>🔥 Спешен</option>' +
                 '</select></div>' +
+            '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Снимка на талон</label>' +
+                '<div id="editReqPhotoBox" class="erp-box">' + (r.photo_data
+                    ? '<img src="' + escAttr(r.photo_data) + '" alt="Талон" class="erp-img" onclick="window.open(this.src,\'_blank\')"><div class="erp-note">Текуща снимка — може да я смениш</div>'
+                    : '<div class="erp-empty">Няма качена снимка</div>') + '</div>' +
+                '<div class="erp-btns">' +
+                    '<label class="erp-btn">📷 Снимай<input type="file" accept="image/*" capture="environment" hidden onchange="onEditReqPhoto(this)"></label>' +
+                    '<label class="erp-btn">🖼 От галерията<input type="file" accept="image/*" hidden onchange="onEditReqPhoto(this)"></label>' +
+                '</div></div>' +
             '<button onclick="saveEditRequest(\'' + r.id + '\')" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 0 #0d1f52,0 6px 16px rgba(26,58,143,0.3);border-top:1px solid rgba(255,255,255,0.3);">💾 Запази промените</button>' +
         '</div>' +
     '</div>';
@@ -2311,6 +2360,8 @@ async function saveEditRequest(requestId) {
     const typeChanged = before && (before.client_type || 'ФЛ') !== editClientType;
 
     try {
+        const hadPhoto = !!(before && before.photo_data);
+        if (editReqPhoto) updateData.photo_data = editReqPhoto;   // сървърът я качва в хранилището и записва адреса
         await supabasePatch('service_requests', 'id=eq.' + requestId, updateData);
 
         await fetch(API_URL, {
@@ -2323,11 +2374,13 @@ async function saveEditRequest(requestId) {
                     request_id: requestId,
                     action: 'edited',
                     performed_by: sessionStorage.getItem('workcard_user') || 'Неизвестен',
-                    details: typeChanged ? 'Заявка редактирана (клиент сменен на ' + editClientType + ')' : 'Заявка редактирана'
+                    details: (typeChanged ? 'Заявка редактирана (клиент сменен на ' + editClientType + ')' : 'Заявка редактирана') +
+                        (editReqPhoto ? (hadPhoto ? '; сменена снимка на талон' : '; добавена снимка на талон') : '')
                 }
             })
         });
 
+        editReqPhoto = null;
         document.getElementById('editReqOverlay').remove();
         await loadServiceRequests();
         alert('✓ Заявката е обновена');
