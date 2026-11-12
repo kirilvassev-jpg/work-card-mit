@@ -800,6 +800,11 @@
           <span>Категорията се взема директно от файла</span>
         </div>
         <div class="preview-table-wrap" id="import-preview-table-wrap" style="margin-top:10px;"></div>
+        <div id="import-validfrom-section" style="margin-top:14px;padding:12px 14px;background:#EFF6FF;border-radius:8px;border:1.5px solid #93C5FD;">
+          <label for="import-valid-from" style="display:block;font-size:13px;font-weight:700;color:#1e3a8a;margin-bottom:6px;">Новите цени важат от: *</label>
+          <select id="import-valid-from" style="width:100%;max-width:320px;"></select>
+          <span style="display:block;font-size:11.5px;color:#1e3a8a;margin-top:6px;">От избрания месец нататък всички машини, вкл. тези на обекти, се таксуват по цените от файла. Предходните месеци остават по старите цени. Изберете „Без промяна на цените“, ако само добавяте машини или поправяте имена и категории.</span>
+        </div>
         <div id="import-replace-section" style="margin-top:14px;padding:12px 14px;background:#FEF3C7;border-radius:8px;border:1.5px solid #F59E0B;">
           <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;">
             <input type="checkbox" id="import-replace-all" style="margin-top:3px;flex-shrink:0;width:16px;height:16px;accent-color:#dc2626;">
@@ -2185,12 +2190,30 @@ let importColumnMap = { kod: null, ime: null, kat: null, cena: null };
 let importPreviewRows = [];
 let dropZoneInitialized = false;
 
+// Месеци за „Новите цени важат от“: от предходния до 12 месеца напред (същото ограничение като в proxy)
+const BG_MONTHS = ['Януари','Февруари','Март','Април','Май','Юни','Юли','Август','Септември','Октомври','Ноември','Декември'];
+function fillValidFromOptions() {
+  const sel = document.getElementById('import-valid-from');
+  if (!sel) return;
+  const now = new Date();
+  let html = '<option value="">-- Изберете месец --</option><option value="none">Без промяна на цените (само каталог)</option>';
+  for (let i = -1; i <= 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const v = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
+    html += '<option value="' + v + '">' + BG_MONTHS[d.getMonth()] + ' ' + d.getFullYear() + '</option>';
+  }
+  sel.innerHTML = html;
+  sel.value = '';
+}
+
 function openImportModal() {
   if (currentRole !== 'admin' || !canImport) return;
   importParsedData = [];
   importExcelHeaders = [];
   importColumnMap = { kod: null, ime: null, kat: null, cena: null };
   importPreviewRows = [];
+  document.getElementById('import-replace-all').checked = false;
+  fillValidFromOptions();
   document.getElementById('import-dropzone').classList.remove('drag-over');
   showImportStep(1);
   if (!dropZoneInitialized) { setupDropZone(); dropZoneInitialized = true; }
@@ -2269,7 +2292,7 @@ function buildColumnMapUI() {
     { key: 'kod',  label: 'Код WS (уникален)' },
     { key: 'ime',  label: 'Наименование' },
     { key: 'kat',  label: 'Категория' },
-    { key: 'cena', label: 'Цена (лв/ден)' }
+    { key: 'cena', label: 'Цена (EUR/ден)' }
   ];
   const opts = importExcelHeaders.map((h, i) =>
     '<option value="' + i + '">' + escapeHtml(h) + '</option>'
@@ -2382,12 +2405,27 @@ function importPrevStep() {
   }
 }
 
+let importHistoryCount = 0;
+
 async function confirmImport() {
   if (currentRole !== 'admin' || !canImport) { showToast('Нямате право за импорт на машини.', true); return; }
   const allRows = importPreviewRows.filter(r => r.kod);
   if (!allRows.length) { showToast('Няма редове за импорт!', true); return; }
   const replaceAll = document.getElementById('import-replace-all').checked;
-  console.log('[import] v3 start — replaceAll:', replaceAll, 'rows:', allRows.length);
+  const vfSel = document.getElementById('import-valid-from');
+  const vfVal = vfSel ? vfSel.value : '';
+  if (!vfVal) { showToast('Изберете от кой месец важат новите цени (или „Без промяна на цените“).', true); vfSel && vfSel.focus(); return; }
+  const validFrom = vfVal === 'none' ? '' : vfVal;
+  if (validFrom) {
+    const label = vfSel.options[vfSel.selectedIndex].textContent;
+    const okVf = confirm(
+      'Цените от файла ще важат от ' + label + ' нататък,\n' +
+      'включително за машините, които в момента са на обекти.\n\n' +
+      'Месеците преди ' + label + ' остават по старите цени.\n\nПродължаване?'
+    );
+    if (!okVf) return;
+  }
+  console.log('[import] v4 start — replaceAll:', replaceAll, 'validFrom:', validFrom || '(без)', 'rows:', allRows.length);
   if (replaceAll) {
     const ok = confirm(
       '⚠ Сигурни ли сте?\n\n' +
@@ -2409,7 +2447,8 @@ async function confirmImport() {
     const dupCount = allRows.length - dedupMap.size;
     if (replaceAll) {
       btnConfirm.textContent = 'Изтриване и запис...';
-      const result = await callProxy('catalog-replace', { machines: upsertData });
+      const result = await callProxy('catalog-replace', validFrom ? { machines: upsertData, valid_from: validFrom } : { machines: upsertData });
+      importHistoryCount = (() => { try { return JSON.parse(result.text).history || 0; } catch { return 0; } })();
       if (!result.ok) {
         let errMsg = `[${result.status}] ${result.text}`;
         try { errMsg = JSON.parse(result.text).error || errMsg; } catch { /* ignore */ }
@@ -2417,7 +2456,8 @@ async function confirmImport() {
       }
     } else {
       btnConfirm.textContent = 'Записване...';
-      const result2 = await callProxy('catalog-upsert', { machines: upsertData });
+      const result2 = await callProxy('catalog-upsert', validFrom ? { machines: upsertData, valid_from: validFrom } : { machines: upsertData });
+      importHistoryCount = (() => { try { return JSON.parse(result2.text).history || 0; } catch { return 0; } })();
       console.log('[import] catalog-upsert response:', result2.status, result2.text.substring(0, 300));
       if (!result2.ok) {
         let errMsg2 = `[${result2.status}] ${result2.text}`;
@@ -2431,7 +2471,8 @@ async function confirmImport() {
       (replaceAll ? 'Списъкът е заменен! ' : 'Импортирани ') +
       dedupMap.size + ' машини!' +
       (skipCnt > 0 ? ' (' + skipCnt + ' пропуснати — без код)' : '') +
-      (dupCount > 0 ? ' (' + dupCount + ' дублирани)' : '')
+      (dupCount > 0 ? ' (' + dupCount + ' дублирани)' : '') +
+      (validFrom ? ' Цени в историята: ' + importHistoryCount + '.' : '')
     );
     await loadMachinesCatalog();
     await loadPriceHistory();
