@@ -1,117 +1,135 @@
-/*
- * auth.js – общ модул за достъп до api-proxy (Работни карти)
- *
- * Прикача пропуск към всяка заявка към api-proxy:
- *   • таблет (механици) – пропуск на регистрираното устройство (x-device-token)
- *   • офис (MSAL)       – Microsoft пропускът (token) и автоматично го подновява
- * Включва се във всяка страница ПРЕДИ останалите скриптове.
- */
+/* Shared authentication. Browser role flags are for navigation; the API enforces permissions. */
 (function () {
+  var config = window.WC_CONFIG;
+  config.storageScope = config.demo ? 'demo' : config.apiUrl;
+  var environment = JSON.stringify([config.storageScope, config.clientId, config.tenantId]);
+  if (sessionStorage.getItem('workcard_environment') !== environment) {
+    Object.keys(sessionStorage).filter(function (k) { return k.indexOf('workcard_') === 0; }).forEach(function (k) { sessionStorage.removeItem(k); });
+    sessionStorage.setItem('workcard_environment', environment);
+  }
   var WC = window.WC_AUTH = {
-    CLIENT_ID: '62029787-9853-404f-9a43-eff6e9762d13',
-    TENANT_ID: '0b822811-c53c-4f5e-9444-350c2fb3f935',
-    DEVICE_KEY: 'wc_device_token',
-    DEVICE_NAME_KEY: 'wc_device_name',
+    CLIENT_ID: config.clientId, TENANT_ID: config.tenantId,
+    DEVICE_KEY: config.demo ? 'wc_demo_device_token' : 'wc_device_token', DEVICE_NAME_KEY: config.demo ? 'wc_demo_device_name' : 'wc_device_name',
     MSAL_SRC: 'https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js'
   };
-
-  WC.isMechanic = function () { return sessionStorage.getItem('workcard_role') === 'mechanic'; };
-  WC.deviceToken = function () { try { return localStorage.getItem(WC.DEVICE_KEY); } catch (e) { return null; } };
-  WC.deviceName = function () { try { return localStorage.getItem(WC.DEVICE_NAME_KEY); } catch (e) { return null; } };
-  WC.officeToken = function () { return sessionStorage.getItem('workcard_token'); };
-
-  WC.goLogin = function (msg) {
-    if (msg) sessionStorage.setItem('workcard_login_msg', msg);
-    sessionStorage.removeItem('workcard_auth');
-    if (!/login\.html$/.test(location.pathname)) location.href = 'login.html';
+  var rawFetch = window.fetch.bind(window), msalApp, refreshPromise;
+  WC.escapeHTML = function (value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]; });
   };
-
-  // ── Подновяване на Microsoft пропуска (без нов вход) ──
-  var msalApp = null;
-  function loadMsal() {
-    if (window.msal) return Promise.resolve();
-    return new Promise(function (ok, fail) {
-      var s = document.createElement('script');
-      s.src = WC.MSAL_SRC; s.onload = ok; s.onerror = fail;
-      document.head.appendChild(s);
-    });
-  }
+  WC.isMechanic = function () { return sessionStorage.getItem('workcard_role') === 'mechanic'; };
+  WC.deviceToken = function () { try { return localStorage.getItem(WC.DEVICE_KEY); } catch (err) { return null; } };
+  WC.deviceName = function () { try { return localStorage.getItem(WC.DEVICE_NAME_KEY); } catch (err) { return null; } };
+  WC.officeToken = function () { return sessionStorage.getItem('workcard_token'); };
+  WC.goLogin = function (message) {
+    if (message) sessionStorage.setItem('workcard_login_msg', message);
+    sessionStorage.removeItem('workcard_auth');
+    if (!/login\.html$/.test(location.pathname)) location.replace('login.html');
+  };
+  WC.logout = function () {
+    // Preserve device registration and unsent drafts on this device.
+    Object.keys(sessionStorage).filter(function (k) { return k.indexOf('workcard_') === 0; }).forEach(function (k) { sessionStorage.removeItem(k); });
+    location.href = 'login.html';
+  };
+  WC.setSession = function (user) {
+    sessionStorage.setItem('workcard_role', user.role);
+    sessionStorage.setItem('workcard_db_role', user.role);
+    sessionStorage.setItem('workcard_user', user.name);
+    sessionStorage.setItem('workcard_identity', user.id);
+    sessionStorage.setItem('workcard_email', user.email || '');
+    sessionStorage.setItem('workcard_auth', 'true');
+    WC.user = user;
+    return user;
+  };
   WC.refreshOfficeToken = function () {
-    return loadMsal().then(function () {
+    if (config.demo) return Promise.reject(new Error('Демо сесията е изтекла. Влез отново.'));
+    if (refreshPromise) return refreshPromise;
+    refreshPromise = Promise.resolve().then(function () {
+      if (window.msal) return;
+      return new Promise(function (ok, fail) {
+        var script = document.createElement('script'); script.src = WC.MSAL_SRC;
+        script.onload = ok; script.onerror = fail; document.head.appendChild(script);
+      });
+    }).then(async function () {
       if (!msalApp) {
         msalApp = new msal.PublicClientApplication({
-          auth: {
-            clientId: WC.CLIENT_ID,
-            authority: 'https://login.microsoftonline.com/' + WC.TENANT_ID,
-            redirectUri: location.origin + location.pathname.replace(/\/[^\/]*$/, '/login.html')
-          },
-          cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
+        auth: { clientId: config.clientId, authority: 'https://login.microsoftonline.com/' + config.tenantId, redirectUri: location.origin + location.pathname.replace(/\/[^\/]*$/, '/login.html') },
+        cache: { cacheLocation: 'sessionStorage' }
         });
-        return msalApp.initialize();
+        if (msalApp.initialize) await msalApp.initialize();
       }
-    }).then(function () {
-      var acc = msalApp.getAllAccounts()[0];
-      if (!acc) throw new Error('no_account');
-      return msalApp.acquireTokenSilent({ scopes: ['User.Read'], account: acc });
-    }).then(function (r) {
-      sessionStorage.setItem('workcard_token', r.accessToken);
-      return r.accessToken;
-    });
+      var account = msalApp.getAllAccounts()[0];
+      if (!account) throw new Error('Нужен е нов вход.');
+      return msalApp.acquireTokenSilent({ scopes: [config.apiScope], account: account });
+    }).then(function (response) {
+      sessionStorage.setItem('workcard_token', response.accessToken);
+      return response.accessToken;
+    }).finally(function () { refreshPromise = null; });
+    return refreshPromise;
   };
-
-  // ── Без пропуск няма достъп до страниците (освен login.html) ──
-  var page = location.pathname.split('/').pop() || 'index.html';
-  if (page !== 'login.html' && !WC.deviceToken() && !WC.officeToken()) {
-    WC.goLogin('Нужен е вход с Microsoft или регистрирано устройство.');
-    return;
-  }
-
-  // ── Прихващане на заявките към api-proxy ──
-  var origFetch = window.fetch.bind(window);
-
-  function withAuth(opts) {
-    opts = Object.assign({}, opts || {});
-    var headers = Object.assign({}, opts.headers || {});
-    if (WC.isMechanic()) {
-      var dt = WC.deviceToken();
-      if (dt) headers['x-device-token'] = dt;
-    } else {
-      var ot = WC.officeToken();
-      if (ot && typeof opts.body === 'string') {
-        try {
-          var b = JSON.parse(opts.body);
-          if (b && typeof b === 'object' && !b.token) { b.token = ot; opts.body = JSON.stringify(b); }
-        } catch (e) { /* не е JSON – оставяме както е */ }
-      }
-    }
+  function optionsWithAuth(options) {
+    var opts = Object.assign({}, options), headers = new Headers(opts.headers || {});
+    var device = WC.deviceToken(), token = WC.officeToken();
+    if (WC.isMechanic() && device) headers.set('x-device-token', device);
+    else if (token) headers.set('Authorization', 'Bearer ' + token);
     opts.headers = headers;
     return opts;
   }
-
-  window.fetch = function (url, opts) {
-    var u = typeof url === 'string' ? url : (url && url.url) || '';
-    if (u.indexOf('/functions/v1/api-proxy') === -1) return origFetch(url, opts);
-
-    return origFetch(url, withAuth(opts)).then(function (res) {
-      if (res.status !== 401) return res;
-      // Пропускът е невалиден
-      if (WC.isMechanic()) {
-        try { localStorage.removeItem(WC.DEVICE_KEY); } catch (e) {}
-        WC.goLogin('Устройството не е регистрирано или регистрацията е изтекла.');
-        return res;
-      }
-      if (!WC.officeToken()) return res;
-      // Офис: опит за подновяване на Microsoft пропуска и повторение на заявката
-      return WC.refreshOfficeToken().then(function (tok) {
-        var o = Object.assign({}, opts || {});
-        if (typeof o.body === 'string') {
-          try { var b = JSON.parse(o.body); b.token = tok; o.body = JSON.stringify(b); } catch (e) {}
-        }
-        return origFetch(url, withAuth(o));
-      }).catch(function () {
-        WC.goLogin('Сесията е изтекла. Влезте отново.');
-        return res;
-      });
-    });
+  WC.request = async function (input, options) {
+    var opts = Object.assign({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal: AbortSignal.timeout(30000) }, options || {});
+    var response = await rawFetch(config.apiUrl, optionsWithAuth(opts));
+    if (response.status === 401 && !WC.isMechanic() && WC.officeToken() && !config.demo) {
+      try { await WC.refreshOfficeToken(); response = await rawFetch(config.apiUrl, optionsWithAuth(opts)); }
+      catch (err) { WC.goLogin('Сесията е изтекла. Влез отново.'); throw err; }
+    }
+    if (response.status === 401 && !/login\.html$/.test(location.pathname)) WC.goLogin('Нужен е нов вход или регистрация на устройството.');
+    return response;
   };
+  WC.call = async function (input) {
+    var response = await WC.request(input);
+    var data = await response.json();
+    if (!response.ok) { var error = new Error(data.error || 'Грешка при връзка със сървъра.'); error.status = response.status; throw error; }
+    return data;
+  };
+  WC.validateSession = async function () { return WC.setSession(await WC.call({ action: 'session' })); };
+  WC.demoLogin = async function (role, mechanic) {
+    if (!config.demo) throw new Error('Демо входът е изключен.');
+    var response = await rawFetch(config.apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'demo_login', role: role, mechanic: mechanic }) });
+    var data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+    sessionStorage.setItem('workcard_token', data.token);
+    return WC.setSession(data.user);
+  };
+  var page = location.pathname.split('/').pop() || 'index.html';
+  WC.ready = page === 'login.html' ? Promise.resolve() : WC.validateSession().catch(function (err) {
+    // Offline access restores a draft only; no server permissions are granted.
+    if (!navigator.onLine && page === 'index.html' && sessionStorage.getItem('workcard_identity') && sessionStorage.getItem('workcard_auth') === 'true') {
+      return { id: sessionStorage.getItem('workcard_identity'), name: sessionStorage.getItem('workcard_user'), role: sessionStorage.getItem('workcard_role'), offline: true };
+    }
+    WC.goLogin(err.message); return null;
+  });
+  window.fetch = async function (url, opts) {
+    var u = typeof url === 'string' ? url : url.url;
+    if (u !== config.apiUrl) return rawFetch(url, opts);
+    if (page !== 'login.html') {
+      var user = await WC.ready;
+      if (!user) return new Response(JSON.stringify({ error: 'Нужен е вход.' }), { status: 401 });
+    }
+    return WC.request(JSON.parse(opts.body));
+  };
+  document.addEventListener('DOMContentLoaded', function () {
+    if (config.demo) {
+      var banner = document.createElement('div');
+      banner.textContent = 'ДЕМО — само примерни данни. Промените се нулират при рестарт на сървъра.';
+      banner.style.cssText = 'background:#fff3cd;color:#674900;padding:10px;text-align:center;font:14px sans-serif;position:relative;z-index:1000';
+      document.body.prepend(banner);
+    }
+    WC.ready.then(function (user) {
+      if (user && ['admin','manager'].includes(user.role)) {
+        var nav = document.querySelector('#bottomNav');
+        if (nav && !nav.querySelector('[href="devices.html"]')) {
+          var link = document.createElement('a'); link.href = 'devices.html'; link.textContent = 'Устройства'; nav.appendChild(link);
+        }
+      }
+    });
+  });
 })();

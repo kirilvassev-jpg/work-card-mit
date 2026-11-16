@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="bg">
 <head>
+    <script src="app-config.js"></script>
+    <script src="auth.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>График — Ар Си Техник</title>
@@ -159,7 +161,7 @@
 
 <div class="header">
     <button class="hdr-btn" style="left:12px;" onclick="window.history.back()">← Назад</button>
-    <button class="hdr-btn" style="right:12px;font-size:11px;" onclick="sessionStorage.clear(); localStorage.clear(); window.location.href='login.html';">Изход</button>
+    <button class="hdr-btn" style="right:12px;font-size:11px;" onclick="WC_AUTH.logout()">Изход</button>
     <div class="header-top">
         <img src="Repairs.png" alt="Logo">
         <h1>ГРАФИК ЗА ИЗПЪЛНЕНИЕ</h1>
@@ -236,7 +238,7 @@
 </nav>
 
 <script>
-function sanitize(s){if(s===null||s===undefined)return '';var d=document.createElement('div');d.textContent=String(s);return d.innerHTML;}
+function sanitize(s){return WC_AUTH.escapeHTML(s);}
 // ===== Тихо обновяване: екранът се пипа само ако съдържанието наистина е различно =====
 function setHTML(el, html) {
     if (!el) return false;
@@ -247,7 +249,7 @@ function setHTML(el, html) {
     return true;
 }
 
-const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
+const API_URL = WC_CONFIG.apiUrl;
 
 const WORK_START = 7, WORK_END = 19;           // работно време в дневния изглед
 const SLOT_MIN = 30;                           // стъпка в минути

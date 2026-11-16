@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="bg"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Устройства — Ар Си Техник</title>
+<script src="app-config.js"></script><script src="auth.js"></script>
+<link rel="stylesheet" href="theme.css">
+<style>body{font:16px system-ui;background:#f1f5f9;color:#172033;margin:0;padding:20px}main{max-width:800px;margin:auto}section{padding:20px;background:white;border-radius:12px;margin:16px 0}label{display:block;margin:12px 0}input,select,button{font:inherit;padding:10px;max-width:100%;box-sizing:border-box}button{cursor:pointer}#result{overflow-wrap:anywhere}li{margin:16px 0}#message{white-space:pre-wrap}</style>
+</head><body><main><a href="assign.html">← Разпределяне</a><h1>Регистрирани устройства</h1>
+<p>Всяко устройство работи от името на конкретен механик. Регистрацията важи 90 дни и може да бъде отписана по всяко време.</p>
+<section><form id="deviceForm"><label>Име на устройството <input id="deviceName" required maxlength="100" placeholder="Таблет сервиз 1"></label>
+<label>Механик <select id="mechanic" required></select></label><button>Издай код за регистрация</button></form><p id="result" role="status"></p></section>
+<p id="message" role="status"></p><section><h2>Устройства</h2><ul id="devices"></ul></section>
+</main><script src="devices.js"></script></body></html>

@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="bg">
 <head>
+    <script src="app-config.js"></script>
+    <script src="auth.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Dashboard — Ар Си Техник</title>
@@ -170,7 +172,7 @@
 
 <div class="header">
     <button class="hdr-btn" style="left:12px;" onclick="window.history.back()">← Назад</button>
-    <button class="hdr-btn" style="right:12px;font-size:11px;" onclick="sessionStorage.clear(); localStorage.clear(); if (window.caches) { caches.keys().then(n => n.forEach(x => caches.delete(x))); } window.location.href = 'login.html';">Изход</button>
+    <button class="hdr-btn" style="right:12px;font-size:11px;" onclick="WC_AUTH.logout()">Изход</button>
     <div class="header-top">
         <img src="Repairs.png" alt="Logo">
         <h1>DASHBOARD</h1>
@@ -320,8 +322,8 @@
 </nav>
 
 <script>
-function sanitize(s){if(s===null||s===undefined)return '';var d=document.createElement('div');d.textContent=String(s);return d.innerHTML;}
-const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
+function sanitize(s){return WC_AUTH.escapeHTML(s);}
+const API_URL = WC_CONFIG.apiUrl;
 
 const REQ_FIELDS = 'id,request_number,client_name,company_name,vehicle,brand,model,reg_number,status,priority,activity_type,assigned_mechanics,responsible_mechanic,desired_date,created_at,assigned_at,started_at,completed_at';
 const CARD_FIELDS = 'id,mechanic,work_date,work_hours,km_traveled,reg_number,vehicle,activity_type,client,repair_type,request_id';

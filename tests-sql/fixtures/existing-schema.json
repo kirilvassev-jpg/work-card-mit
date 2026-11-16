@@ -1,0 +1,1544 @@
+{
+  "columns": [
+    {
+      "table_name": "nomenclatures",
+      "column_name": "id",
+      "column_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "nomenclatures",
+      "column_name": "group_name",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "nomenclatures",
+      "column_name": "label",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "nomenclatures",
+      "column_name": "value",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "nomenclatures",
+      "column_name": "sort_order",
+      "column_type": "int4",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "nomenclatures",
+      "column_name": "is_active",
+      "column_type": "bool",
+      "is_nullable": "YES",
+      "column_default": "true",
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "nomenclatures",
+      "column_name": "created_at",
+      "column_type": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "request_log",
+      "column_name": "id",
+      "column_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "request_log",
+      "column_name": "request_id",
+      "column_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "request_log",
+      "column_name": "action",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "request_log",
+      "column_name": "performed_by",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "request_log",
+      "column_name": "details",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "request_log",
+      "column_name": "created_at",
+      "column_type": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "id",
+      "column_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "client_name",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "client_email",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "client_phone",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "vehicle",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "reg_number",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "activity_type",
+      "column_type": "_text",
+      "is_nullable": "YES",
+      "column_default": "'{}'::text[]",
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "description",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "priority",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": "'Нормален'::text",
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "status",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": "'Нова'::text",
+      "ordinal_position": 10
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "assigned_mechanics",
+      "column_type": "_text",
+      "is_nullable": "YES",
+      "column_default": "'{}'::text[]",
+      "ordinal_position": 11
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "responsible_mechanic",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 12
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "work_card_id",
+      "column_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 13
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "created_by",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 14
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "created_at",
+      "column_type": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "ordinal_position": 15
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "assigned_at",
+      "column_type": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 16
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "started_at",
+      "column_type": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 17
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "completed_at",
+      "column_type": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 18
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "updated_at",
+      "column_type": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "ordinal_position": 19
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "notes",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 20
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "request_number",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 21
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "frame_number",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 22
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "km_hours",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 23
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "client_type",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": "'ФЛ'::text",
+      "ordinal_position": 24
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "company_name",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 25
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "bulstat",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 26
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "contact_person",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 27
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "brand",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 28
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "model",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 29
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "desired_date",
+      "column_type": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 30
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "photo_data",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 31
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "year_of_manufacture",
+      "column_type": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 32
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "synced",
+      "column_type": "bool",
+      "is_nullable": "YES",
+      "column_default": "false",
+      "ordinal_position": 33
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "scheduled_at",
+      "column_type": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 34
+    },
+    {
+      "table_name": "service_requests",
+      "column_name": "estimated_hours",
+      "column_type": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 35
+    },
+    {
+      "table_name": "user_roles",
+      "column_name": "id",
+      "column_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "user_roles",
+      "column_name": "email",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "user_roles",
+      "column_name": "name",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "user_roles",
+      "column_name": "role",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "user_roles",
+      "column_name": "is_active",
+      "column_type": "bool",
+      "is_nullable": "YES",
+      "column_default": "true",
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "user_roles",
+      "column_name": "created_at",
+      "column_type": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "work_card_log",
+      "column_name": "id",
+      "column_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "work_card_log",
+      "column_name": "work_card_id",
+      "column_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "work_card_log",
+      "column_name": "action",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "work_card_log",
+      "column_name": "performed_by",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "work_card_log",
+      "column_name": "field_changed",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "work_card_log",
+      "column_name": "old_value",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "work_card_log",
+      "column_name": "new_value",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "work_card_log",
+      "column_name": "details",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "work_card_log",
+      "column_name": "created_at",
+      "column_type": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "work_card_materials",
+      "column_name": "id",
+      "column_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "work_card_materials",
+      "column_name": "work_card_id",
+      "column_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "work_card_materials",
+      "column_name": "category",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "work_card_materials",
+      "column_name": "item_type",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "work_card_materials",
+      "column_name": "quantity",
+      "column_type": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "work_card_materials",
+      "column_name": "unit",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "work_card_materials",
+      "column_name": "created_at",
+      "column_type": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "id",
+      "column_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "work_date",
+      "column_type": "date",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "vehicle",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "reg_number",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "km_hours",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "client",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "activity_type",
+      "column_type": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "services",
+      "column_type": "_text",
+      "is_nullable": "YES",
+      "column_default": "'{}'::text[]",
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "repair_systems",
+      "column_type": "_text",
+      "is_nullable": "YES",
+      "column_default": "'{}'::text[]",
+      "ordinal_position": 10
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "repair_type",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 11
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "has_materials",
+      "column_type": "bool",
+      "is_nullable": "YES",
+      "column_default": "false",
+      "ordinal_position": 12
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "work_hours",
+      "column_type": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 13
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "created_at",
+      "column_type": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "ordinal_position": 14
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "synced",
+      "column_type": "bool",
+      "is_nullable": "YES",
+      "column_default": "false",
+      "ordinal_position": 15
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "repair_description",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 16
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "mechanic",
+      "column_type": "_text",
+      "is_nullable": "YES",
+      "column_default": "'{}'::text[]",
+      "ordinal_position": 17
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "other_materials",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 18
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "km_traveled",
+      "column_type": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 19
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "request_id",
+      "column_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 20
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "notes",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 21
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "external_service",
+      "column_type": "bool",
+      "is_nullable": "YES",
+      "column_default": "false",
+      "ordinal_position": 22
+    },
+    {
+      "table_name": "work_cards",
+      "column_name": "external_service_note",
+      "column_type": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "ordinal_position": 23
+    }
+  ],
+  "constraints": [
+    {
+      "definition": "PRIMARY KEY (id)",
+      "table_name": "nomenclatures",
+      "constraint_name": "nomenclatures_pkey"
+    },
+    {
+      "definition": "UNIQUE (email)",
+      "table_name": "user_roles",
+      "constraint_name": "user_roles_email_key"
+    },
+    {
+      "definition": "PRIMARY KEY (id)",
+      "table_name": "user_roles",
+      "constraint_name": "user_roles_pkey"
+    },
+    {
+      "definition": "FOREIGN KEY (work_card_id) REFERENCES work_cards(id) ON DELETE SET NULL",
+      "table_name": "service_requests",
+      "constraint_name": "service_requests_card_fk"
+    },
+    {
+      "definition": "PRIMARY KEY (id)",
+      "table_name": "service_requests",
+      "constraint_name": "service_requests_pkey"
+    },
+    {
+      "definition": "PRIMARY KEY (id)",
+      "table_name": "work_cards",
+      "constraint_name": "work_cards_pkey"
+    },
+    {
+      "definition": "FOREIGN KEY (request_id) REFERENCES service_requests(id) ON DELETE SET NULL",
+      "table_name": "work_cards",
+      "constraint_name": "work_cards_request_fk"
+    },
+    {
+      "definition": "FOREIGN KEY (work_card_id) REFERENCES work_cards(id) ON DELETE CASCADE",
+      "table_name": "work_card_materials",
+      "constraint_name": "work_card_materials_card_fk"
+    },
+    {
+      "definition": "PRIMARY KEY (id)",
+      "table_name": "work_card_materials",
+      "constraint_name": "work_card_materials_pkey"
+    },
+    {
+      "definition": "PRIMARY KEY (id)",
+      "table_name": "request_log",
+      "constraint_name": "request_log_pkey"
+    },
+    {
+      "definition": "FOREIGN KEY (request_id) REFERENCES service_requests(id) ON DELETE SET NULL",
+      "table_name": "request_log",
+      "constraint_name": "request_log_request_fk"
+    },
+    {
+      "definition": "FOREIGN KEY (work_card_id) REFERENCES work_cards(id) ON DELETE SET NULL",
+      "table_name": "work_card_log",
+      "constraint_name": "work_card_log_card_fk"
+    },
+    {
+      "definition": "PRIMARY KEY (id)",
+      "table_name": "work_card_log",
+      "constraint_name": "work_card_log_pkey"
+    }
+  ],
+  "permissions": [
+    {
+      "grantee": "anon",
+      "table_name": "nomenclatures",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "nomenclatures",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "nomenclatures",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "nomenclatures",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "nomenclatures",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "nomenclatures",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "nomenclatures",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "nomenclatures",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "nomenclatures",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "nomenclatures",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "nomenclatures",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "nomenclatures",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "nomenclatures",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "nomenclatures",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "nomenclatures",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "nomenclatures",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "nomenclatures",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "nomenclatures",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "nomenclatures",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "nomenclatures",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "nomenclatures",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_card_materials",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_card_materials",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_card_materials",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_card_materials",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_card_materials",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_card_materials",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_card_materials",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_card_materials",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_card_materials",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_card_materials",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_card_materials",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_card_materials",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_card_materials",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_card_materials",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_card_materials",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_card_materials",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_card_materials",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_card_materials",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_card_materials",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_card_materials",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_card_materials",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_card_log",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_card_log",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_card_log",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_card_log",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_card_log",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_card_log",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_card_log",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_card_log",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_card_log",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_card_log",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_card_log",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_card_log",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_card_log",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_card_log",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_card_log",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_card_log",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_card_log",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_card_log",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_card_log",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_card_log",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_card_log",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "request_log",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "request_log",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "request_log",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "request_log",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "request_log",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "request_log",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "request_log",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "request_log",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "request_log",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "request_log",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "request_log",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "request_log",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "request_log",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "request_log",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "request_log",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "request_log",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "request_log",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "request_log",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "request_log",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "request_log",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "request_log",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "service_requests",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "service_requests",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "service_requests",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "service_requests",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "service_requests",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "service_requests",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "service_requests",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "service_requests",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "service_requests",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "service_requests",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "service_requests",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "service_requests",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "service_requests",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "service_requests",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "service_requests",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "service_requests",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "service_requests",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "service_requests",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "service_requests",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "service_requests",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "service_requests",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "user_roles",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "user_roles",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "user_roles",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "user_roles",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "user_roles",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "user_roles",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "user_roles",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "user_roles",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "user_roles",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "user_roles",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "user_roles",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "user_roles",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "user_roles",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "user_roles",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_roles",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_roles",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_roles",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_roles",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_roles",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_roles",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "user_roles",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_cards",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_cards",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_cards",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_cards",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_cards",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_cards",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "work_cards",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_cards",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_cards",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_cards",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_cards",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_cards",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_cards",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "work_cards",
+      "privilege_type": "TRIGGER"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_cards",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_cards",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_cards",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_cards",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_cards",
+      "privilege_type": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_cards",
+      "privilege_type": "REFERENCES"
+    },
+    {
+      "grantee": "service_role",
+      "table_name": "work_cards",
+      "privilege_type": "TRIGGER"
+    }
+  ]
+}

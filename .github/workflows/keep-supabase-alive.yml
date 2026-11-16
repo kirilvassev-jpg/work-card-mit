@@ -10,12 +10,12 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase REST API
+      - name: Check API health without exposing business data
         env:
           SUPABASE_URL: https://wcsdjfsohqanxcppcvvk.supabase.co
-          SUPABASE_ANON_KEY: sb_publishable_aMxRatJ2BJxE5vQIhffing_8_zMpBDO
         run: |
-          curl -sS -o /dev/null -w "HTTP %{http_code}\n" \
-            "$SUPABASE_URL/rest/v1/nomenclatures?select=id&limit=1" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY"
+          curl --fail-with-body -sS \
+            "$SUPABASE_URL/functions/v1/api-proxy" \
+            -H 'Origin: https://kirilvassev-jpg.github.io' \
+            -H 'Content-Type: application/json' \
+            --data '{"action":"health"}'

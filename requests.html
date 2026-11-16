@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="bg">
 <head>
+    <script src="app-config.js"></script>
+    <script src="auth.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Нова заявка — Ар Си Техник</title>
@@ -125,14 +127,13 @@
         .bottom-nav a .nav-icon { font-size:20px; margin-bottom:2px; }
         .bottom-nav a.active::after { content:''; display:block; width:24px; height:3px; background:var(--accent-red); border-radius:2px; margin-top:2px; }
     </style>
-<script src="auth.js"></script>
 <script src="datepicker.js"></script>
 </head>
 <body>
 
 <div class="header">
     <button onclick="window.history.back()" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">← Назад</button>
-    <button onclick="sessionStorage.clear(); localStorage.clear(); if (window.caches) { caches.keys().then(names => names.forEach(name => caches.delete(name))); } window.location.href = 'login.html';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Изход</button>
+    <button onclick="WC_AUTH.logout()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Изход</button>
     <div class="header-top">
         <img src="Repairs.png" alt="Logo">
         <h1>НОВА ЗАЯВКА</h1>
@@ -276,8 +277,8 @@
 </nav>
 
 <script>
-function sanitize(s){if(!s)return s;var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
+function sanitize(s){return WC_AUTH.escapeHTML(s);}
+const API_URL = WC_CONFIG.apiUrl;
 
 // Check auth
 function checkAuth() {
@@ -573,8 +574,7 @@ function resetForm() {
 
 // Logout
 function logout() {
-    sessionStorage.clear();
-    window.location.href = 'login.html';
+    WC_AUTH.logout();
 }
 
 // Init

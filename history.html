@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="bg">
 <head>
+    <script src="app-config.js"></script>
+    <script src="auth.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Работни карти — Преглед</title>
@@ -494,7 +496,7 @@
 
 <div class="header">
     <button onclick="window.history.back()" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">← Назад</button>
-    <button onclick="sessionStorage.clear(); localStorage.clear(); if (window.caches) { caches.keys().then(names => names.forEach(name => caches.delete(name))); } window.location.href = 'login.html';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Изход</button>
+    <button onclick="WC_AUTH.logout()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Изход</button>
     <div class="header-top">
         <img src="Repairs.png" alt="Logo" style="width:42px; height:42px; border-radius:10px; box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 0 15px rgba(255,255,255,0.2); padding:3px; background: rgba(255,255,255,0.15); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.25);">
         <h1>ПЛАТФОРМА ЗА УПРАВЛЕНИЕ НА СЕРВИЗНА ДЕЙНОСТ</h1>
@@ -723,7 +725,7 @@
 </div>
 
 <script>
-function sanitize(s){if(!s)return s;var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function sanitize(s){return WC_AUTH.escapeHTML(s);}
 // Safe notification — works on Android (via Service Worker) and desktop
 function safeNotify(title, options) {
     try {
@@ -754,7 +756,7 @@ function setHTML(el, html) {
 
 // ===== Преглед на снимка в страницата (работи и за стари снимки, записани като data URL) =====
 function openPhoto(src) {
-    if (!src) return;
+    if (!src || !/^(https?:\/\/|data:image\/(jpeg|png|webp|gif);base64,)/.test(src)) return;
     let ov = document.getElementById('photoViewer');
     if (!ov) {
         ov = document.createElement('div');
@@ -786,7 +788,7 @@ function openPhoto(src) {
     document.body.style.overflow = 'hidden';
 }
 
-const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
+const API_URL = WC_CONFIG.apiUrl;
 
 let allCards = [];
 let allMaterials = [];
@@ -838,29 +840,7 @@ async function supabaseDelete(table, query) {
     return res;
 }
 
-const PASS_HASH = '964d1f6965b6480f9099f3698a3dff9447a9055a29ba02de68454e58c74857df';
-
-async function checkPasswordHash(input) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(input);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex === PASS_HASH;
-}
-async function checkPassword() {
-    const input = document.getElementById('passwordInput');
-    const valid = await checkPasswordHash(document.getElementById('passwordInput').value);
-    if (valid) {
-        sessionStorage.setItem('workcard_auth', 'true');
-        document.getElementById('authError').classList.remove('show');
-        document.getElementById('authOverlay').style.display = 'none';
-        showApp();
-    } else {
-        document.getElementById('authError').classList.add('show');
-        input.value = '';
-    }
-}
+function checkPassword() { WC_AUTH.goLogin('Влез с Microsoft или регистрирано устройство.'); }
 function showApp() {
     document.getElementById('container').style.display = 'block';
     document.getElementById('bottomNav').style.display = 'flex';
@@ -916,7 +896,7 @@ async function loadMechanics() {
     try {
         const data = await supabaseGet('nomenclatures', 'group_name=eq.mechanics&is_active=eq.true&order=sort_order');
         const sel = document.getElementById('filterMechanic');
-        data.forEach(m => { sel.innerHTML += `<option value="${m.value}">${m.label}</option>`; });
+        data.forEach(m => { sel.innerHTML += `<option value="${sanitize(m.value)}">${sanitize(m.label)}</option>`; });
     } catch(e) { console.error(e); }
 }
 
@@ -1453,7 +1433,7 @@ function closeEditModal() {
 }
 
 function isManager() {
-    return sessionStorage.getItem('workcard_role') === 'manager';
+    return ['manager', 'admin'].includes(sessionStorage.getItem('workcard_role'));
 }
 
 async function deleteCard(cardId, event) {
@@ -1481,14 +1461,7 @@ async function deleteCard(cardId, event) {
         const deleted = res.status === 204 ? [{}] : await res.json().catch(() => [{}]);
         if (Array.isArray(deleted) && deleted.length === 0) { showStatus('Картата вече не съществува', 'error'); await loadCards(); return; }
 
-        // Следа в историята (остава и след изтриването)
-        fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: 'work_card_log', method: 'POST', body: { work_card_id: null, action: 'deleted', performed_by: user, details: 'Изтрита работна карта: ' + summary } }) }).catch(() => {});
-        if (c.request_id) {
-            fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: 'request_log', method: 'POST', body: { request_id: c.request_id, action: 'edited', performed_by: user, details: 'Работната карта по заявката е изтрита (' + summary + ')' } }) }).catch(() => {});
-        }
-
+        // Историята и отварянето на заявката са част от сървърната транзакция.
         showStatus('✓ Работната карта е изтрита', 'success');
         await loadCards();
     } catch (e) {
@@ -1525,7 +1498,7 @@ function buildEditCheckboxes(containerId, items, groupName, selectedValues) {
     container.innerHTML = '';
     items.forEach(item => {
         const checked = selectedValues.includes(item.value) ? 'checked' : '';
-        container.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="${groupName}" value="${item.value}" ${checked}><span>${item.label}</span></label>`;
+        container.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="${groupName}" value="${sanitize(item.value)}" ${checked}><span>${sanitize(item.label)}</span></label>`;
     });
 }
 function buildEditMaterialCheckboxes(containerId, items, groupName, catMats, unit, step) {
@@ -1537,11 +1510,11 @@ function buildEditMaterialCheckboxes(containerId, items, groupName, catMats, uni
         const qty = mat ? mat.quantity : '';
         container.innerHTML += `<div class="material-item">
             <label class="checkbox-item">
-                <input type="checkbox" name="${groupName}" value="${item.value}" ${checked} onchange="toggleQtyField(this)">
-                <span>${item.label}</span>
+                <input type="checkbox" name="${groupName}" value="${sanitize(item.value)}" ${checked} onchange="toggleQtyField(this)">
+                <span>${sanitize(item.label)}</span>
             </label>
             <div class="item-qty" style="display:${mat ? 'flex' : 'none'};">
-                <input type="number" class="item-qty-input" step="${step}" min="0" placeholder="0" value="${qty}" data-group="${groupName}" data-value="${item.value}">
+                <input type="number" class="item-qty-input" step="${step}" min="0" placeholder="0" value="${qty}" data-group="${groupName}" data-value="${sanitize(item.value)}">
                 <span class="unit">${unit}</span>
             </div>
         </div>`;
@@ -1571,7 +1544,7 @@ function buildEditForm(c) {
     actDiv.innerHTML = '';
     (allNomenclatures.activity_types || []).forEach(a => {
         const checked = actList(c).includes(a.value) ? 'checked' : '';
-        actDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="editActivityType" value="${a.value}" ${checked} onchange="onEditActivityChange()"><span>${a.label}</span></label>`;
+        actDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="editActivityType" value="${sanitize(a.value)}" ${checked} onchange="onEditActivityChange()"><span>${sanitize(a.label)}</span></label>`;
     });
 
     buildEditCheckboxes('editServicesList', allNomenclatures.services || [], 'editServices', c.services || []);
@@ -1581,7 +1554,7 @@ function buildEditForm(c) {
     repTypeSelect.innerHTML = '<option value="">— Избери —</option>';
     (allNomenclatures.repair_types || []).forEach(r => {
         const selected = c.repair_type === r.value ? 'selected' : '';
-        repTypeSelect.innerHTML += `<option value="${r.value}" ${selected}>${r.label}</option>`;
+        repTypeSelect.innerHTML += `<option value="${sanitize(r.value)}" ${selected}>${sanitize(r.label)}</option>`;
     });
     document.getElementById('editRepairDescription').value = c.repair_description || '';
     onEditActivityChange();
@@ -1712,15 +1685,7 @@ async function saveEdit() {
             cardData.external_service = editExternal;
             cardData.external_service_note = editExternal ? document.getElementById('editExtNote').value.trim() : null;
         }
-        await supabasePatch('work_cards', `id=eq.${editingCardId}`, cardData);
-        if (oldData) {
-            await logWorkCardChanges(editingCardId, oldData, cardData, sessionStorage.getItem('workcard_user') || 'Неизвестен');
-        }
-        await supabaseDelete('work_card_materials', `work_card_id=eq.${editingCardId}`);
-        if (editHasMaterials) {
-            const materials = collectEditMaterials();
-            if (materials.length > 0) { await supabaseInsert('work_card_materials', materials.map(m => ({ ...m, work_card_id: editingCardId }))); }
-        }
+        await WC_AUTH.call({ action: 'update_work_card', id: editingCardId, card: cardData, materials: editHasMaterials ? collectEditMaterials() : [] });
         closeEditModal();
         await loadCards();
         showStatus('✓ Картата е обновена успешно', 'success');
@@ -1779,7 +1744,7 @@ async function loadServiceRequests() {
         filterServiceRequests();
     } catch(e) {
         console.error(e);
-        reqList.innerHTML = '<div class="error-msg">Грешка при зареждане: ' + e.message + '</div>';
+        reqList.innerHTML = '<div class="error-msg">Грешка при зареждане: ' + sanitize(e.message) + '</div>';
     }
 }
 
@@ -2291,7 +2256,7 @@ function editRequest(requestId) {
         '</div>' +
         '<div style="display:flex;flex-direction:column;gap:12px;">' +
             '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Описание на проблема</label>' +
-                '<textarea id="editReqDesc" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;min-height:80px;font-family:inherit;">' + (r.description || '') + '</textarea></div>' +
+                '<textarea id="editReqDesc" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;min-height:80px;font-family:inherit;">' + sanitize(r.description) + '</textarea></div>' +
             '<div style="border-top:1px solid var(--border);padding-top:12px;font-size:14px;font-weight:800;color:#059669;">👤 Данни на клиента</div>' +
             '<div style="display:flex;gap:8px;">' +
                 '<button type="button" id="editCtFL" class="edit-ct' + (isUL ? '' : ' active') + '" onclick="setEditClientType(\'ФЛ\')">Физическо лице</button>' +
@@ -2310,24 +2275,24 @@ function editRequest(requestId) {
             '<div style="border-top:1px solid var(--border);padding-top:12px;font-size:14px;font-weight:800;color:var(--primary);">🚗 Данни за машината</div>' +
             '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
                 '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Марка</label>' +
-                    '<input id="editReqBrand" value="' + (r.brand || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+                    '<input id="editReqBrand" value="' + escAttr(r.brand) + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
                 '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Модел</label>' +
-                    '<input id="editReqModel" value="' + (r.model || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+                    '<input id="editReqModel" value="' + escAttr(r.model) + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
             '</div>' +
             '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
                 '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">рег № / сер № / Инв №</label>' +
-                    '<input id="editReqReg" value="' + (r.reg_number || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+                    '<input id="editReqReg" value="' + escAttr(r.reg_number) + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
                 '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Година</label>' +
-                    '<input id="editReqYear" type="number" value="' + (r.year_of_manufacture || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+                    '<input id="editReqYear" type="number" value="' + escAttr(r.year_of_manufacture) + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
             '</div>' +
             '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
                 '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">рама №</label>' +
-                    '<input id="editReqFrame" value="' + (r.frame_number || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+                    '<input id="editReqFrame" value="' + escAttr(r.frame_number) + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
                 '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">км / мч</label>' +
-                    '<input id="editReqKm" value="' + (r.km_hours || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+                    '<input id="editReqKm" value="' + escAttr(r.km_hours) + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
             '</div>' +
             '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Желана дата</label>' +
-                '<input id="editReqDate" type="date" value="' + (r.desired_date || '') + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
+                '<input id="editReqDate" type="date" value="' + escAttr(r.desired_date) + '" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;"></div>' +
             '<div><label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Приоритет</label>' +
                 '<select id="editReqPriority" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;">' +
                     '<option value="Нормален"' + (r.priority !== 'Спешен' ? ' selected' : '') + '>Нормален</option>' +
@@ -2537,10 +2502,10 @@ document.addEventListener('DOMContentLoaded', () => {
         Notification.requestPermission();
     }
     if (sessionStorage.getItem('workcard_auth') === 'true') {
+        document.getElementById('authOverlay').style.display = 'none';
         showApp();
     } else {
-        document.getElementById('authOverlay').style.display = 'flex';
-        document.getElementById('passwordInput').focus();
+        WC_AUTH.goLogin('Нужен е вход.');
     }
 });
 

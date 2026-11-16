@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="bg">
 <head>
+    <script src="app-config.js"></script>
+    <script src="auth.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Разпределяне — Ар Си Техник</title>
@@ -189,7 +191,7 @@
 
 <div class="header">
     <button onclick="window.history.back()" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">← Назад</button>
-    <button onclick="sessionStorage.clear(); localStorage.clear(); if (window.caches) { caches.keys().then(names => names.forEach(name => caches.delete(name))); } window.location.href = 'login.html';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Изход</button>
+    <button onclick="WC_AUTH.logout()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Изход</button>
     <div class="header-top">
         <img src="Repairs.png" alt="Logo">
         <h1>РАЗПРЕДЕЛЯНЕ</h1>
@@ -240,7 +242,7 @@
 </nav>
 
 <script>
-function sanitize(s){if(!s)return s;var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function sanitize(s){return WC_AUTH.escapeHTML(s);}
 // Safe notification — works on Android (via Service Worker) and desktop
 function safeNotify(title, options) {
     try {
@@ -271,7 +273,7 @@ function setHTML(el, html) {
 
 // ===== Преглед на снимка в страницата (работи и за стари снимки, записани като data URL) =====
 function openPhoto(src) {
-    if (!src) return;
+    if (!src || !/^(https?:\/\/|data:image\/(jpeg|png|webp|gif);base64,)/.test(src)) return;
     let ov = document.getElementById('photoViewer');
     if (!ov) {
         ov = document.createElement('div');
@@ -303,7 +305,7 @@ function openPhoto(src) {
     document.body.style.overflow = 'hidden';
 }
 
-const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
+const API_URL = WC_CONFIG.apiUrl;
 
 let allRequests = [];
 let mechanics = [];
@@ -528,7 +530,7 @@ function renderRequests() {
 
         let assignSection = '';
         if (r.status === 'Нова') {
-            const mechChecks = mechanics.map(m => `<label class="mechanic-item"><input type="checkbox" name="mech-${r.id}" value="${m.value}" onchange="updateResponsibleOptions('${r.id}')"><span>${m.label}</span></label>`).join('');
+            const mechChecks = mechanics.map(m => `<label class="mechanic-item"><input type="checkbox" name="mech-${r.id}" value="${sanitize(m.value)}" onchange="updateResponsibleOptions('${r.id}')"><span>${sanitize(m.label)}</span></label>`).join('');
             assignSection = `
                 <div class="assign-section">
                     <div class="assign-label">Назначи механик(ци):</div>
@@ -783,7 +785,7 @@ function updateResponsibleOptions(requestId) {
     const checked = Array.from(document.querySelectorAll(`input[name="mech-${requestId}"]:checked`)).map(cb => cb.value);
     const select = document.getElementById(`resp-${requestId}`);
     select.innerHTML = '<option value="">— Избери отговорник —</option>';
-    checked.forEach(m => { select.innerHTML += `<option value="${m}">★ ${m}</option>`; });
+    checked.forEach(m => { select.innerHTML += `<option value="${sanitize(m)}">★ ${sanitize(m)}</option>`; });
     if (checked.length === 1) select.value = checked[0];
 }
 

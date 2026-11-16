@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="bg">
 <head>
+    <script src="app-config.js"></script>
+    <script src="auth.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Табло — Ар Си Техник</title>
@@ -325,7 +327,7 @@ button, .task-card { touch-action: manipulation; }
 </div>
 
 <script>
-function sanitize(s){if(!s)return s;var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function sanitize(s){return WC_AUTH.escapeHTML(s);}
 // ===== Тихо обновяване: екранът се пипа само ако съдържанието наистина е различно =====
 function setHTML(el, html) {
     if (!el) return false;
@@ -338,7 +340,7 @@ function setHTML(el, html) {
 
 // ===== Преглед на снимка в страницата (работи и за стари снимки, записани като data URL) =====
 function openPhoto(src) {
-    if (!src) return;
+    if (!src || !/^(https?:\/\/|data:image\/(jpeg|png|webp|gif);base64,)/.test(src)) return;
     let ov = document.getElementById('photoViewer');
     if (!ov) {
         ov = document.createElement('div');
@@ -370,7 +372,7 @@ function openPhoto(src) {
     document.body.style.overflow = 'hidden';
 }
 
-const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
+const API_URL = WC_CONFIG.apiUrl;
 
 let allTasks = [];
 let mechanics = [];
@@ -510,6 +512,7 @@ async function loadMechanicScreen() {
 }
 
 function selectMechanic(name) {
+    if (WC_AUTH.isMechanic() && name !== sessionStorage.getItem('workcard_user')) return;
     selectedMechanic = name;
     previousNewCount = Infinity; // no sound on first load after selection
     allTasks = [];
@@ -669,18 +672,7 @@ async function claimTask(taskId) {
     }
 
     try {
-        await apiCall(`service_requests?id=eq.${taskId}`, 'PATCH', {
-            status: 'В изпълнение',
-            started_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        });
-
-        await apiCall('request_log', 'POST', {
-            request_id: taskId,
-            action: 'started',
-            performed_by: mechanic,
-            details: `${mechanic} пое задачата`
-        });
+        await WC_AUTH.call({ action: 'start_task', id: taskId, mechanic: mechanic });
 
         showStatus(`✓ ${mechanic} пое задачата!`, 'success');
         await loadTasksForMechanic(mechanic);

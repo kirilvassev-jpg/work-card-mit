@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="bg">
 <head>
+    <script src="app-config.js"></script>
+    <script src="auth.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход — Ар Си Техник</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a3a8f">
-    <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
     <style>
         :root {
             --primary: #1a3a8f;
@@ -186,14 +187,14 @@
         </div>
 
         <div class="role-group">
-            <div class="role-group-label">Без акаунт</div>
+            <div class="role-group-label">С регистрирано устройство</div>
             <div class="role-btn" onclick="selectRole('mechanic')" id="role-mechanic">
                 <span class="role-icon">🔧</span>
                 <div class="role-info">
                     <div class="role-name">Механик</div>
                     <div class="role-desc">Попълване на работни карти</div>
                 </div>
-                <span class="role-badge badge-free">Без парола</span>
+                <span class="role-badge badge-free">Регистриран таблет</span>
             </div>
         </div>
 
@@ -207,6 +208,7 @@
 
         <!-- Mechanic section -->
         <div class="mechanic-section" id="mechanicSection">
+            <div id="deviceCodeWrap"><p id="deviceHint"></p><label for="deviceCode">Код за регистрация</label><input id="deviceCode" type="password" autocomplete="off" style="width:100%;padding:12px;margin:8px 0" placeholder="Код от ръководителя"></div>
             <select class="mechanic-select" id="mechanicSelect">
                 <option value="">— Избери име —</option>
             </select>
@@ -225,208 +227,7 @@
 <div class="footer-hint">Ар Си Техник ООД — Платформа за управление на сервизна дейност</div>
 <div class="ai-badge">✨ Разработено с AI</div>
 
-<script>
-// ============================================
-// КОНФИГУРАЦИЯ — ВЪВЕДИ СВОИТЕ СТОЙНОСТИ
-// ============================================
-const CLIENT_ID = '62029787-9853-404f-9a43-eff6e9762d13';
-const TENANT_ID = '0b822811-c53c-4f5e-9444-350c2fb3f935';
-function sanitize(s){if(!s)return s;var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
-
-// ============================================
-// MSAL КОНФИГУРАЦИЯ
-// ============================================
-const msalConfig = {
-    auth: {
-        clientId: CLIENT_ID,
-        authority: `https://login.microsoftonline.com/${TENANT_ID}`,
-        redirectUri: window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/login.html'),
-    },
-    cache: {
-        cacheLocation: 'sessionStorage',
-        storeAuthStateInCookie: false,
-    }
-};
-
-let msalInstance = null;
-let selectedRole = null;
-
-// Init MSAL
-try {
-    msalInstance = new msal.PublicClientApplication(msalConfig);
-} catch(e) {
-    console.error('MSAL init error:', e);
-}
-
-// ============================================
-// РОЛЯ ИЗБОР
-// ============================================
-function selectRole(role) {
-    selectedRole = role;
-
-    // Visual feedback
-    document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('selected'));
-    document.getElementById(`role-${role}`).classList.add('selected');
-
-    // Show/hide sections
-    const msalSection = document.getElementById('msalSection');
-    const mechanicSection = document.getElementById('mechanicSection');
-
-    if (role === 'mechanic') {
-        msalSection.classList.remove('visible');
-        mechanicSection.classList.add('visible');
-        loadMechanics();
-    } else {
-        msalSection.classList.add('visible');
-        mechanicSection.classList.remove('visible');
-    }
-
-    // Hide error
-    document.getElementById('errorMsg').classList.remove('show');
-}
-
-// ============================================
-// MSAL ВХОД
-// ============================================
-async function loginMSAL() {
-    if (!msalInstance) {
-        showError('Microsoft Login не е конфигуриран. Провери Client ID и Tenant ID.');
-        return;
-    }
-
-    const loading = document.getElementById('loading');
-    loading.classList.add('show');
-
-    try {
-        sessionStorage.setItem('workcard_pending_role', selectedRole);
-        msalInstance.loginRedirect({
-            scopes: ['User.Read'],
-            prompt: 'select_account'
-        });
-        return;
-
-    } catch(e) {
-        console.error('MSAL error:', e);
-        if (e.errorCode !== 'user_cancelled') {
-            showError('Грешка при вход: ' + (e.errorMessage || e.message));
-        }
-        loading.classList.remove('show');
-    }
-}
-
-// ============================================
-// ПОМОЩНИ ФУНКЦИИ
-// ============================================
-function showError(msg) {
-    const el = document.getElementById('errorMsg');
-    el.textContent = msg;
-    el.classList.add('show');
-}
-
-function getRoleName(role) {
-    const names = {
-        'coordinator': 'Сервизен координатор',
-        'manager': 'Ръководител сервизна дейност',
-        'admin': 'Управител',
-        'mechanic': 'Механик'
-    };
-    return names[role] || role;
-}
-
-// ============================================
-// МЕХАНИК ВХОД
-// ============================================
-async function loadMechanics() {
-    try {
-        const res = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: 'nomenclatures?group_name=eq.mechanics&is_active=eq.true&order=sort_order', method: 'GET' })
-        });
-        const data = await res.json();
-        const select = document.getElementById('mechanicSelect');
-        select.innerHTML = '<option value="">— Избери име —</option>';
-        data.forEach(m => { select.innerHTML += '<option value="' + m.value + '">' + m.label + '</option>'; });
-    } catch(e) { console.error(e); }
-}
-
-function loginMechanic() {
-    const name = document.getElementById('mechanicSelect').value;
-    if (!name) return;
-    sessionStorage.setItem('workcard_role', 'mechanic');
-    sessionStorage.setItem('workcard_user', name);
-    sessionStorage.setItem('workcard_auth', 'true');
-    window.location.href = 'tablet.html';
-}
-
-document.getElementById('mechanicSelect').addEventListener('change', function() {
-    document.getElementById('btnContinue').disabled = this.value === '';
-});
-
-// Handle MSAL redirect and existing session
-async function handleRedirect() {
-    // Warm up Edge Function
-    fetch('https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: 'nomenclatures?limit=1', method: 'GET' })
-    }).catch(() => {});
-
-    if (!msalInstance) return;
-    try {
-        const response = await msalInstance.handleRedirectPromise();
-        if (response) {
-            const email = response.account.username.toLowerCase();
-            const displayName = response.account.name;
-            const selectedRole = sessionStorage.getItem('workcard_pending_role');
-
-            const res = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: 'user_roles?email=eq.' + encodeURIComponent(email) + '&is_active=eq.true', method: 'GET' })
-            });
-            const roles = await res.json();
-
-            if (roles.length === 0) {
-                showError('Акаунтът ' + email + ' няма зададена роля в системата.');
-                return;
-            }
-
-            const userRole = roles[0].role;
-            // Admin може да избере коя роля да ползва; останалите ползват своята
-            const navRole = (userRole === 'admin' && selectedRole) ? selectedRole : userRole;
-            sessionStorage.setItem('workcard_role', navRole);
-            sessionStorage.setItem('workcard_db_role', userRole);
-            sessionStorage.setItem('workcard_user', displayName);
-            sessionStorage.setItem('workcard_email', email);
-            sessionStorage.setItem('workcard_auth', 'true');
-            sessionStorage.setItem('workcard_token', response.accessToken);
-            sessionStorage.removeItem('workcard_pending_role');
-
-            switch(navRole) {
-                case 'coordinator': window.location.href = 'requests.html'; break;
-                case 'manager': window.location.href = 'assign.html'; break;
-                case 'admin': window.location.href = 'dashboard.html'; break;
-                default: window.location.href = 'index.html'; break;
-            }
-        } else {
-            const auth = sessionStorage.getItem('workcard_auth');
-            const role = sessionStorage.getItem('workcard_role');
-            if (auth === 'true' && role) {
-                switch(role) {
-                    case 'mechanic': window.location.href = 'tablet.html'; break;
-                    case 'coordinator': window.location.href = 'requests.html'; break;
-                    case 'manager': window.location.href = 'assign.html'; break;
-                    case 'admin': window.location.href = 'dashboard.html'; break;
-                }
-            }
-        }
-    } catch(err) { console.error('Redirect error:', err); }
-}
-
-document.addEventListener('DOMContentLoaded', handleRedirect);
-</script>
+<script src="login.js"></script>
 
 </body>
 </html>

@@ -1,1 +1,9 @@
 supabase/.temp/
+node_modules/
+.cache/
+.env
+.env.*
+!.env.example
+supabase/functions/.env
+supabase/functions/.env.*
+!supabase/functions/.env.example

@@ -1,3 +1,8 @@
+project_id = "work-card-mit"
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
 
 [functions.api-proxy]
 enabled = true
@@ -9,3 +14,9 @@ entrypoint = "./functions/api-proxy/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/api-proxy/*.html" ]
+
+# Separate endpoint for testing the new API before the existing site's cutover.
+[functions.api-proxy-v2]
+enabled = true
+verify_jwt = false
+entrypoint = "./manual/api-proxy-v2.ts"

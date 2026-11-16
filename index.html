@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="bg">
 <head>
+    <script src="app-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="draft-store.js"></script>
+    <script src="drafts.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Работна карта — Ар Си Техник</title>
@@ -463,7 +467,7 @@ textarea { min-height: 90px; }
     <button class="icon-btn" onclick="window.history.back()" aria-label="Назад" data-icon="back" data-icon-class="lg"></button>
     <div class="title">Работна карта</div>
     <div class="who" id="whoChip" style="display:none;"><span data-icon="user" data-icon-class="sm"></span><span id="whoName"></span></div>
-    <button class="icon-btn" aria-label="Изход" data-icon="out" onclick="sessionStorage.clear(); localStorage.clear(); if (window.caches) { caches.keys().then(n => n.forEach(x => caches.delete(x))); } window.location.href = 'login.html';"></button>
+    <button class="icon-btn" aria-label="Изход" data-icon="out" onclick="WC_AUTH.logout()"></button>
 </div>
 
 <div id="offlineBanner" class="offline-banner">⚠ Няма интернет връзка. Опитай по-късно.</div>
@@ -612,10 +616,10 @@ textarea { min-height: 90px; }
 if (sessionStorage.getItem('workcard_auth') !== 'true') {
     window.location.replace('login.html');
 }
-function sanitize(s){if(!s)return s;var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function sanitize(s){return WC_AUTH.escapeHTML(s);}
 // ===== Преглед на снимка в страницата (работи и за стари снимки, записани като data URL) =====
 function openPhoto(src) {
-    if (!src) return;
+    if (!src || !/^(https?:\/\/|data:image\/(jpeg|png|webp|gif);base64,)/.test(src)) return;
     let ov = document.getElementById('photoViewer');
     if (!ov) {
         ov = document.createElement('div');
@@ -647,7 +651,7 @@ function openPhoto(src) {
     document.body.style.overflow = 'hidden';
 }
 
-const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
+const API_URL = WC_CONFIG.apiUrl;
 
 async function supabaseGet(table, query = '') {
     const path = query ? `${table}?${query}` : table;
@@ -675,7 +679,11 @@ async function supabaseInsert(table, data) {
 let nomenclatures = {};
 async function loadNomenclatures() {
     try {
-        const data = await supabaseGet('nomenclatures', 'is_active=eq.true&order=sort_order');
+        await WC_AUTH.ready;
+        const cacheKey = 'wc_nomenclatures:' + WC_CONFIG.storageScope + ':' + sessionStorage.getItem('workcard_identity');
+        const data = navigator.onLine ? await supabaseGet('nomenclatures', 'is_active=eq.true&order=sort_order') : JSON.parse(localStorage.getItem(cacheKey) || 'null');
+        if (!Array.isArray(data)) throw new Error('Нужна е първа връзка с интернет.');
+        if (navigator.onLine) { try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch (err) {} }
         nomenclatures = {};
         data.forEach(item => { if (!nomenclatures[item.group_name]) nomenclatures[item.group_name] = []; nomenclatures[item.group_name].push(item); });
         buildForm();
@@ -683,6 +691,7 @@ async function loadNomenclatures() {
         document.getElementById('workCardForm').style.display = 'block';
         document.getElementById('submitSection').style.display = 'block';
         checkForRequest();
+        WC_DRAFTS.init();
     } catch (e) {
         console.error('Грешка при зареждане:', e);
         document.getElementById('loading').innerHTML = '<div style="color:var(--danger);font-size:14px;">Грешка при зареждане. Провери интернет връзката.</div>';
@@ -842,18 +851,18 @@ function prefillFromRequest(data, requestId) {
 
 function buildForm() {
     const mechOptions = document.getElementById('mechanicOptions');
-    (nomenclatures.mechanics || []).forEach(m => { mechOptions.innerHTML += `<div class="ms-option" data-value="${m.value}" onclick="toggleMechanicOption(this)"><input type="checkbox"><span>${m.label}</span></div>`; });
+    (nomenclatures.mechanics || []).forEach(m => { mechOptions.innerHTML += `<div class="ms-option" data-value="${sanitize(m.value)}" onclick="toggleMechanicOption(this)"><input type="checkbox"><span>${sanitize(m.label)}</span></div>`; });
     document.getElementById('workDate').value = new Date().toISOString().split('T')[0];
     const actDiv = document.getElementById('activityTypes');
     (nomenclatures.activity_types || []).forEach(a => {
-        actDiv.innerHTML += `<label class="checkbox-item act-check"><input type="checkbox" name="activityType" value="${a.value}" onchange="onActivityChange()"><span>${a.label}</span></label>`;
+        actDiv.innerHTML += `<label class="checkbox-item act-check"><input type="checkbox" name="activityType" value="${sanitize(a.value)}" onchange="onActivityChange()"><span>${sanitize(a.label)}</span></label>`;
     });
     const servDiv = document.getElementById('servicesList');
-    (nomenclatures.services || []).forEach(s => { servDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="services" value="${s.value}"><span>${s.label}</span></label>`; });
+    (nomenclatures.services || []).forEach(s => { servDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="services" value="${sanitize(s.value)}"><span>${sanitize(s.label)}</span></label>`; });
     const repSysDiv = document.getElementById('repairSystemsList');
-    (nomenclatures.repair_systems || []).forEach(r => { repSysDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="repairSystems" value="${r.value}"><span>${r.label}</span></label>`; });
+    (nomenclatures.repair_systems || []).forEach(r => { repSysDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="repairSystems" value="${sanitize(r.value)}"><span>${sanitize(r.label)}</span></label>`; });
     const repTypeSelect = document.getElementById('repairType');
-    (nomenclatures.repair_types || []).forEach(r => { repTypeSelect.innerHTML += `<option value="${r.value}">${r.label}</option>`; });
+    (nomenclatures.repair_types || []).forEach(r => { repTypeSelect.innerHTML += `<option value="${sanitize(r.value)}">${sanitize(r.label)}</option>`; });
     buildCheckboxes('filtersList', nomenclatures.services || [], 'filters', 'брой', '1');
     buildCheckboxes('oilsList', nomenclatures.oils || [], 'oils', 'литри', '0.1');
     buildCheckboxes('antifreezesList', nomenclatures.antifreezes || [], 'antifreezes', 'литри', '0.1');
@@ -866,11 +875,11 @@ function buildCheckboxes(containerId, items, groupName, unit, step) {
     items.forEach(item => {
         container.innerHTML += `<div class="material-item">
             <label class="checkbox-item">
-                <input type="checkbox" name="${groupName}" value="${item.value}" onchange="toggleQtyField(this)">
-                <span>${item.label}</span>
+                <input type="checkbox" name="${groupName}" value="${sanitize(item.value)}" onchange="toggleQtyField(this)">
+                <span>${sanitize(item.label)}</span>
             </label>
             <div class="item-qty" style="display:none;">
-                <input type="number" class="item-qty-input" step="${step}" min="0" placeholder="0" data-group="${groupName}" data-value="${item.value}">
+                <input type="number" class="item-qty-input" step="${step}" min="0" placeholder="0" data-group="${groupName}" data-value="${sanitize(item.value)}">
                 <span class="unit">${unit}</span>
             </div>
         </div>`;
@@ -1002,10 +1011,12 @@ function collectMaterials() {
 }
 
 async function submitForm() {
+    if (submitForm.busy) return;
     if (!navigator.onLine) { showStatus('Няма интернет връзка. Опитай по-късно.', 'error'); return; }
     if (!validate()) return;
     if (!confirm('Сигурен ли си, че искаш да запишеш тази работна карта?')) return;
     const btn = document.getElementById('submitBtn');
+    submitForm.busy = true;
     btn.disabled = true; btn.textContent = 'Записване...';
     try {
         const acts = getActivities();
@@ -1026,83 +1037,20 @@ async function submitForm() {
             notes: document.getElementById('workNotes').value.trim() || null,
             request_id: window._currentRequestId || null
         };
-        const result = await supabaseInsert('work_cards', cardData);
-        const cardId = result[0].id;
-
-        await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                path: 'work_card_log',
-                method: 'POST',
-                body: {
-                    work_card_id: cardId,
-                    action: 'created',
-                    performed_by: cardData.mechanic.join(', '),
-                    details: 'Нова работна карта'
-                }
-            })
-        });
-
-        if (hasMaterials) { const materials = collectMaterials(); if (materials.length > 0) { await supabaseInsert('work_card_materials', materials.map(m => ({ ...m, work_card_id: cardId }))); } }
-        showStatus(`✓ Записана: ${cardData.mechanic.join(', ')} — ${cardData.vehicle} (${cardData.reg_number}) — ${cardData.activity_type}`, 'success');
-
-        if (window._currentRequestId) {
-            try {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        path: 'service_requests?id=eq.' + window._currentRequestId,
-                        method: 'PATCH',
-                        body: {
-                            status: 'Изпълнена',
-                            work_card_id: cardId,
-                            completed_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString()
-                        }
-                    })
-                });
-
-                await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        path: 'request_log',
-                        method: 'POST',
-                        body: {
-                            request_id: window._currentRequestId,
-                            action: 'completed',
-                            performed_by: cardData.mechanic.join(', '),
-                            details: 'Работна карта попълнена. ID: ' + cardId
-                        }
-                    })
-                });
-
-                sessionStorage.removeItem('workcard_request_id');
-                sessionStorage.removeItem('workcard_request_data');
-                window._currentRequestId = null;
-
-                // Redirect back to tablet after 2 seconds
-                setTimeout(() => {
-                    window.location.href = 'tablet.html';
-                }, 2000);
-            } catch(e) {
-                console.error('Error updating request:', e);
-            }
-        }
-
-        // Карта без заявка, отворена от таблото → връщане към таблото
-        if (!cardData.request_id && sessionStorage.getItem('workcard_from_tablet') === '1') {
-            sessionStorage.removeItem('workcard_prefill_mechanic');
-            sessionStorage.removeItem('workcard_from_tablet');
-            setTimeout(() => { window.location.href = 'tablet.html'; }, 2000);
-        }
-        if (cardData.request_id) sessionStorage.removeItem('workcard_from_tablet');
+        const materials = hasMaterials ? collectMaterials() : [];
+        await WC_AUTH.call(WC_DRAFTS.submission(cardData, materials));
+        WC_DRAFTS.clear();
+        showStatus('✓ Работната карта и материалите са записани успешно.', 'success');
+        const backToTablet = !!cardData.request_id || sessionStorage.getItem('workcard_from_tablet') === '1';
+        sessionStorage.removeItem('workcard_request_id');
+        sessionStorage.removeItem('workcard_request_data');
+        sessionStorage.removeItem('workcard_prefill_mechanic');
+        sessionStorage.removeItem('workcard_from_tablet');
+        if (backToTablet) setTimeout(() => { window.location.href = 'tablet.html'; }, 1200);
 
         resetForm();
-    } catch (e) { console.error('Грешка при запис:', e); showStatus('Грешка при запис: ' + e.message, 'error'); }
-    finally { btn.disabled = false; btn.textContent = '✓ Запиши работна карта'; }
+    } catch (e) { if (e.status && e.status < 500) WC_DRAFTS.reject(); console.error('Грешка при запис:', e); showStatus('Грешка при запис: ' + e.message, 'error'); }
+    finally { submitForm.busy = false; btn.disabled = false; btn.textContent = '✓ Запиши работна карта'; }
 }
 
 function showStatus(msg, type) {
@@ -1111,7 +1059,7 @@ function showStatus(msg, type) {
 function resetForm() {
     const rm = document.getElementById('requestMachine'); if (rm && !window._currentRequestId) rm.remove();
     const mechs = Array.from(document.querySelectorAll('.ms-option.selected')).map(el => el.dataset.value); const date = document.getElementById('workDate').value;
-    document.querySelectorAll('input[type="text"], input[type="number"]').forEach(i => i.value = '');
+    document.querySelectorAll('#workCardForm input[type="text"]:not([aria-label]), #workCardForm input[type="number"]').forEach(i => i.value = '');
     document.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(i => i.checked = false);
     document.querySelectorAll('#mechanicOptions .ms-option').forEach(opt => {
         const isSelected = mechs.includes(opt.dataset.value);
