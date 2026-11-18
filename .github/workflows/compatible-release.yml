@@ -1,0 +1,17 @@
+name: Compatible release checks
+on:
+  push:
+    branches: [main, codex/compatible-release, codex/rollback-compatible-release]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node .github/check-compatible-release.mjs
