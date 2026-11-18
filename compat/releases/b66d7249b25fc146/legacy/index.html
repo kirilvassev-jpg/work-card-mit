@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Работна карта — Ар Си Техник</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a3a8f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Работна Карта">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --primary-light: #0ea5e9;
+            --primary-gradient: linear-gradient(135deg, #0d1f52 0%, #1a3a8f 50%, #2955c7 100%);
+            --accent-blue: #0284c7;
+            --accent-red: #dc2626;
+            --accent-red-dark: #b91c1c;
+            --success: #0284c7;
+            --danger: #dc2626;
+            --bg: linear-gradient(180deg, #e0f2fe 0%, #f0f9ff 30%, #fafaf9 60%);
+            --card: linear-gradient(160deg, #ffffff, #f0f9ff);
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e0f2fe;
+            --radius: 14px;
+            --shadow: none;
+            --shadow-lg: 0 4px 12px rgba(2,132,199,0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg); color: var(--text); line-height: 1.5;
+            padding-bottom: 80px; min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--primary-gradient);
+            color: #fff; padding: 20px 24px 32px;
+            text-align: center; position: sticky; top: 0; z-index: 100;
+            border-radius: 0 0 28px 28px;
+            box-shadow: var(--shadow-lg);
+        }
+        .header-top { display: flex; align-items: center; justify-content: center; gap: 12px; }
+        .header-icon {
+            font-size: 20px; background: rgba(255,255,255,0.2); border-radius: 10px;
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+        }
+        .header-text { text-align: left; }
+        .header h1 { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 0.3px; }
+        .header .subtitle { font-size: 12px; color: rgba(255,255,255,0.7); }
+        @media (max-width:600px) {
+            .header { padding: 16px 84px 24px !important; }
+            .header h1 { font-size: 18px; }
+            .header-top img { width:34px !important; height:34px !important; }
+        }
+
+        /* Offline banner */
+        .offline-banner {
+            display: none; background: #fef2f2; border: 1px solid #fecaca;
+            color: var(--danger); text-align: center; padding: 10px; font-size: 13px; font-weight: 600;
+            animation: slideDown 0.3s ease;
+        }
+        .offline-banner.show { display: block; }
+        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+        /* Bottom nav */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: #fff; border-top: none;
+            display: flex; z-index: 100; gap: 10px;
+            box-shadow: 0 -1px 3px rgba(0,0,0,0.06);
+        }
+        .bottom-nav a {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            padding: 8px 0 10px; text-decoration: none; font-size: 14px;
+            font-weight: 600; color: var(--text-muted); transition: all 0.2s;
+            position: relative;
+        }
+        .bottom-nav a.active { color: var(--primary); }
+        .bottom-nav a .nav-icon { font-size: 24px; margin-bottom: 2px; }
+        .bottom-nav a.active::after {
+            content: ''; display: block; width: 24px; height: 2px;
+            background: var(--primary); border-radius: 2px; margin-top: 2px;
+        }
+
+        /* Form */
+        .form-container { max-width: 600px; margin: 0 auto; padding: 12px; display: flex; flex-direction: column; gap: 20px; }
+
+        .section {
+            background: var(--card); border-radius: var(--radius);
+            padding: 18px; margin-bottom: 0;
+            border: 1px solid var(--border);
+            display: flex; flex-direction: column; gap: 14px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: fadeInUp 0.4s ease backwards;
+        }
+        .section:nth-child(1) { animation-delay: 0.05s; }
+        .section:nth-child(2) { animation-delay: 0.1s; }
+        .section:nth-child(3) { animation-delay: 0.15s; }
+        .section:nth-child(4) { animation-delay: 0.15s; }
+        .section:nth-child(5) { animation-delay: 0.2s; }
+        .section:nth-child(6) { animation-delay: 0.25s; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 1px; color: var(--primary);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .section-title .icon { font-size: 16px; }
+
+        /* Fields */
+        .field { display: flex; flex-direction: column; gap: 5px; }
+        .field label { display: block; font-size: 13px; font-weight: 600; color: #334155; }
+        .field label .required { color: var(--danger); margin-left: 2px; }
+
+        select, input[type="text"], input[type="date"], input[type="number"], textarea {
+            width: 100%; padding: 12px 14px; border: 1px solid var(--border);
+            border-radius: 10px; font-size: 14px; color: var(--text); background: rgba(255,255,255,0.7);
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.25s ease;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        textarea { font-family: inherit; resize: vertical; }
+        select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; -webkit-appearance: none; appearance: none; }
+        ::placeholder { color: #64748b; }
+        select:focus, input:focus, textarea:focus {
+            outline: none; border-color: var(--primary); background: rgba(255,255,255,0.9);
+            box-shadow: 0 0 0 3px rgba(2,132,199,0.15);
+        }
+
+        /* Radio - activity type cards */
+        .radio-group { display: flex; flex-direction: column; gap: 8px; }
+        .radio-option {
+            display: flex; align-items: center; gap: 14px;
+            padding: 12px 16px; border: 1px solid var(--border);
+            border-radius: 10px; cursor: pointer; transition: all 0.25s ease;
+            background: rgba(255,255,255,0.7); color: #475569;
+            font-size: 13px; font-weight: 500;
+        }
+        .radio-option:hover { border-color: var(--primary); }
+        .radio-option:has(input:checked) {
+            border-color: var(--primary); background: var(--primary);
+            color: #fff; font-weight: 600;
+        }
+        .radio-option input[type="radio"] { width: 20px; height: 20px; min-width: 20px; accent-color: var(--primary); margin: 0; vertical-align: middle; }
+        .radio-option span { font-size: 13px; vertical-align: middle; line-height: 1.4; }
+
+        /* Checkboxes */
+        .checkbox-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .checkbox-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: 12px 16px; border: 1px solid var(--border);
+            border-radius: 8px; cursor: pointer; transition: all 0.2s;
+            background: #fff; color: var(--text-muted); font-size: 13px;
+        }
+        .checkbox-item:has(input:checked) {
+            border-color: var(--primary); background: #e0f2fe; color: var(--primary); font-weight: 500;
+        }
+        .checkbox-item input[type="checkbox"] { width: 20px; height: 20px; min-width: 20px; accent-color: var(--primary); flex-shrink: 0; margin: 0; vertical-align: middle; }
+        .checkbox-item span { font-size: 13px; vertical-align: middle; line-height: 1.4; }
+        #mechanicsList.checkbox-item:has(input:checked), #mechanicsList .checkbox-item:has(input:checked) {
+            border-color: var(--primary); background: #e0f2fe; color: var(--primary);
+        }
+        #mechanicsList .checkbox-item input[type="checkbox"] { accent-color: var(--primary); margin-top: 2px; }
+        #mechanicsList .checkbox-item { justify-content: center; align-items: flex-start; }
+        #mechanicsList {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        #mechanicsList .checkbox-item span {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.3;
+        }
+        #mechanicsList .checkbox-item.checked,
+        #mechanicsList .checkbox-item:has(input:checked) {
+            transform: scale(1.02);
+            transition: all 0.2s ease;
+        }
+        #mechanicsList .checkbox-item.checked span,
+        #mechanicsList .checkbox-item:has(input:checked) span {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        #mechanicsList .checkbox-item:not(.checked):not(:has(input:checked)) {
+            transition: all 0.2s ease;
+        }
+        #mechanicsList .checkbox-item:not(.checked):not(:has(input:checked)) span {
+            font-size: 13px;
+            font-weight: 400;
+        }
+
+        /* Multi-select dropdown (mechanics) */
+        .ms-dropdown {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 14px; border: 1px solid var(--border);
+            border-radius: 10px; font-size: 14px; color: var(--text); background: rgba(255,255,255,0.7);
+            cursor: pointer; transition: all 0.25s ease;
+        }
+        .ms-dropdown:hover { border-color: var(--primary); }
+        .ms-dropdown.open { border-color: var(--primary); background: rgba(255,255,255,0.9); box-shadow: 0 0 0 3px rgba(2,132,199,0.15); }
+        .ms-display { flex: 1; }
+        .ms-arrow { font-size: 11px; color: var(--text-muted); transition: transform 0.25s ease; margin-left: 8px; }
+        .ms-arrow.open { transform: rotate(180deg); }
+
+        .ms-options {
+            display: none; margin-top: 6px; border: 1px solid var(--border);
+            border-radius: 10px; background: #fff; max-height: 240px; overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(2,132,199,0.1);
+        }
+        .ms-options.open { display: block; }
+        .ms-option {
+            display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+            cursor: pointer; font-size: 13px; color: var(--text); transition: background 0.2s;
+        }
+        .ms-option:hover { background: #f0f9ff; }
+        .ms-option:not(:last-child) { border-bottom: 1px solid var(--border); }
+        .ms-option input[type="checkbox"] { width: 18px; height: 18px; min-width: 18px; accent-color: #1a3a8f; pointer-events: none; margin: 0; }
+        .ms-option.selected { background: rgba(26,58,143,0.06); font-weight: 500; }
+
+        .ms-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .ms-tags:empty { display: none; }
+        .ms-tag {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(26,58,143,0.08); border: 1px solid rgba(26,58,143,0.2);
+            border-radius: 20px; color: #1a3a8f; font-size: 11px; font-weight: 600;
+            padding: 4px 6px 4px 10px;
+        }
+        .ms-tag-remove {
+            border: none; background: none; color: #1a3a8f; cursor: pointer;
+            font-size: 14px; line-height: 1; padding: 0 2px; font-weight: 700;
+        }
+
+        /* Toggle switch */
+        .toggle-group { display: flex; gap: 8px; }
+        .toggle-btn {
+            flex: 1; padding: 11px; border: 1px solid var(--border);
+            border-radius: 10px; background: rgba(255,255,255,0.7); font-size: 14px;
+            font-weight: 600; cursor: pointer; text-align: center; color: var(--text-muted);
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.3s ease;
+        }
+        .toggle-btn.active-yes {
+            border-color: var(--primary); background: rgba(2,132,199,0.06); color: var(--primary);
+        }
+        .toggle-btn.active-no {
+            border-color: #64748b; background: rgba(100,116,139,0.06); color: #64748b;
+        }
+
+        /* Material categories */
+        .material-category { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+        .material-category:last-child { margin-bottom: 0; }
+        .material-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 14px; background: rgba(255,255,255,0.7); cursor: pointer;
+            font-size: 14px; font-weight: 600; color: var(--text);
+            transition: background 0.2s;
+        }
+        .material-header:hover { background: rgba(255,255,255,0.95); }
+        .material-header .mat-icon { font-size: 18px; margin-right: 8px; }
+        .material-header .arrow { transition: transform 0.3s ease; font-size: 12px; color: var(--text-muted); }
+        .material-header .arrow.open { transform: rotate(180deg); }
+        .material-body { padding: 12px 14px; display: none; animation: fadeIn 0.3s ease; }
+        .material-body.open { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .material-qty {
+            display: flex; align-items: center; gap: 8px;
+            margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+        }
+        .material-qty label { font-size: 13px; white-space: nowrap; margin-bottom: 0; }
+        .material-qty input { width: 100px; }
+        .material-qty .unit { font-size: 13px; color: var(--text-muted); }
+        .material-item {
+            margin-bottom: 4px;
+        }
+        .item-qty {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 0 4px 38px;
+        }
+        .item-qty-input {
+            width: 80px;
+            padding: 6px 10px;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            text-align: center;
+        }
+        .item-qty .unit {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Conditional */
+        .conditional { display: none; }
+        .conditional.visible { display: block; }
+
+        /* Submit button */
+        .submit-section { padding: 0 12px; max-width: 600px; margin: 0 auto; animation: fadeInUp 0.4s ease 0.3s backwards; }
+        .submit-btn {
+            display: block; width: 100%; padding: 18px;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: #fff; border: none; border-radius: var(--radius);
+            font-size: 16px; font-weight: 700; cursor: pointer;
+            letter-spacing: 0.3px; transition: all 0.15s ease;
+            text-align: center; font-family: 'Outfit', sans-serif;
+            box-shadow: 0 4px 0 #a11018, 0 6px 16px rgba(228,30,43,0.4), 0 0 20px rgba(228,30,43,0.15);
+            border-top: 1px solid rgba(255,255,255,0.3);
+            position: relative; overflow: hidden;
+        }
+        .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 0 #a11018, 0 8px 24px rgba(228,30,43,0.5), 0 0 30px rgba(228,30,43,0.25); }
+        .submit-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #a11018, 0 2px 8px rgba(228,30,43,0.3); }
+        .submit-btn:disabled { background: #94a3b8; box-shadow: none; cursor: not-allowed; transform: none; }
+        .submit-btn::after {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+            transform: translateX(-100%);
+        }
+        .submit-btn:not(:disabled):hover::after { transform: translateX(100%); transition: transform 0.6s ease; }
+
+        /* Status */
+        .status {
+            text-align: center; padding: 14px; border-radius: var(--radius);
+            margin: 0 12px 12px; max-width: 600px; font-size: 14px; font-weight: 600;
+            display: none; animation: fadeInUp 0.3s ease;
+        }
+        .status.success { display: block; background: rgba(2,132,199,0.1); color: var(--primary); border: 1px solid rgba(2,132,199,0.2); }
+        .status.error { display: block; background: rgba(220,38,38,0.08); color: var(--danger); border: 1px solid rgba(220,38,38,0.15); }
+
+        /* Loading */
+        .loading { display: none; text-align: center; padding: 50px; }
+        .loading.show { display: block; }
+        .spinner {
+            width: 40px; height: 40px; border: 3px solid var(--border);
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 0.8s linear infinite; margin: 0 auto 14px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Validation */
+        .field.invalid select, .field.invalid input, .field.invalid .ms-dropdown { border-color: var(--danger); background: rgba(220,38,38,0.03); }
+        .field .error-msg { color: var(--danger); font-size: 12px; margin-top: 4px; display: none; }
+        .field.invalid .error-msg { display: block; }
+
+        /* Mobile: larger tap targets for checkboxes/radios */
+        @media (max-width: 768px) {
+            .checkbox-item, .radio-option { gap: 14px; padding: 12px 16px; }
+            .checkbox-item input[type="checkbox"],
+            .radio-option input[type="radio"] {
+                width: 20px; height: 20px; min-width: 20px; cursor: pointer;
+            }
+        }
+        .req-machine { background:#fff; border:1.5px solid rgba(26,58,143,0.18); border-left:5px solid #1a3a8f; border-radius:12px; padding:14px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+        .rm-title { font-size:12px; font-weight:800; color:#1a3a8f; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+        .rm-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        .rm-grid > div { background:#f8fafc; border-radius:8px; padding:8px 10px; font-size:15px; }
+        .rm-grid span { display:block; font-size:11px; color:#5a6577; font-weight:600; margin-bottom:2px; }
+        .rm-desc { background:#f8fafc; border-left:3px solid #f59e0b; border-radius:8px; padding:10px; font-size:14px; }
+        .rm-photo { max-width:100%; max-height:240px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.12); cursor:pointer; }
+        .rm-hint { font-size:11px; color:#5a6577; margin-top:4px; }
+        @media (max-width:420px) { .rm-grid { grid-template-columns:1fr; } }
+    </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap&subset=cyrillic">
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ===== Работна карта — режим за телефон и таблет ===== */
+.header, .bottom-nav { display:none !important; }
+body { padding-bottom: 96px; }
+.form-container { max-width: 720px; margin: 0 auto; padding: 12px 12px 0; }
+.section { border-left: none !important; border: 1px solid var(--border); border-radius: 14px; box-shadow: none; padding: 16px; }
+.section-title { text-transform: none !important; letter-spacing: 0 !important; font-size: 16px !important; color: var(--navy) !important; border-bottom: none !important; padding-bottom: 0 !important; margin-bottom: 14px !important; display:flex; align-items:center; gap:8px; }
+.section-title .icon { display:inline-grid; place-items:center; width:32px; height:32px; border-radius:9px; background:#eef2fb; color:var(--primary); font-size:0; }
+.section-title .icon svg.ico { width:18px; height:18px; }
+.field label { font-size: 14px; font-weight: 600; color: var(--text-muted); }
+input[type="text"], input[type="number"], input[type="date"], input.flatpickr-input, select, textarea, .ms-display {
+    font-size: 16px !important; min-height: 50px; border-radius: 11px !important; }
+textarea { min-height: 90px; }
+.checkbox-item, .radio-option, .ms-option, .material-header { min-height: 50px; font-size: 15px; }
+.toggle-btn { min-height: 50px; font-size: 16px !important; }
+.material-header .mat-icon { display:inline-grid; place-items:center; width:26px; height:26px; border-radius:7px; background:#eef2fb; color:var(--primary); margin-right:8px; font-size:0; vertical-align:middle; }
+.material-header .mat-icon svg.ico { width:15px; height:15px; }
+
+/* стъпки */
+.wc-steps { display:flex; gap:6px; margin: 2px 0 14px; }
+.wc-step { flex:1; background:none; border:none; padding:0; text-align:left; cursor:pointer; font-family:inherit; }
+.wc-step .ln { height:5px; border-radius:3px; background:var(--border); transition:background .2s; }
+.wc-step.done .ln, .wc-step.cur .ln { background:var(--primary); }
+.wc-step span { display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-top:5px; }
+.wc-step.cur span { color:var(--navy); font-weight:700; }
+.wc-step .n { display:none; }
+.step-hidden { display:none !important; }
+
+/* долна лента с бутони */
+.submit-section { position: fixed !important; left:0; right:0; bottom:0; z-index:150; margin:0 !important; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) !important;
+    background:#fff; border-top:1px solid var(--border); box-shadow:0 -4px 16px rgba(19,41,107,0.08); max-width:none !important; width:auto !important; animation:none !important; }
+.action-row { max-width:720px; margin:0 auto; display:flex; gap:10px; }
+.act-back { flex:0 0 112px; min-height:54px; border:1.5px solid var(--border); background:#fff; color:var(--primary); border-radius:12px; font-size:16px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; }
+.act-next, #submitBtn { flex:1; min-height:54px; border:none; border-radius:12px; font-size:17px !important; font-weight:700; cursor:pointer; color:#fff; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:none !important; }
+.act-next { background:var(--primary); }
+#submitBtn { background:var(--accent-red) !important; margin:0 !important; width:auto !important; padding:0 12px !important; }
+.act-back[disabled] { visibility:hidden; }
+
+/* табелка на машината */
+.req-machine { background:linear-gradient(180deg,#f7f9fb,#edf1f6) !important; border:1.5px solid #c6cfdb !important; border-left:1.5px solid #c6cfdb !important; border-radius:12px !important; position:relative; padding:14px 16px !important; }
+.req-machine::before, .req-machine::after { content:''; position:absolute; top:9px; width:7px; height:7px; border-radius:50%; background:#b6c0cd; box-shadow:inset 0 0 0 1px #9eaaba; }
+.req-machine::before { left:9px; } .req-machine::after { right:9px; }
+.plate-head { text-align:center; font-size:12px; color:var(--text-muted); font-weight:600; }
+.plate-reg { text-align:center; font-size:26px; font-weight:700; letter-spacing:2px; margin:2px 0 10px; font-variant-numeric:tabular-nums; }
+.rm-title { text-transform:none !important; letter-spacing:0 !important; font-size:14px !important; }
+.rm-grid > div { background:rgba(255,255,255,0.7) !important; }
+
+#requestBanner { font-size:14px !important; padding:10px 12px !important; }
+#requestBanner button { padding:8px !important; font-size:13px !important; margin-top:6px !important; }
+.req-machine .rm-grid { grid-template-columns:1fr 1fr !important; gap:6px !important; }
+.req-machine .rm-grid > div { padding:7px 9px !important; font-size:14px !important; }
+.status { display:none !important; }
+/* ===== Хоризонтален режим (завъртян телефон) — същият изглед, по-компактен ===== */
+@media (orientation: landscape) and (max-height: 520px) {
+    .app-bar { height: 46px; }
+    .app-bar .icon-btn { width: 36px; height: 36px; }
+    .form-container { padding-top: 8px; }
+    .wc-steps { margin-bottom: 8px; }
+    .section { padding: 12px 14px; margin-bottom: 8px; }
+    .section-title { margin-bottom: 8px !important; }
+    body { padding-bottom: 72px; }
+    .submit-section { padding: 6px 12px calc(6px + env(safe-area-inset-bottom)) !important; }
+    .act-back, .act-next, #submitBtn { min-height: 44px !important; font-size: 15px !important; }
+    .act-back { flex-basis: 100px; }
+}
+.ms-display { display:flex !important; align-items:center; }
+.radio-option, .checkbox-item { gap:10px; }
+</style>
+<script src="ui.js"></script>
+<script src="datepicker.js"></script>
+<link rel="stylesheet" href="compat/releases/b66d7249b25fc146/shared/work-plan.css">
+<script>window.WC_CONFIG={storageScope:"https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy",legacyDrafts:true};</script>
+<script src="compat/releases/b66d7249b25fc146/shared/draft-store.js"></script>
+<script src="compat/releases/b66d7249b25fc146/shared/drafts.js"></script>
+<script type="module" src="compat/releases/b66d7249b25fc146/shared/request-plan.mjs"></script>
+</head>
+<body>
+
+<div class="app-bar">
+    <button class="icon-btn" onclick="window.history.back()" aria-label="Назад" data-icon="back" data-icon-class="lg"></button>
+    <div class="title">Работна карта</div>
+    <div class="who" id="whoChip" style="display:none;"><span data-icon="user" data-icon-class="sm"></span><span id="whoName"></span></div>
+    <button class="icon-btn" aria-label="Изход" data-icon="out" onclick="sessionStorage.clear(); localStorage.clear(); if (window.caches) { caches.keys().then(n => n.forEach(x => caches.delete(x))); } window.location.href = 'login.html';"></button>
+</div>
+
+<div id="offlineBanner" class="offline-banner">⚠ Няма интернет връзка. Опитай по-късно.</div>
+
+<div id="loading" class="loading show">
+    <div class="spinner"></div>
+    <div style="color:var(--text-muted);font-size:14px;">Зареждане...</div>
+</div>
+
+<div id="statusMsg" class="status"></div>
+
+<form id="workCardForm" class="form-container" style="display:none;" onsubmit="return false;">
+
+    <div class="wc-steps" id="wcSteps">
+        <button type="button" class="wc-step cur" onclick="goStep(1)"><div class="ln"></div><span>Машина</span></button>
+        <button type="button" class="wc-step" onclick="goStep(2)"><div class="ln"></div><span>Дейност</span></button>
+        <button type="button" class="wc-step" onclick="goStep(3)"><div class="ln"></div><span>Материали</span></button>
+        <button type="button" class="wc-step" onclick="goStep(4)"><div class="ln"></div><span>Време</span></button>
+    </div>
+
+    <div class="section" data-step="1">
+        <div class="section-title"><span class="icon" data-icon="clip"></span> Основни данни</div>
+        <div class="field" id="fMechanic">
+            <label>Механик <span class="required">*</span></label>
+            <div id="mechanicDropdown" class="ms-dropdown" onclick="toggleMechanicDropdown(event)">
+                <div class="ms-display" id="mechanicDisplay">— Избери механик —</div>
+                <span class="ms-arrow" id="mechanicArrow">▼</span>
+            </div>
+            <div id="mechanicOptions" class="ms-options"></div>
+            <div id="mechanicTags" class="ms-tags"></div>
+            <div class="error-msg">Избери механик</div>
+        </div>
+        <div class="field" id="fDate">
+            <label>Дата <span class="required">*</span></label>
+            <input type="date" id="workDate">
+            <div class="error-msg">Въведи дата</div>
+        </div>
+        <div class="field" id="fVehicle">
+            <label>Автомобил / Бус / Машина <span class="required">*</span></label>
+            <input type="text" id="vehicle" placeholder="напр. JCB 3CX, Iveco Daily...">
+            <div class="error-msg">Въведи автомобил или машина</div>
+        </div>
+        <div class="field" id="fRegNumber">
+            <label>рег № / сер № / Инв № <span class="required">*</span></label>
+            <input type="text" id="regNumber" placeholder="напр. СА 1234 ВХ, SER-5678...">
+            <div class="error-msg">Въведи номер</div>
+        </div>
+        <div class="field" id="fKmHours">
+            <label>km / м.ч. <span class="required">*</span></label>
+            <input type="text" id="kmHours" placeholder="напр. 12500 km или 3200 м.ч.">
+            <div class="error-msg">Въведи km или моточасове</div>
+        </div>
+        <div class="field" id="fClient">
+            <label>Клиент: Име, Фамилия <span class="required">*</span></label>
+            <input type="text" id="client" placeholder="напр. Иван Иванов">
+            <div class="error-msg">Въведи клиент</div>
+        </div>
+    </div>
+
+    <div class="section" data-step="2">
+        <div class="section-title"><span class="icon" data-icon="bolt"></span> Вид дейност</div>
+        <div class="field" id="fActivity">
+            <div id="activityTypes" class="checkbox-group"></div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">Може да избереш една или няколко дейности</div>
+            <div class="error-msg">Избери вид дейност</div>
+        </div>
+    </div>
+
+    <div id="sectionServices" class="section conditional" data-step="2">
+        <div class="section-title"><span class="icon" data-icon="filter"></span> Обслужване — Филтри</div>
+        <div id="servicesList" class="checkbox-grid"></div>
+    </div>
+
+    <div id="sectionRepair" class="section conditional" data-step="2">
+        <div class="section-title"><span class="icon" data-icon="wrench"></span> Ремонт</div>
+        <div class="field">
+            <label>Система за ремонт</label>
+            <div id="repairSystemsList" class="checkbox-grid"></div>
+        </div>
+        <div class="field" style="margin-top:14px;">
+            <label>Вид ремонт</label>
+            <select id="repairType"><option value="">— Избери —</option></select>
+        </div>
+        <div class="field" style="margin-top:14px;">
+            <label>Извършен ремонт</label>
+            <input type="text" id="repairDescription" placeholder="Описание на извършения ремонт...">
+        </div>
+    </div>
+
+    <div class="section" data-step="3">
+        <div class="section-title"><span class="icon" data-icon="box"></span> Вложени материали <span class="required">*</span></div>
+        <div class="field" id="fMaterials">
+            <div class="toggle-group">
+                <button type="button" class="toggle-btn" onclick="toggleMaterials(true)">Да</button>
+                <button type="button" class="toggle-btn" onclick="toggleMaterials(false)">Не</button>
+            </div>
+            <div class="error-msg">Избери Да или Не</div>
+        </div>
+        <div id="materialsSection" class="conditional">
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="filter"></span>Филтри</span><span class="arrow">▼</span></div><div class="material-body"><div id="filtersList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="drop"></span>Масло</span><span class="arrow">▼</span></div><div class="material-body"><div id="oilsList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="thermo"></span>Антифриз</span><span class="arrow">▼</span></div><div class="material-body"><div id="antifreezesList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="bulb"></span>Крушки</span><span class="arrow">▼</span></div><div class="material-body"><div id="bulbsList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="link"></span>Бързи връзки</span><span class="arrow">▼</span></div><div class="material-body"><div id="quickCouplingsList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="cog"></span>Зъби</span><span class="arrow">▼</span></div><div class="material-body"><div id="teethList" class="checkbox-grid"></div></div></div>
+            <div class="material-category"><div class="material-header" onclick="toggleCategory(this)"><span><span class="mat-icon" data-icon="note"></span>Друго</span><span class="arrow">▼</span></div><div class="material-body"><textarea id="otherMaterials" rows="3" placeholder="Опиши допълнителни материали..."></textarea></div></div>
+        </div>
+    </div>
+
+    <div class="section" data-step="3">
+        <div class="section-title"><span class="icon" data-icon="note"></span> Забележка</div>
+        <div class="field" id="fWorkNotes">
+            <textarea id="workNotes" rows="3" placeholder="Забележка, коментар..." style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;resize:vertical;background:#f8fafc;"></textarea>
+        </div>
+    </div>
+
+    <div class="section" data-step="4">
+        <div class="section-title"><span class="icon" data-icon="clock"></span> Време за работа</div>
+        <div class="field" id="fWorkHours">
+            <label>Човекочасове <span class="required">*</span></label>
+            <input type="number" id="workHours" step="0.5" min="0" placeholder="напр. 2.5" inputmode="decimal">
+            <div class="error-msg">Въведи време за работа</div>
+        </div>
+        <div class="field" id="fKmTraveled">
+            <label>Изминати км</label>
+            <input type="number" id="kmTraveled" step="1" min="0" placeholder="напр. 45">
+        </div>
+    </div>
+</form>
+
+<div class="submit-section" id="submitSection" style="display:none;">
+    <div class="action-row">
+        <button type="button" class="act-back" id="actBack" onclick="prevStep()" disabled><span data-icon="back"></span>Назад</button>
+        <button type="button" class="act-next" id="actNext" onclick="nextStep()">Към дейност<span data-icon="next"></span></button>
+        <button type="button" class="submit-btn" id="submitBtn" onclick="submitForm()" style="display:none;">✓ Запиши работна карта</button>
+    </div>
+</div>
+
+<nav class="bottom-nav">
+    <a href="index.html" class="active"><span class="nav-icon">📝</span>Нова карта</a>
+    <a href="history.html"><span class="nav-icon">📊</span>Преглед</a>
+</nav>
+
+<script>
+// Без вход → към login.html
+if (sessionStorage.getItem('workcard_auth') !== 'true') {
+    window.location.replace('login.html');
+}
+function sanitize(s){if(!s)return s;var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+// ===== Преглед на снимка в страницата (работи и за стари снимки, записани като data URL) =====
+function openPhoto(src) {
+    if (!src) return;
+    let ov = document.getElementById('photoViewer');
+    if (!ov) {
+        ov = document.createElement('div');
+        ov.id = 'photoViewer';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(10,16,32,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;padding:56px 12px 16px;';
+        ov.innerHTML =
+            '<button type="button" id="pvClose" aria-label="Затвори" style="position:absolute;top:10px;right:12px;width:44px;height:44px;border:none;border-radius:10px;background:rgba(255,255,255,0.15);color:#fff;font-size:24px;cursor:pointer;">✕</button>' +
+            '<button type="button" id="pvTab" style="position:absolute;top:10px;left:12px;height:44px;padding:0 14px;border:none;border-radius:10px;background:rgba(255,255,255,0.15);color:#fff;font-size:14px;font-weight:700;cursor:pointer;">↗ Отвори в нов раздел</button>' +
+            '<img id="pvImg" alt="Снимка" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.5);">' +
+            '<div id="pvErr" style="display:none;color:#fff;font-size:15px;text-align:center;max-width:520px;">Снимката не може да се зареди. Възможно е файлът да липсва в хранилището.</div>';
+        document.body.appendChild(ov);
+        const close = () => { ov.style.display = 'none'; document.body.style.overflow = ''; };
+        ov.addEventListener('click', e => { if (e.target === ov) close(); });
+        ov.querySelector('#pvClose').addEventListener('click', close);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && ov.style.display === 'flex') close(); });
+        ov.querySelector('#pvImg').addEventListener('error', () => { ov.querySelector('#pvImg').style.display = 'none'; ov.querySelector('#pvErr').style.display = 'block'; });
+        ov.querySelector('#pvTab').addEventListener('click', async () => {
+            const s = ov.dataset.src;
+            if (s.startsWith('data:')) {               // браузърите блокират data URL в нов раздел → отваряме като файл
+                try { const b = await (await fetch(s)).blob(); window.open(URL.createObjectURL(b), '_blank'); } catch (e) {}
+            } else window.open(s, '_blank');
+        });
+    }
+    ov.dataset.src = src;
+    const img = ov.querySelector('#pvImg');
+    img.style.display = 'block'; ov.querySelector('#pvErr').style.display = 'none';
+    img.src = src;
+    ov.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
+
+async function supabaseGet(table, query = '') {
+    const path = query ? `${table}?${query}` : table;
+    const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path, method: 'GET' })
+    });
+    if (!res.ok) throw new Error(`GET ${table}: ${res.status}`);
+    return res.json();
+}
+async function supabaseInsert(table, data) {
+    const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: table, method: 'POST', body: data })
+    });
+    if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`POST ${table}: ${res.status} — ${err}`);
+    }
+    return res.json();
+}
+
+let nomenclatures = {};
+async function loadNomenclatures() {
+    try {
+        const data = await supabaseGet('nomenclatures', 'is_active=eq.true&order=sort_order');
+        nomenclatures = {};
+        data.forEach(item => { if (!nomenclatures[item.group_name]) nomenclatures[item.group_name] = []; nomenclatures[item.group_name].push(item); });
+        buildForm();
+        document.getElementById('loading').classList.remove('show');
+        document.getElementById('workCardForm').style.display = 'block';
+        document.getElementById('submitSection').style.display = 'block';
+        checkForRequest();
+        await WC_REQUEST_PLAN.init({apiUrl:API_URL,requestId:window._currentRequestId});
+        WC_DRAFTS.init();
+    } catch (e) {
+        console.error('Грешка при зареждане:', e);
+        document.getElementById('loading').innerHTML = '<div style="color:var(--danger);font-size:14px;">Грешка при зареждане. Провери интернет връзката.</div>';
+    }
+}
+
+function checkForRequest() {
+    const requestId = sessionStorage.getItem('workcard_request_id');
+    const requestDataStr = sessionStorage.getItem('workcard_request_data');
+    if (requestId && requestDataStr) {
+        try {
+            const data = JSON.parse(requestDataStr);
+            prefillFromRequest(data, requestId);
+        } catch(e) { console.error('Request parse error:', e); }
+        return;
+    }
+    // Карта без заявка — механикът от таблото се попълва автоматично
+    const mech = sessionStorage.getItem('workcard_prefill_mechanic') ||
+        (sessionStorage.getItem('workcard_role') === 'mechanic' ? sessionStorage.getItem('workcard_user') : null);
+    if (mech) prefillMechanicOnly(mech);
+}
+
+function prefillMechanicOnly(mech) {
+    const opt = document.querySelector('#mechanicOptions .ms-option[data-value="' + CSS.escape(mech) + '"]');
+    if (opt && !opt.classList.contains('selected')) toggleMechanicOption(opt);
+    if (sessionStorage.getItem('workcard_from_tablet') !== '1') return;
+    const banner = document.createElement('div');
+    banner.id = 'requestBanner';
+    banner.style.cssText = 'background:rgba(26,58,143,0.06);border:1.5px solid rgba(26,58,143,0.2);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;color:#1a3a8f;font-weight:600;';
+    banner.textContent = '📝 Работна карта без заявка — ' + mech;
+    const backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.textContent = '← Назад към таблото';
+    backBtn.style.cssText = 'display:block;width:100%;padding:10px;margin-top:8px;background:white;color:#1a3a8f;border:1.5px solid rgba(26,58,143,0.3);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;';
+    backBtn.onclick = function () {
+        sessionStorage.removeItem('workcard_prefill_mechanic');
+        sessionStorage.removeItem('workcard_from_tablet');
+        window.location.href = 'tablet.html';
+    };
+    banner.appendChild(backBtn);
+    const form = document.getElementById('workCardForm');
+    (document.getElementById('wcSteps') ? document.getElementById('wcSteps').insertAdjacentElement('afterend', banner) : form.insertBefore(banner, form.firstChild));
+}
+
+async function loadFullRequest(id) {
+    try {
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'service_requests?id=eq.' + id + '&select=request_number,client_name,company_name,client_phone,brand,model,vehicle,reg_number,year_of_manufacture,frame_number,km_hours,description,activity_type,photo_data', method: 'GET' })
+        });
+        if (!res.ok) return null;
+        const rows = await res.json();
+        return rows[0] || null;
+    } catch (e) { return null; }
+}
+
+function prefillKm(d) {
+    const km = document.getElementById('kmHours');
+    if (km && d.km_hours && !km.value) {
+        km.value = d.km_hours;
+        km.style.borderColor = '#7c3aed';
+        km.style.background = 'rgba(124,58,237,0.03)';
+    }
+}
+
+function machineInfoHtml(d) {
+    const v = x => (x === null || x === undefined || x === '') ? '<span style="color:var(--text-muted,#5a6577);">—</span>' : '<strong>' + sanitize(x) + '</strong>';
+    const head = [d.request_number, d.company_name || d.client_name].filter(Boolean).map(x => sanitize(String(x))).join(' · ');
+    let h = '<div class="plate-head">' + (head || 'Данни за машината от заявката') + '</div>' +
+        '<div class="plate-reg">' + sanitize(d.reg_number || '—') + '</div>' +
+        '<div class="rm-grid">' +
+            '<div><span>Марка</span>' + v(d.brand) + '</div>' +
+            '<div><span>Модел</span>' + v(d.model || (!d.brand ? d.vehicle : '')) + '</div>' +
+            '<div><span>Година на производство</span>' + v(d.year_of_manufacture) + '</div>' +
+            '<div><span>рама №</span>' + v(d.frame_number) + '</div>' +
+            '<div><span>изминати км / мч (по заявка)</span>' + v(d.km_hours) + '</div>' +
+        '</div>';
+    if (d.description) {
+        h += '<div class="rm-title" style="margin-top:12px;">Описание на проблема</div><div class="rm-desc">' + sanitize(d.description) + '</div>';
+    }
+    if (d.photo_data) {
+        h += '<div class="rm-title" style="margin-top:12px;">Снимка на талон</div>' +
+             '<img src="' + sanitize(d.photo_data) + '" alt="Талон" class="rm-photo" onclick="openPhoto(this.src)">' +
+             '<div class="rm-hint">Натисни снимката за увеличаване</div>';
+    }
+    return h;
+}
+
+function prefillFromRequest(data, requestId) {
+    const banner = document.createElement('div');
+    banner.id = 'requestBanner';
+    banner.style.cssText = 'background:rgba(124,58,237,0.08);border:1.5px solid rgba(124,58,237,0.2);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;color:#5b21b6;font-weight:600;';
+    banner.innerHTML = 'Заявка от <strong>' + sanitize(data.company_name || data.client_name) + '</strong> — ' + sanitize(data.vehicle) + ' (' + sanitize(data.reg_number) + ')';
+    const backBtn = document.createElement('button');
+    backBtn.textContent = '← Назад към таблото';
+    backBtn.style.cssText = 'display:block;width:100%;padding:10px;margin-top:8px;background:white;color:#7c3aed;border:1.5px solid rgba(124,58,237,0.3);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;';
+    backBtn.onclick = function() {
+        sessionStorage.removeItem('workcard_request_id');
+        sessionStorage.removeItem('workcard_request_data');
+        window._currentRequestId = null;
+        window.location.href = 'tablet.html';
+    };
+    banner.appendChild(backBtn);
+    const form = document.getElementById('workCardForm');
+    (document.getElementById('wcSteps') ? document.getElementById('wcSteps').insertAdjacentElement('afterend', banner) : form.insertBefore(banner, form.firstChild));
+
+    // Пълни данни за машината от заявката
+    const machineBox = document.createElement('div');
+    machineBox.id = 'requestMachine';
+    machineBox.className = 'req-machine';
+    machineBox.dataset.step = '1';
+    machineBox.innerHTML = machineInfoHtml(data);
+    banner.insertAdjacentElement('afterend', machineBox);
+    loadFullRequest(requestId).then(full => { if (full) { machineBox.innerHTML = machineInfoHtml(full); prefillKm(full); } });
+
+    window._currentRequestId = requestId;
+
+    const clientField = document.getElementById('client');
+    if (clientField && data.client_name) clientField.value = data.client_name;
+
+    const vehicleField = document.getElementById('vehicle');
+    if (vehicleField && data.vehicle) vehicleField.value = data.vehicle;
+
+    const regField = document.getElementById('regNumber');
+    if (regField && data.reg_number) regField.value = data.reg_number;
+
+    prefillKm(data);
+
+    if (data.activity_type && data.activity_type.length > 0) {
+        const list = Array.isArray(data.activity_type) ? data.activity_type : String(data.activity_type).split(',').map(x => x.trim());
+        list.forEach(a => {
+            const cb = document.querySelector('input[name="activityType"][value="' + a + '"]');
+            if (cb) cb.checked = true;
+        });
+        onActivityChange();
+    }
+
+    if (data.assigned_mechanics && data.assigned_mechanics.length > 0) {
+        data.assigned_mechanics.forEach(mechName => {
+            const optionEl = document.querySelector('#mechanicOptions .ms-option[data-value="' + CSS.escape(mechName) + '"]');
+            if (optionEl) {
+                optionEl.classList.add('selected');
+                optionEl.querySelector('input[type="checkbox"]').checked = true;
+            }
+        });
+        updateMechanicUI();
+    }
+
+    [clientField, vehicleField, regField].forEach(f => {
+        if (f && f.value) {
+            f.style.borderColor = '#7c3aed';
+            f.style.background = 'rgba(124,58,237,0.03)';
+        }
+    });
+}
+
+function buildForm() {
+    const mechOptions = document.getElementById('mechanicOptions');
+    (nomenclatures.mechanics || []).forEach(m => { mechOptions.innerHTML += `<div class="ms-option" data-value="${m.value}" onclick="toggleMechanicOption(this)"><input type="checkbox"><span>${m.label}</span></div>`; });
+    document.getElementById('workDate').value = new Date().toISOString().split('T')[0];
+    const actDiv = document.getElementById('activityTypes');
+    (nomenclatures.activity_types || []).forEach(a => {
+        actDiv.innerHTML += `<label class="checkbox-item act-check"><input type="checkbox" name="activityType" value="${a.value}" onchange="onActivityChange()"><span>${a.label}</span></label>`;
+    });
+    const servDiv = document.getElementById('servicesList');
+    (nomenclatures.services || []).forEach(s => { servDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="services" value="${s.value}"><span>${s.label}</span></label>`; });
+    const repSysDiv = document.getElementById('repairSystemsList');
+    (nomenclatures.repair_systems || []).forEach(r => { repSysDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" name="repairSystems" value="${r.value}"><span>${r.label}</span></label>`; });
+    const repTypeSelect = document.getElementById('repairType');
+    (nomenclatures.repair_types || []).forEach(r => { repTypeSelect.innerHTML += `<option value="${r.value}">${r.label}</option>`; });
+    buildCheckboxes('filtersList', nomenclatures.services || [], 'filters', 'брой', '1');
+    buildCheckboxes('oilsList', nomenclatures.oils || [], 'oils', 'литри', '0.1');
+    buildCheckboxes('antifreezesList', nomenclatures.antifreezes || [], 'antifreezes', 'литри', '0.1');
+    buildCheckboxes('bulbsList', nomenclatures.bulbs || [], 'bulbs', 'брой', '1');
+    buildCheckboxes('quickCouplingsList', nomenclatures.quick_couplings || [], 'quick_couplings', 'брой', '1');
+    buildCheckboxes('teethList', nomenclatures.teeth || [], 'teeth', 'брой', '1');
+}
+function buildCheckboxes(containerId, items, groupName, unit, step) {
+    const container = document.getElementById(containerId);
+    items.forEach(item => {
+        container.innerHTML += `<div class="material-item">
+            <label class="checkbox-item">
+                <input type="checkbox" name="${groupName}" value="${item.value}" onchange="toggleQtyField(this)">
+                <span>${item.label}</span>
+            </label>
+            <div class="item-qty" style="display:none;">
+                <input type="number" class="item-qty-input" step="${step}" min="0" placeholder="0" data-group="${groupName}" data-value="${item.value}">
+                <span class="unit">${unit}</span>
+            </div>
+        </div>`;
+    });
+}
+function toggleQtyField(checkbox) {
+    const qtyDiv = checkbox.closest('.material-item').querySelector('.item-qty');
+    if (checkbox.checked) {
+        qtyDiv.style.display = 'flex';
+        qtyDiv.querySelector('input').focus();
+    } else {
+        qtyDiv.style.display = 'none';
+        qtyDiv.querySelector('input').value = '';
+    }
+}
+
+function toggleMechanicDropdown(event) {
+    event.stopPropagation();
+    const dropdown = document.getElementById('mechanicDropdown');
+    const options = document.getElementById('mechanicOptions');
+    const arrow = document.getElementById('mechanicArrow');
+    const open = !options.classList.contains('open');
+    options.classList.toggle('open', open);
+    dropdown.classList.toggle('open', open);
+    arrow.classList.toggle('open', open);
+}
+function closeMechanicDropdown() {
+    document.getElementById('mechanicOptions').classList.remove('open');
+    document.getElementById('mechanicDropdown').classList.remove('open');
+    document.getElementById('mechanicArrow').classList.remove('open');
+}
+function toggleMechanicOption(optionEl) {
+    optionEl.classList.toggle('selected');
+    optionEl.querySelector('input[type="checkbox"]').checked = optionEl.classList.contains('selected');
+    updateMechanicUI();
+}
+function removeMechanicTag(value) {
+    const optionEl = document.querySelector(`#mechanicOptions .ms-option[data-value="${CSS.escape(value)}"]`);
+    if (optionEl) { optionEl.classList.remove('selected'); optionEl.querySelector('input[type="checkbox"]').checked = false; }
+    updateMechanicUI();
+}
+function updateMechanicUI() {
+    const selected = Array.from(document.querySelectorAll('#mechanicOptions .ms-option.selected'));
+    document.getElementById('mechanicDisplay').textContent = selected.length === 0 ? '— Избери механик —' : `${selected.length} избрани`;
+    const tags = document.getElementById('mechanicTags');
+    tags.innerHTML = '';
+    selected.forEach(opt => {
+        const tag = document.createElement('span');
+        tag.className = 'ms-tag';
+        const label = document.createElement('span');
+        label.textContent = opt.querySelector('span').textContent;
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button'; removeBtn.className = 'ms-tag-remove'; removeBtn.textContent = '×';
+        removeBtn.onclick = (e) => { e.stopPropagation(); removeMechanicTag(opt.dataset.value); };
+        tag.appendChild(label); tag.appendChild(removeBtn);
+        tags.appendChild(tag);
+    });
+}
+document.addEventListener('click', (e) => {
+    const dropdownField = document.getElementById('fMechanic');
+    if (dropdownField && !dropdownField.contains(e.target)) closeMechanicDropdown();
+});
+
+function getActivities() { return getCheckedValues('activityType'); }
+function hasTO(acts) { return acts.includes('ТО / ППП'); }
+function hasRepair(acts) { return acts.includes('РЕМОНТ') || acts.includes('ГАРАНЦИОНЕН РЕМОНТ'); }
+function onActivityChange() {
+    const acts = getActivities();
+    document.getElementById('sectionServices').classList.remove('visible');   // филтрите са в „Материали → Филтри“
+    document.getElementById('sectionRepair').classList.toggle('visible', hasRepair(acts));
+}
+let hasMaterials = null;
+function toggleMaterials(yes) {
+    hasMaterials = yes;
+    const btns = document.querySelectorAll('.toggle-btn');
+    btns[0].className = 'toggle-btn' + (yes ? ' active-yes' : '');
+    btns[1].className = 'toggle-btn' + (!yes ? ' active-no' : '');
+    document.getElementById('materialsSection').classList.toggle('visible', yes);
+}
+function toggleCategory(header) {
+    const body = header.nextElementSibling;
+    const arrow = header.querySelector('.arrow');
+    body.classList.toggle('open'); arrow.classList.toggle('open');
+}
+
+function validate() {
+    let valid = true;
+    const checks = [
+        { id: 'fMechanic', test: () => document.querySelectorAll('.ms-option.selected').length > 0 },
+        { id: 'fDate', test: () => document.getElementById('workDate').value !== '' },
+        { id: 'fVehicle', test: () => document.getElementById('vehicle').value.trim() !== '' },
+        { id: 'fRegNumber', test: () => document.getElementById('regNumber').value.trim() !== '' },
+        { id: 'fClient', test: () => document.getElementById('client').value.trim() !== '' },
+        { id: 'fActivity', test: () => document.querySelector('input[name="activityType"]:checked') !== null },
+        { id: 'fKmHours', test: () => document.getElementById('kmHours').value.trim() !== '' },
+        { id: 'fMaterials', test: () => hasMaterials !== null },
+        { id: 'fWorkHours', test: () => document.getElementById('workHours').value !== '' },
+    ];
+    checks.forEach(c => { const el = document.getElementById(c.id); if (!c.test()) { el.classList.add('invalid'); valid = false; } else { el.classList.remove('invalid'); } });
+    if (!valid) { const first = document.querySelector('.field.invalid'); if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    return valid;
+}
+
+function getCheckedValues(name) { return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value); }
+function collectMaterials() {
+    const materials = [];
+    const cats = [
+        { name: 'filters', category: 'filter', unit: 'брой' },
+        { name: 'oils', category: 'oil', unit: 'литри' },
+        { name: 'antifreezes', category: 'antifreeze', unit: 'литри' },
+        { name: 'bulbs', category: 'bulb', unit: 'брой' },
+        { name: 'quick_couplings', category: 'quick_coupling', unit: 'брой' },
+        { name: 'teeth', category: 'teeth', unit: 'брой' },
+    ];
+    cats.forEach(cat => {
+        const checked = document.querySelectorAll(`input[name="${cat.name}"]:checked`);
+        checked.forEach(cb => {
+            const qtyInput = cb.closest('.material-item').querySelector('.item-qty-input');
+            const qty = parseFloat(qtyInput.value) || 0;
+            materials.push({
+                category: cat.category,
+                item_type: cb.value,
+                quantity: qty,
+                unit: cat.unit
+            });
+        });
+    });
+    return materials;
+}
+
+async function submitForm() {
+    if (!navigator.onLine) { showStatus('Няма интернет връзка. Опитай по-късно.', 'error'); return; }
+    if (!validate()) return;
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.textContent = 'Записване...';
+    try {
+        const acts = getActivities();
+        const activityType = acts.join(', ');
+        const isTO = hasTO(acts), isRep = hasRepair(acts);
+        const cardData = {
+            mechanic: Array.from(document.querySelectorAll('.ms-option.selected')).map(el => el.dataset.value), work_date: document.getElementById('workDate').value,
+            vehicle: document.getElementById('vehicle').value.trim(), reg_number: document.getElementById('regNumber').value.trim(),
+            km_hours: document.getElementById('kmHours').value.trim() || null, client: document.getElementById('client').value.trim(),
+            activity_type: activityType,
+            services: hasMaterials ? getCheckedValues('filters') : [],   // за архива в SharePoint (колона „Обслужване“)
+            repair_systems: isRep ? getCheckedValues('repairSystems') : [],
+            repair_type: isRep ? document.getElementById('repairType').value || null : null,
+            repair_description: isRep ? document.getElementById('repairDescription').value.trim() || null : null,
+            has_materials: hasMaterials, work_hours: parseFloat(document.getElementById('workHours').value),
+            other_materials: hasMaterials ? document.getElementById('otherMaterials').value.trim() || null : null,
+            km_traveled: document.getElementById('kmTraveled').value ? parseInt(document.getElementById('kmTraveled').value) : null,
+            notes: document.getElementById('workNotes').value.trim() || null,
+            request_id: window._currentRequestId || null
+        };
+        const prepared=WC_REQUEST_PLAN.prepare(cardData,hasMaterials?collectMaterials():[]);
+        if(!confirm(WC_REQUEST_PLAN.review(prepared.card,prepared.materials))) return;
+        if(!WC_DRAFTS.save()) throw Error('Черновата не е запазена. Провери паметта на устройството.');
+        const result = await supabaseInsert('work_cards', prepared.card);
+        const cardId = result[0].id;
+
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: 'work_card_log',
+                method: 'POST',
+                body: {
+                    work_card_id: cardId,
+                    action: 'created',
+                    performed_by: cardData.mechanic.join(', '),
+                    details: 'Нова работна карта'
+                }
+            })
+        });
+
+        if (hasMaterials) { const materials = prepared.materials; if (materials.length > 0) { await supabaseInsert('work_card_materials', materials.map(m => ({ ...m, work_card_id: cardId }))); } }
+        showStatus(`✓ Записана: ${cardData.mechanic.join(', ')} — ${cardData.vehicle} (${cardData.reg_number}) — ${cardData.activity_type}`, 'success');
+
+        if (window._currentRequestId) {
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        path: 'service_requests?id=eq.' + window._currentRequestId,
+                        method: 'PATCH',
+                        body: {
+                            status: 'Изпълнена',
+                            work_card_id: cardId,
+                            completed_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        }
+                    })
+                });
+
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        path: 'request_log',
+                        method: 'POST',
+                        body: {
+                            request_id: window._currentRequestId,
+                            action: 'completed',
+                            performed_by: cardData.mechanic.join(', '),
+                            details: 'Работна карта попълнена. ID: ' + cardId
+                        }
+                    })
+                });
+
+                sessionStorage.removeItem('workcard_request_id');
+                sessionStorage.removeItem('workcard_request_data');
+                window._currentRequestId = null;
+
+                // Redirect back to tablet after 2 seconds
+                setTimeout(() => {
+                    window.location.href = 'tablet.html';
+                }, 2000);
+            } catch(e) {
+                console.error('Error updating request:', e);
+            }
+        }
+
+        // Карта без заявка, отворена от таблото → връщане към таблото
+        if (!cardData.request_id && sessionStorage.getItem('workcard_from_tablet') === '1') {
+            sessionStorage.removeItem('workcard_prefill_mechanic');
+            sessionStorage.removeItem('workcard_from_tablet');
+            setTimeout(() => { window.location.href = 'tablet.html'; }, 2000);
+        }
+        if (cardData.request_id) sessionStorage.removeItem('workcard_from_tablet');
+
+        WC_DRAFTS.clear();
+        WC_REQUEST_PLAN.clear();
+        resetForm();
+    } catch (e) { console.error('Грешка при запис:', e); showStatus('Грешка при запис: ' + e.message, 'error'); }
+    finally { btn.disabled = false; btn.textContent = '✓ Запиши работна карта'; }
+}
+
+function showStatus(msg, type) {
+    if (window.UI) UI.toast(msg, type === 'success' ? 'success' : type === 'error' ? 'error' : 'info');
+}
+function resetForm() {
+    const rm = document.getElementById('requestMachine'); if (rm && !window._currentRequestId) rm.remove();
+    const mechs = Array.from(document.querySelectorAll('.ms-option.selected')).map(el => el.dataset.value); const date = document.getElementById('workDate').value;
+    document.querySelectorAll('input[type="text"], input[type="number"]').forEach(i => i.value = '');
+    document.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(i => i.checked = false);
+    document.querySelectorAll('#mechanicOptions .ms-option').forEach(opt => {
+        const isSelected = mechs.includes(opt.dataset.value);
+        opt.classList.toggle('selected', isSelected);
+        opt.querySelector('input[type="checkbox"]').checked = isSelected;
+    });
+    updateMechanicUI();
+    document.getElementById('workDate').value = date;
+    document.getElementById('repairDescription').value = '';
+    document.getElementById('otherMaterials').value = '';
+    document.getElementById('workNotes').value = '';
+    document.getElementById('kmTraveled').value = '';
+    document.getElementById('sectionServices').classList.remove('visible');
+    document.getElementById('sectionRepair').classList.remove('visible');
+    hasMaterials = null;
+    document.querySelectorAll('.toggle-btn').forEach(b => b.className = 'toggle-btn');
+    document.getElementById('materialsSection').classList.remove('visible');
+    document.querySelectorAll('.material-body').forEach(b => b.classList.remove('open'));
+    document.querySelectorAll('.material-header .arrow').forEach(a => a.classList.remove('open'));
+    document.querySelectorAll('.item-qty').forEach(el => { el.style.display = 'none'; el.querySelector('input').value = ''; });
+    const banner = document.getElementById('requestBanner');
+    if (banner) banner.remove();
+    window._currentRequestId = null;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.addEventListener('online', () => document.getElementById('offlineBanner').classList.remove('show'));
+window.addEventListener('offline', () => document.getElementById('offlineBanner').classList.add('show'));
+// ===== Стъпки на работната карта =====
+let currentStep = 1;
+const STEP_NAMES = ['', 'Машина', 'Дейност', 'Материали', 'Време'];
+const FIELD_STEP = { fMechanic: 1, fDate: 1, fVehicle: 1, fRegNumber: 1, fKmHours: 1, fClient: 1, fActivity: 2, fMaterials: 3, fWorkHours: 4 };
+
+function goStep(n, noScroll) {
+    currentStep = Math.max(1, Math.min(4, n));
+    document.querySelectorAll('#workCardForm [data-step]').forEach(el => {
+        el.classList.toggle('step-hidden', +el.dataset.step !== currentStep);
+    });
+    document.querySelectorAll('#wcSteps .wc-step').forEach((b, i) => {
+        b.classList.toggle('cur', i + 1 === currentStep);
+        b.classList.toggle('done', i + 1 < currentStep);
+    });
+    const back = document.getElementById('actBack');
+    const next = document.getElementById('actNext');
+    const save = document.getElementById('submitBtn');
+    if (back) back.disabled = currentStep === 1;
+    if (save) save.style.display = currentStep === 4 ? 'flex' : 'none';
+    if (next) {
+        next.style.display = currentStep < 4 ? 'flex' : 'none';
+        if (currentStep < 4) next.innerHTML = 'Към ' + STEP_NAMES[currentStep + 1].toLowerCase() + (window.UI ? UI.icon('next') : ' ›');
+    }
+    if (!noScroll) window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+// Проверка само на полетата от текущата стъпка
+function stepValid(step) {
+    validate();
+    let ok = true;
+    Object.keys(FIELD_STEP).forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (FIELD_STEP[id] === step) { if (el.classList.contains('invalid')) ok = false; }
+        else if (FIELD_STEP[id] > step) el.classList.remove('invalid');   // не показвай грешки от следващите стъпки
+    });
+    if (!ok) {
+        const first = document.querySelector('[data-step="' + step + '"] .field.invalid');
+        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        showStatus('Попълни задължителните полета, за да продължиш', 'error');
+    } else {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+    return ok;
+}
+
+function nextStep() { if (stepValid(currentStep)) goStep(currentStep + 1); }
+function prevStep() { goStep(currentStep - 1); }
+
+// При запис — ако липсва поле от предишна стъпка, отиди на нея
+const _origSubmitForm = submitForm;
+submitForm = async function () {
+    if (!validate()) {
+        const firstInvalid = Object.keys(FIELD_STEP).find(id => { const el = document.getElementById(id); return el && el.classList.contains('invalid'); });
+        if (firstInvalid) { goStep(FIELD_STEP[firstInvalid], true); stepValid(FIELD_STEP[firstInvalid]); }
+        return;
+    }
+    return _origSubmitForm();
+};
+
+// След успешен запис — обратно към първата стъпка
+const _origResetForm = resetForm;
+resetForm = function () { _origResetForm(); goStep(1); };
+
+document.addEventListener('DOMContentLoaded', () => {
+    const user = sessionStorage.getItem('workcard_user');
+    if (user) { document.getElementById('whoName').textContent = user; document.getElementById('whoChip').style.display = 'flex'; }
+    goStep(1, true);
+});
+
+document.addEventListener('DOMContentLoaded', loadNomenclatures);
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(err => console.log('SW:', err));
+}
+</script>
+</body>
+</html>
