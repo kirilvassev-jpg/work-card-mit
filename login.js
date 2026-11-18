@@ -2,9 +2,11 @@ var selectedRole = null;
 var msalInstance = null;
 function showError(message) { var el = document.getElementById('errorMsg'); el.textContent = message; el.classList.add('show'); }
 function destination(user) {
+  ['wc_office_login_pending','wc_office_login_auto','wc_office_login_role'].forEach(function (key) { sessionStorage.removeItem(key); });
   location.href = ({ mechanic: 'tablet.html', coordinator: 'requests.html', manager: 'assign.html', admin: 'dashboard.html' })[user.role] || 'login.html';
 }
 async function selectRole(role) {
+  if (role === 'mechanic' && WC_CONFIG.legacyMechanicLogin) { WC_AUTH.logout(); return; }
   selectedRole = role;
   document.querySelectorAll('.role-btn').forEach(function (el) { el.classList.toggle('selected', el.id === 'role-' + role); });
   document.getElementById('msalSection').classList.toggle('visible', role !== 'mechanic');
@@ -29,6 +31,7 @@ async function loginMSAL() {
   try {
     if (WC_CONFIG.demo) { destination(await WC_AUTH.demoLogin(selectedRole)); return; }
     document.getElementById('loading').classList.add('show');
+    if (WC_CONFIG.legacyMechanicLogin) sessionStorage.setItem('wc_office_login_pending', '1');
     var app = await initMsal();
     await app.loginRedirect({ scopes: [WC_CONFIG.apiScope], prompt: 'select_account' });
   } catch (err) { showError(err.message); document.getElementById('loading').classList.remove('show'); }
@@ -69,13 +72,15 @@ async function loginMechanic() {
 document.addEventListener('DOMContentLoaded', async function () {
   var message = sessionStorage.getItem('workcard_login_msg');
   if (message) { showError(message); sessionStorage.removeItem('workcard_login_msg'); }
+  var pendingRole = sessionStorage.getItem('wc_office_login_role');
+  if (WC_CONFIG.legacyMechanicLogin && ['coordinator','manager','admin'].includes(pendingRole)) await selectRole(pendingRole);
   if (WC_CONFIG.demo) {
     document.querySelector('#msalSection button').textContent = 'Влез в демо профила';
     return;
   }
   try {
     // Do not trust a role saved in sessionStorage to establish a session.
-    if (location.hash.includes('code=') || location.hash.includes('error=') || location.search.includes('code=')) {
+    if (WC_CONFIG.legacyMechanicLogin || location.hash.includes('code=') || location.hash.includes('error=') || location.search.includes('code=')) {
       var app = await initMsal();
       var response = await app.handleRedirectPromise();
       if (response) {
@@ -83,6 +88,11 @@ document.addEventListener('DOMContentLoaded', async function () {
         sessionStorage.setItem('workcard_token', access);
         sessionStorage.setItem('workcard_role', 'office');
         destination(await WC_AUTH.validateSession());
+      } else if (WC_CONFIG.legacyMechanicLogin) {
+        if (sessionStorage.getItem('wc_office_login_auto') === '1') {
+          sessionStorage.removeItem('wc_office_login_auto');
+          await loginMSAL();
+        }
       }
     }
   } catch (err) { showError(err.message); }

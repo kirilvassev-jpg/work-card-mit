@@ -3,6 +3,8 @@
 <head>
     <script src="app-config.js"></script>
     <script src="auth.js"></script>
+    <script type="module" src="plan-editor.mjs"></script>
+    <link rel="stylesheet" href="work-plan.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Нова заявка — Ар Си Техник</title>
@@ -184,6 +186,7 @@
         </div>
     </div>
 
+    <section id="requestPlanEditor" aria-label="Планирани дейности и материали"></section>
     <!-- КЛИЕНТ -->
     <div class="section s-green" style="animation-delay:0.15s;">
         <div class="section-title">👤 Данни на клиента</div>
@@ -478,6 +481,7 @@ async function submitRequest() {
     try {
         const requestNumber = await generateRequestNumber(document.getElementById('clientName').value.trim());
         const requestData = {
+            ...document.getElementById('requestPlanEditor').editor.read(),
             request_number: requestNumber,
             description: document.getElementById('description').value.trim(),
             activity_type: selectedActivities,
@@ -548,6 +552,7 @@ function showStatus(msg, type) {
 }
 
 function resetForm() {
+    document.getElementById('requestPlanEditor').editor?.clear();
     document.getElementById('description').value = '';
     document.getElementById('desiredDate').value = '';
     document.getElementById('clientName').value = '';

@@ -21,6 +21,7 @@
   WC.deviceName = function () { try { return localStorage.getItem(WC.DEVICE_NAME_KEY); } catch (err) { return null; } };
   WC.officeToken = function () { return sessionStorage.getItem('workcard_token'); };
   WC.goLogin = function (message) {
+    if (config.legacyMechanicLogin) sessionStorage.setItem('wc_office_login_pending', '1');
     if (message) sessionStorage.setItem('workcard_login_msg', message);
     sessionStorage.removeItem('workcard_auth');
     if (!/login\.html$/.test(location.pathname)) location.replace('login.html');
@@ -28,6 +29,7 @@
   WC.logout = function () {
     // Preserve device registration and unsent drafts on this device.
     Object.keys(sessionStorage).filter(function (k) { return k.indexOf('workcard_') === 0; }).forEach(function (k) { sessionStorage.removeItem(k); });
+    ['wc_office_login_pending','wc_office_login_auto','wc_office_login_role'].forEach(function (key) { sessionStorage.removeItem(key); });
     location.href = 'login.html';
   };
   WC.setSession = function (user) {
@@ -124,7 +126,7 @@
       document.body.prepend(banner);
     }
     WC.ready.then(function (user) {
-      if (user && ['admin','manager'].includes(user.role)) {
+      if (user && config.deviceRegistration !== false && ['admin','manager'].includes(user.role)) {
         var nav = document.querySelector('#bottomNav');
         if (nav && !nav.querySelector('[href="devices.html"]')) {
           var link = document.createElement('a'); link.href = 'devices.html'; link.textContent = 'Устройства'; nav.appendChild(link);

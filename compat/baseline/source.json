@@ -1,0 +1,43 @@
+{
+  "repository": "kirilvassev-jpg/work-card-mit",
+  "commit": "d6a4c7c0dc3704d6d9b93e2a680166f498af0f5e",
+  "tree": "2b2d0b076649f4e8452eb6d846dc1757bdd6d72d",
+  "files": [
+    "login.html",
+    "requests.html",
+    "assign.html",
+    "schedule.html",
+    "history.html",
+    "dashboard.html",
+    "index.html",
+    "tablet.html",
+    "auth.js",
+    "sw.js",
+    "manifest.json",
+    "theme.css",
+    "ui.js",
+    "datepicker.js",
+    "Repairs.png",
+    "icons/icon-192.png",
+    "icons/icon-512.png"
+  ],
+  "sha256": {
+    "login.html": "57df4a4aa3218000d27f0e56d575a5615a76f51d38c0e984b06372d723fdb291",
+    "requests.html": "d5d1dedb14c0f23e4e28b460c46add0b7dadf9139b61d323e34b0e59f81364ad",
+    "assign.html": "bb2d44df65556aaec464e8de5150d2a41dca9f89e90b736057a0446891155cdb",
+    "schedule.html": "cfd00b8cce14a7f7f771f8674876e0bc66aa2bf1033b1df8be9e4f654990a5a0",
+    "history.html": "719673048a8090ee401ea071bcdd7bab0b5b19e689d99986ba9f84e8f73c1861",
+    "dashboard.html": "12728e2736b05bfdaafb58d392294aa205b4ef85342059881b1ec7f41a859a24",
+    "index.html": "b8a09ec26d37d0677683dbe6f598004e273fac5a749fea9c248bcc8ebfad8f9c",
+    "tablet.html": "c4f1a5fd3c9bf3812d6a15776cc47a43c0d5c2324b110d2cdab09785e43f4dce",
+    "auth.js": "4b8d78448710ef97b6a3df0fcdafc29bbcc18c25b2436aaf7bd5b53bb90b5d03",
+    "sw.js": "ab9645b7a7563155245066bde0dea7b233533e0d3854e46c2741ba6c22426742",
+    "manifest.json": "a7c4a61879ab0a948f9ee176a8a6ac63fff2a04aea7f1336adc9cfdca62921c1",
+    "theme.css": "f2146df9e2aa4cf41ff7c683d56da138704117d0107cfca7053ecbe5bc17cb36",
+    "ui.js": "bceb06ff705b9c8e7d3de1cf82fb5d3aaef42a41b5ef47bfca089bb3099d28e8",
+    "datepicker.js": "37e24522879a9497f168dbdd7ea3c03e3d7b191854ae5f4e9e530e079ad0af05",
+    "Repairs.png": "4c3a46bab1aa5506490c8e29d91e9466957533a3a3448e696257ad91e4890129",
+    "icons/icon-192.png": "4a432f7745ebddb9512759b4d508768e69b8d37dd3838b6752687820b3143367",
+    "icons/icon-512.png": "f3e4e2a4bacbcdaf933d57e14474328b041d771e73d532c11a173efed4b45541"
+  }
+}

@@ -3,6 +3,8 @@
 <head>
     <script src="app-config.js"></script>
     <script src="auth.js"></script>
+    <script type="module" src="plan-editor.mjs"></script>
+    <link rel="stylesheet" href="work-plan.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Работни карти — Преглед</title>
@@ -2312,10 +2314,18 @@ function editRequest(requestId) {
 
     overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
     document.body.appendChild(overlay);
+    const planContainer=document.createElement('section');
+    const saveButton=overlay.querySelector('button[onclick^="saveEditRequest"]');
+    saveButton.before(planContainer);
+    overlay.planEditor=WC_PLAN_EDITOR.mount(planContainer,r);
 }
 
 async function saveEditRequest(requestId) {
+    let plan;
+    try { plan=document.getElementById('editReqOverlay').planEditor.read(); }
+    catch(error) { alert(error.message); return; }
     const updateData = {
+        ...plan,
         description: document.getElementById('editReqDesc').value.trim() || null,
         client_name: document.getElementById('editReqClient').value.trim(),
         client_phone: document.getElementById('editReqPhone').value.trim(),

@@ -11,6 +11,7 @@ const helpers=await readFile(new URL('../supabase/manual/03_task_and_card_helper
 const identityTemplate=await readFile(new URL('../supabase/manual/04_link_office_user.sql',import.meta.url),'utf8');
 const bulkIdentityTemplate=await readFile(new URL('../supabase/manual/05_link_office_users.sql',import.meta.url),'utf8');
 const devicePreparation=await readFile(new URL('../supabase/manual/06_prepare_device_registry.sql',import.meta.url),'utf8');
+const requestPlans=await readFile(new URL('../supabase/manual/07_request_plans.sql',import.meta.url),'utf8');
 const security=await readFile(new URL('../supabase/migrations/20261112000200_security_and_atomic_cards.sql',import.meta.url),'utf8');
 const quote=value=>{assert.match(value,/^[a-z_]+$/);return '"'+value+'"';};
 const types={uuid:'uuid',text:'text',_text:'text[]',int4:'integer',bool:'boolean',numeric:'numeric',date:'date',timestamptz:'timestamptz'};
@@ -33,6 +34,30 @@ async function existingDatabase(){
   }
   return db;
 }
+test('request-plan preparation preserves every existing row, table privilege and RLS setting',async(t)=>{
+  const db=await existingDatabase();t.after(()=>db.close());
+  const before=(await db.query("insert into service_requests(client_name,vehicle,reg_number,description) values('Клиент','Машина','ДЕМО','Заявка') returning *")).rows[0];
+  const sql="select table_name,grantee,privilege_type from information_schema.table_privileges where table_schema='public' order by table_name,grantee,privilege_type";
+  const grants=(await db.query(sql)).rows;
+  await db.exec(requestPlans);await db.exec(requestPlans);
+  const after=(await db.query('select * from service_requests')).rows[0];
+  for(const [key,value] of Object.entries(before))assert.deepEqual(after[key],value,key);
+  assert.equal(after.planned_operations,null);assert.equal(after.planned_materials,null);
+  assert.deepEqual((await db.query(sql)).rows,grants);
+  assert.equal((await db.query("select relrowsecurity from pg_class where oid='public.service_requests'::regclass")).rows[0].relrowsecurity,false);
+  await db.query('update service_requests set planned_operations=$1,planned_materials=$2',[['Смяна на масло'],JSON.stringify([{category:'oil',item_type:'Масло',quantity:12,unit:'литри'}])]);
+  await db.exec(requestPlans);
+  assert.equal((await db.query('select count(*)::int as n from work_cards')).rows[0].n,0);
+  assert.deepEqual((await db.query('select planned_operations from service_requests')).rows[0].planned_operations,['Смяна на масло']);
+});
+
+test('request-plan preparation rolls back additions when a conflicting existing column type is found',async(t)=>{
+  const db=await existingDatabase();t.after(()=>db.close());
+  await db.exec('alter table service_requests add column planned_materials text;');
+  await assert.rejects(db.exec(requestPlans),/Unexpected type/);await db.exec('rollback;');
+  assert.equal((await db.query("select count(*)::int as n from information_schema.columns where table_name='service_requests' and column_name='planned_operations'")).rows[0].n,0);
+});
+
 test('device preparation preserves existing rows and access while protecting the new registry',async(t)=>{
   const db=await existingDatabase();t.after(()=>db.close());
   const before=(await db.query("insert into user_roles(email,name,role) values('example@example.invalid','Примерен потребител','manager') returning *")).rows;

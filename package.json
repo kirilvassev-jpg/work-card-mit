@@ -7,6 +7,8 @@
     "dev": "node scripts/dev-server.mjs",
     "dev:backend": "node scripts/dev-server.mjs --backend",
     "build:dashboard": "node scripts/build-dashboard-bundle.mjs",
+    "build:compatible": "node scripts/build-compatible-release.mjs",
+    "dev:compatible": "node scripts/preview-compatible-release.mjs",
     "test": "node --test tests/*.test.mjs",
     "test:sql": "node --test tests-sql/*.test.mjs"
   },

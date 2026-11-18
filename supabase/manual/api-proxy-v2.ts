@@ -3,6 +3,54 @@
 // Paste this entire file into index.ts of the NEW api-proxy-v2 function in Supabase Dashboard.
 // No embedded secrets and no external imports. Microsoft/device authorization is performed below.
 
+const categories=new Set(['filter','oil','antifreeze','bulb','quick_coupling','teeth','other']);
+const units=new Set(['брой','литри','кг','м']);
+const text=(value,max=200)=>typeof value==='string'&&value.trim().length>0&&value.trim().length<=max;
+function operations(value){
+  if(value==null)return [];
+  if(!Array.isArray(value)||value.length>40||!value.every(item=>text(item)))throw Error('Невалиден списък с дейности (до 40 позиции).');
+  const result=value.map(item=>item.trim());
+  if(new Set(result.map(item=>item.toLocaleLowerCase('bg-BG'))).size!==result.length)throw Error('Има повтарящи се дейности.');
+  return result;
+}
+function material(value){
+  if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(key=>!['category','item_type','quantity','unit'].includes(key)))throw Error('Невалидни данни за материал.');
+  if(!categories.has(value.category)||!text(value.item_type)||!units.has(value.unit)||typeof value.quantity!=='number'||!Number.isFinite(value.quantity)||value.quantity<=0||value.quantity>1000000)throw Error('Провери материала, мерната единица и количеството.');
+  if(value.unit==='брой'&&!Number.isInteger(value.quantity))throw Error('Количеството в брой трябва да е цяло число.');
+  return {...value,item_type:value.item_type.trim()};
+}
+function materialKey(value){return JSON.stringify([value.category,value.item_type.trim().toLocaleLowerCase('bg-BG'),value.unit]);}
+function plannedMaterials(value){
+  if(value==null)return [];
+  if(!Array.isArray(value)||value.length>80)throw Error('Позволени са до 80 предложени материала.');
+  const result=value.map(material);
+  if(new Set(result.map(materialKey)).size!==result.length)throw Error('Има повтарящи се предложени материали.');
+  return result;
+}
+function mergeMaterials(existing,confirmed){
+  const result=new Map();
+  for(const row of [...existing,...confirmed]){
+    const value=material(row),key=materialKey(value),old=result.get(key);
+    if(old&&old.quantity!==value.quantity)throw Error('Материалът „'+value.item_type+'“ е въведен два пъти с различни количества. Остави го само на едно място.');
+    result.set(key,value);
+  }
+  return [...result.values()];
+}
+function actualCard(card,existing,selectedOperations,confirmedMaterials){
+  const done=operations(selectedOperations),confirmed=plannedMaterials(confirmedMaterials);
+  if(confirmed.length&&!card.has_materials)throw Error('Има потвърдени материали. Избери „Да“ за вложени материали или махни отметките.');
+  const materials=mergeMaterials(existing,confirmed);
+  if(!card.has_materials&&materials.length)throw Error('Материалите не съответстват на картата.');
+  const notes=[card.notes||'',done.length?'Извършени дейности по заявката:\n'+done.map(item=>'• '+item).join('\n'):''].filter(Boolean).join('\n\n');
+  return {card:{...card,notes:notes||null},materials};
+}
+function reviewText(card,materials,done){
+  return ['Провери работната карта преди запис:',card.vehicle+' · '+card.reg_number,'Човекочасове: '+card.work_hours,
+    done.length?'\nИзвършени дейности:\n'+done.map(item=>'• '+item).join('\n'):'',
+    '\nВложени материали:\n'+(materials.length?materials.map(item=>'• '+item.item_type+' — '+item.quantity+' '+item.unit).join('\n'):'Няма'),
+    '\nНепотвърдените предложения не се отчитат.\nДа запиша ли картата?'].filter(Boolean).join('\n');
+}
+
 class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
@@ -11,8 +59,8 @@ function assert(ok, status, message) {
 }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CARD_FIELDS = new Set(('mechanic work_date vehicle reg_number km_hours client activity_type services repair_systems repair_type repair_description has_materials work_hours other_materials km_traveled notes request_id external_service external_service_note').split(' '));
-const REQUEST_FIELDS = new Set(('request_number description activity_type desired_date priority client_type client_name client_email client_phone company_name bulstat contact_person brand model vehicle reg_number year_of_manufacture frame_number km_hours photo_data status created_by assigned_mechanics responsible_mechanic scheduled_at estimated_hours assigned_at started_at completed_at updated_at work_card_id notes').split(' '));
-const REQUEST_DETAIL_FIELDS = new Set(('description activity_type desired_date priority client_type client_name client_email client_phone company_name bulstat contact_person brand model vehicle reg_number year_of_manufacture frame_number km_hours photo_data notes updated_at').split(' '));
+const REQUEST_FIELDS = new Set(('request_number description activity_type desired_date priority client_type client_name client_email client_phone company_name bulstat contact_person brand model vehicle reg_number year_of_manufacture frame_number km_hours photo_data status created_by assigned_mechanics responsible_mechanic scheduled_at estimated_hours assigned_at started_at completed_at updated_at work_card_id notes planned_operations planned_materials').split(' '));
+const REQUEST_DETAIL_FIELDS = new Set(('description activity_type desired_date priority client_type client_name client_email client_phone company_name bulstat contact_person brand model vehicle reg_number year_of_manufacture frame_number km_hours photo_data notes updated_at planned_operations planned_materials').split(' '));
 const TABLES = new Set(['nomenclatures', 'service_requests', 'work_cards', 'work_card_materials', 'request_log', 'work_card_log']);
 function pickFields(body, allowed) {
   assert(body && typeof body === 'object' && !Array.isArray(body), 400, 'Невалидни данни.');
@@ -70,6 +118,10 @@ function authorizePath(input, principal) {
   if (method === 'POST' || method === 'PATCH') {
     if (table === 'service_requests') {
       body = pickFields(body, REQUEST_FIELDS);
+      try {
+        if ('planned_operations' in body) body.planned_operations=operations(body.planned_operations);
+        if ('planned_materials' in body) body.planned_materials=plannedMaterials(body.planned_materials);
+      } catch (error) { throw new HttpError(400,error.message); }
       if (body.photo_data != null) {
         assert(typeof body.photo_data === 'string' && (/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(body.photo_data) || /^https:\/\/[^\s"'<>]+$/.test(body.photo_data)), 400, 'Невалидна снимка.');
       }

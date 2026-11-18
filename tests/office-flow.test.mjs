@@ -46,7 +46,7 @@ test('the request editor renders stored descriptions and machine fields as text'
   for(const field of ['brand','model','reg_number','year_of_manufacture','frame_number','km_hours','desired_date'])record[field]=attribute;
   const elements=[];
   const WC={};
-  const context=vm.createContext({WC,WC_AUTH:WC,allServiceRequests:[record],document:{createElement:()=>({style:{}}),body:{appendChild:el=>elements.push(el)}}});
+  const context=vm.createContext({WC,WC_AUTH:WC,WC_PLAN_EDITOR:{mount(){}},allServiceRequests:[record],document:{createElement:()=>({style:{},querySelector:()=>({before(){}})}),body:{appendChild:el=>elements.push(el)}}});
   vm.runInContext(auth.slice(auth.indexOf('WC.escapeHTML = function'),auth.indexOf('WC.isMechanic = function')),context);
   vm.runInContext(history.slice(history.indexOf('function escAttr(v)'),history.indexOf('let editClientType')),context);
   vm.runInContext('function sanitize(s){return WC_AUTH.escapeHTML(s);}',context);

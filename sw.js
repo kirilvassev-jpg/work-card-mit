@@ -1,5 +1,5 @@
-const CACHE_NAME = 'work-card-v17';
-const ASSETS = ['index.html','history.html','login.html','requests.html','assign.html','dashboard.html','tablet.html','schedule.html','devices.html','manifest.json','app-config.js','auth.js','login.js','devices.js','draft-store.js','drafts.js','theme.css','ui.js','datepicker.js','Repairs.png','icons/icon-192.png','icons/icon-512.png'];
+const CACHE_NAME = 'work-card-v18';
+const ASSETS = ['index.html','history.html','login.html','requests.html','assign.html','dashboard.html','tablet.html','schedule.html','devices.html','manifest.json','app-config.js','auth.js','login.js','devices.js','draft-store.js','drafts.js','plan-model.mjs','plan-editor.mjs','request-plan.mjs','work-plan.css','theme.css','ui.js','datepicker.js','Repairs.png','icons/icon-192.png','icons/icon-512.png'];
 const base = new URL('./', self.location.href);
 const allowed = new Set(ASSETS.map(file => new URL(file, base).href));
 self.addEventListener('install', event => {

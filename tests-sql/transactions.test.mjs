@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 test('PostgreSQL migrations, rollback, replay and authorization boundaries',async(t)=>{
   const db=new PGlite();t.after(()=>db.close());
   await db.exec('create role anon; create role authenticated; create role service_role bypassrls;');
-  for(const file of ['20261112000100_baseline.sql','20261112000200_security_and_atomic_cards.sql']) {
+  for(const file of ['20261112000100_baseline.sql','20261112000200_security_and_atomic_cards.sql','20261117000100_request_plans.sql']) {
     await db.exec(await readFile(new URL('../supabase/migrations/'+file,import.meta.url),'utf8'));
     if(file.includes('baseline'))await db.exec('grant select on public.work_cards to public;');
   }

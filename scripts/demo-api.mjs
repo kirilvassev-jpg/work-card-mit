@@ -12,6 +12,8 @@ export function createDemoApi() {
     { id: randomUUID(), request_number: 'DEMO-001', client_name: 'Примерен клиент', client_type: 'ФЛ', client_phone: '0000000000', brand: 'Демо', model: 'Машина', vehicle: 'Демо Машина', reg_number: 'ДЕМО-01', description: 'Примерно техническо обслужване', activity_type: ['ТО / ППП'], status: 'Разпределена', priority: 'Нормален', assigned_mechanics: ['Демо механик'], responsible_mechanic: 'Демо механик', scheduled_at: today + 'T08:00:00', desired_date: today, estimated_hours: 2, created_at: now, assigned_at: now, updated_at: now, created_by: 'Демо координатор' },
     { id: randomUUID(), request_number: 'DEMO-002', client_name: 'Примерна фирма', client_type: 'ЮЛ', company_name: 'Демо сервиз ООД', vehicle: 'Демо Багер', brand: 'Демо', model: 'Багер', reg_number: 'ДЕМО-02', description: 'Примерна проверка на ходова част', activity_type: ['РЕМОНТ'], status: 'Нова', priority: 'Спешен', assigned_mechanics: [], created_at: now, updated_at: now, created_by: 'Демо координатор' }
   ] };
+  tables.service_requests[0].planned_operations=['Смяна на двигателно масло','Смяна на маслен филтър','Проверка за течове'];
+  tables.service_requests[0].planned_materials=[{category:'oil',item_type:'Двигателно масло',quantity:12,unit:'литри'},{category:'filter',item_type:'Маслен филтър',quantity:1,unit:'брой'}];
   const submissions = new Map();
   const identities = Object.fromEntries(['admin','manager','coordinator','Демо механик','Втори механик'].map(k => [k, randomUUID()]));
   const digest = s => createHash('sha256').update(s).digest('hex');

@@ -7,8 +7,8 @@ import { createDemoApi } from './demo-api.mjs';
 const root = fileURLToPath(new URL('../',import.meta.url));
 export async function createDevServer({backend=false,apiUrl=process.env.WC_API_URL || 'http://127.0.0.1:54321/functions/v1/api-proxy'}={}) {
   const demo=createDemoApi();
-  const publicFiles=new Set((await readdir(root)).filter(f=>/\.(html|js|css|png)$/.test(f)).concat('manifest.json'));
-  const mimes={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.png':'image/png'};
+  const publicFiles=new Set((await readdir(root)).filter(f=>/\.(html|js|mjs|css|png)$/.test(f)).concat('manifest.json'));
+  const mimes={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.png':'image/png'};
   return http.createServer(async(req,res)=>{
     res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
     try {

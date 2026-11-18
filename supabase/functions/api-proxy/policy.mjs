@@ -1,3 +1,4 @@
+import {operations,plannedMaterials} from '../_shared/plan-model.mjs';
 export class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
@@ -6,8 +7,8 @@ export function assert(ok, status, message) {
 }
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const CARD_FIELDS = new Set(('mechanic work_date vehicle reg_number km_hours client activity_type services repair_systems repair_type repair_description has_materials work_hours other_materials km_traveled notes request_id external_service external_service_note').split(' '));
-const REQUEST_FIELDS = new Set(('request_number description activity_type desired_date priority client_type client_name client_email client_phone company_name bulstat contact_person brand model vehicle reg_number year_of_manufacture frame_number km_hours photo_data status created_by assigned_mechanics responsible_mechanic scheduled_at estimated_hours assigned_at started_at completed_at updated_at work_card_id notes').split(' '));
-const REQUEST_DETAIL_FIELDS = new Set(('description activity_type desired_date priority client_type client_name client_email client_phone company_name bulstat contact_person brand model vehicle reg_number year_of_manufacture frame_number km_hours photo_data notes updated_at').split(' '));
+const REQUEST_FIELDS = new Set(('request_number description activity_type desired_date priority client_type client_name client_email client_phone company_name bulstat contact_person brand model vehicle reg_number year_of_manufacture frame_number km_hours photo_data status created_by assigned_mechanics responsible_mechanic scheduled_at estimated_hours assigned_at started_at completed_at updated_at work_card_id notes planned_operations planned_materials').split(' '));
+const REQUEST_DETAIL_FIELDS = new Set(('description activity_type desired_date priority client_type client_name client_email client_phone company_name bulstat contact_person brand model vehicle reg_number year_of_manufacture frame_number km_hours photo_data notes updated_at planned_operations planned_materials').split(' '));
 const TABLES = new Set(['nomenclatures', 'service_requests', 'work_cards', 'work_card_materials', 'request_log', 'work_card_log']);
 export function pickFields(body, allowed) {
   assert(body && typeof body === 'object' && !Array.isArray(body), 400, 'Невалидни данни.');
@@ -65,6 +66,10 @@ export function authorizePath(input, principal) {
   if (method === 'POST' || method === 'PATCH') {
     if (table === 'service_requests') {
       body = pickFields(body, REQUEST_FIELDS);
+      try {
+        if ('planned_operations' in body) body.planned_operations=operations(body.planned_operations);
+        if ('planned_materials' in body) body.planned_materials=plannedMaterials(body.planned_materials);
+      } catch (error) { throw new HttpError(400,error.message); }
       if (body.photo_data != null) {
         assert(typeof body.photo_data === 'string' && (/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(body.photo_data) || /^https:\/\/[^\s"'<>]+$/.test(body.photo_data)), 400, 'Невалидна снимка.');
       }

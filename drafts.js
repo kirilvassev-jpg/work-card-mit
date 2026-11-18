@@ -10,7 +10,7 @@
   function snapshot() {
     var values = {};
     fields().forEach(function (el) { values[fieldKey(el)] = /checkbox|radio/.test(el.type) ? el.checked : el.value; });
-    return { values: values, mechanics: Array.from(document.querySelectorAll('#mechanicOptions .ms-option.selected')).map(function (el) { return el.dataset.value; }), hasMaterials: hasMaterials, step: currentStep, submissionId: submissionId, pendingPayload: pendingPayload };
+    return { values: values, mechanics: Array.from(document.querySelectorAll('#mechanicOptions .ms-option.selected')).map(function (el) { return el.dataset.value; }), hasMaterials: hasMaterials, step: currentStep, submissionId: submissionId, pendingPayload: pendingPayload,requestPlan:window.WC_REQUEST_PLAN?.snapshot() };
   }
   function save() {
     if (!store || suspended || cleared) return false;
@@ -31,6 +31,7 @@
       var selected = data.mechanics.includes(el.dataset.value); el.classList.toggle('selected', selected); el.querySelector('input').checked = selected;
     });
     updateMechanicUI(); onActivityChange();
+    window.WC_REQUEST_PLAN?.restore(data.requestPlan);
     if (data.hasMaterials === true || data.hasMaterials === false) toggleMaterials(data.hasMaterials);
     document.querySelectorAll('.material-item').forEach(function (el) { var cb = el.querySelector('input[type="checkbox"]'); el.querySelector('.item-qty').style.display = cb.checked ? 'flex' : 'none'; });
     goStep(data.step || 1, true);
@@ -40,7 +41,7 @@
   }
   window.WC_DRAFTS = {
     init: function () {
-      var identity = sessionStorage.getItem('workcard_identity');
+      var identity = sessionStorage.getItem('workcard_identity') || (window.WC_CONFIG?.legacyDrafts ? sessionStorage.getItem('workcard_user') : null);
       if (!identity) return;
       store = WC_DRAFT_STORE(localStorage, 'wc_draft:v1:' + (WC_CONFIG.storageScope || (WC_CONFIG.demo ? 'demo' : 'real')) + ':' + identity + ':' + (window._currentRequestId || 'new'));
       status = document.createElement('div'); status.setAttribute('role', 'status'); status.style.cssText = 'font-size:13px;padding:10px;color:#475569';
