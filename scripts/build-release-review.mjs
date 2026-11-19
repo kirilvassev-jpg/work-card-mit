@@ -5,11 +5,26 @@ import {fileURLToPath,pathToFileURL} from 'node:url';
 import {renderCompatibleRelease} from './build-compatible-release.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
-export async function buildReleaseReview(base,sourceCommit='local'){
+export function retiredReleaseFiles(previous,prefix,pages){
+  if(!/^compat\/releases\/[0-9a-f]{16}\/$/.test(previous.prefix)||previous.prefix===prefix)throw Error('Invalid previous release');
+  const files=new Map();
+  for(const variant of ['office','legacy'])for(const page of pages){
+    files.set(previous.prefix+variant+'/'+page,Buffer.from('<!doctype html><html lang="bg"><meta charset="utf-8"><title>Обновяване</title><script>location.replace(new URL('+JSON.stringify(page)+',location.origin+"/work-card-mit/").href);</script><p>Обновяване на приложението…</p></html>\n'));
+  }
+  files.set(previous.prefix+'router.js',Buffer.from('(function(){var script=document.createElement("script");script.src='+JSON.stringify(prefix+'router.js')+';document.head.appendChild(script);})();\n'));
+  return files;
+}
+export async function buildReleaseReview(base,sourceCommit='local',previous=null){
   const release=await renderCompatibleRelease();
   if(base.main!==release.metadata.baselineCommit||base.tree!==release.metadata.baselineTree)throw Error('Production baseline moved; review before packaging');
   const files=new Map(release.files);
   const metadata={...release.metadata,sourceCommit};
+  if(previous){
+    // Old bookmarked/cached payload URLs must not continue serving vulnerable HTML.
+    for(const [file,data] of retiredReleaseFiles(previous,metadata.prefix,metadata.changedRootPages))files.set(file,data);
+    metadata.retiredPrefixes=[previous.prefix];
+    metadata.files=Object.fromEntries([...files].filter(([file])=>file!=='compat/release.json').map(([file,data])=>[file,createHash('sha256').update(data).digest('hex')]));
+  }
   files.set('compat/release.json',Buffer.from(JSON.stringify(metadata,null,2)+'\n'));
   files.set('.github/check-compatible-release.mjs',await readFile(path.join(root,'scripts/check-compatible-release.mjs')));
   files.set('.github/workflows/compatible-release.yml',Buffer.from(`name: Compatible release checks
@@ -53,5 +68,6 @@ jobs:
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href){
   const base=JSON.parse(await readFile(path.join(root,'.cache','release-base.json'),'utf8'));
-  console.log(JSON.stringify(await buildReleaseReview(base,process.argv[2]||'local')));
+  const previous=process.argv[3]?JSON.parse(await readFile(process.argv[3],'utf8')):null;
+  console.log(JSON.stringify(await buildReleaseReview(base,process.argv[2]||'local',previous)));
 }

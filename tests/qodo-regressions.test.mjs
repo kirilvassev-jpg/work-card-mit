@@ -9,6 +9,7 @@ import os from 'node:os';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {renderCompatibleRelease} from '../scripts/build-compatible-release.mjs';
+import {retiredReleaseFiles} from '../scripts/build-release-review.mjs';
 const release=await renderCompatibleRelease();
 const source=(variant,page)=>release.files.get(release.metadata.prefix+variant+'/'+page).toString();
 const safeCode=readFileSync(new URL('../safe-render.js',import.meta.url),'utf8');
@@ -101,5 +102,22 @@ test('release validation rejects an emptied page list and missing integrity maps
     await writeFile(path.join(root,'.github/compatible-release-checks.json'),JSON.stringify(manifest));
     const result=spawnSync(process.execPath,[fileURLToPath(new URL('../scripts/check-compatible-release.mjs',import.meta.url)),root],{encoding:'utf8'});
     assert.notEqual(result.status,0);assert.match(result.stderr,/complete public page set|Missing baseline/);
+  }
+});
+
+test('cached old entry points and internal payload links load the protected release on the public addresses',()=>{
+  const retired=retiredReleaseFiles({prefix:'compat/releases/0000000000000000/'},release.metadata.prefix,release.metadata.changedRootPages);
+  assert.equal(retired.size,17);
+  for(const [file,bytes] of retired){
+    const html=bytes.toString();let target;
+    if(file.endsWith('router.js')){
+      vm.runInNewContext(html,{document:{createElement:()=>({}),head:{appendChild(script){target=script.src;}}}});
+      assert.equal(target,release.metadata.prefix+'router.js');
+    }else{
+      const script=html.match(/<script>(.*?)<\/script>/s)[1];
+      vm.runInNewContext(script,{URL,location:{origin:'https://kirilvassev-jpg.github.io',replace(url){target=url;}}});
+      assert.equal(target,'https://kirilvassev-jpg.github.io/work-card-mit/'+file.split('/').pop());
+      assert.doesNotMatch(html,/renderRequests|renderTasks|renderServiceRequests/);
+    }
   }
 });
