@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <script src="compat/releases/6715e801d3476b24/office/app-config.js"></script>
+    <script src="compat/releases/6715e801d3476b24/office/auth.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Разпределяне — Ар Си Техник</title>
+    <meta name="theme-color" content="#1a3a8f">
+    <style>
+        :root {
+            --primary: #1a3a8f; --primary-dark: #0d1f52; --primary-light: #2955c7;
+            --accent-red: #e41e2b; --accent-green: #10b981; --accent-amber: #f59e0b;
+            --accent-purple: #7c3aed; --accent-blue: #3b82f6;
+            --bg: #f0f4f8; --card: #ffffff; --text: #1a2332; --text-muted: #5a6577; --border: #d8dfe8;
+            --radius: 12px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; padding-bottom:80px; }
+
+        .header { background:linear-gradient(135deg,var(--primary-dark),var(--primary),var(--primary-light)); color:white; padding:16px 20px; text-align:center; position:sticky; top:0; z-index:100; box-shadow:0 4px 20px rgba(30,41,59,0.3); }
+        .header-top { display:flex; align-items:center; justify-content:center; gap:10px; }
+        .header img { width:36px; height:36px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:2px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); }
+        .header h1 { font-size:18px; font-weight:700; letter-spacing:1px; }
+        .header-sub { font-size:11px; opacity:0.7; margin-top:2px; }
+        .header-user { font-size:11px; opacity:0.9; margin-top:4px; background:rgba(255,255,255,0.15); display:inline-block; padding:2px 12px; border-radius:12px; }
+
+        body.read-only .mechanic-list, body.read-only .responsible-select, body.read-only .action-btn.btn-assign { display:none !important; }
+        .container { max-width:700px; margin:0 auto; padding:12px; }
+
+        /* Status tabs */
+        .status-tabs { display:flex; gap:4px; margin-bottom:12px; background:var(--card); border-radius:var(--radius); padding:4px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+        .status-tab { flex:1; padding:10px 4px; text-align:center; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; transition:all 0.2s; color:var(--text-muted); background:transparent; border:none; }
+        .status-tab.active { color:white; }
+        .status-tab[data-status="Нова"].active { background:var(--accent-red); }
+        .status-tab[data-status="Разпределена"].active { background:var(--accent-purple); }
+        .status-tab[data-status="В изпълнение"].active { background:var(--accent-blue); }
+        .status-tab[data-status="Изпълнена"].active { background:var(--accent-green); }
+        .status-tab[data-status="all"].active { background:var(--primary); }
+        .tab-count { display:inline-block; min-width:18px; height:18px; line-height:18px; border-radius:9px; font-size:10px; font-weight:800; margin-left:4px; }
+
+        /* Request cards */
+        .requests-list { display:flex; flex-direction:column; gap:10px; }
+        .request-card {
+            background:var(--card); border-radius:var(--radius); overflow:hidden;
+            box-shadow:0 1px 3px rgba(0,0,0,0.06); transition:all 0.25s;
+            animation:fadeInUp 0.3s ease backwards;
+        }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        .request-card.is-new {
+            animation: newRequestPulse 1.5s ease-in-out infinite;
+            border: 2px solid var(--accent-red);
+        }
+        @keyframes newRequestPulse {
+            0%, 100% { background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+            50% { background: rgba(228, 30, 43, 0.05); box-shadow: 0 4px 16px rgba(228,30,43,0.15); }
+        }
+        @keyframes popupIn { from { transform:translate(-50%,-50%) scale(0.8); opacity:0; } to { transform:translate(-50%,-50%) scale(1); opacity:1; } }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+        .card-main { display:flex; }
+        .card-stripe { width:5px; flex-shrink:0; }
+        .stripe-new { background:var(--accent-red); }
+        .stripe-assigned { background:var(--accent-purple); }
+        .stripe-progress { background:var(--accent-blue); }
+        .stripe-done { background:var(--accent-green); }
+
+        .card-content { flex:1; padding:14px; }
+        .card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+        .card-client { font-size:15px; font-weight:700; color:var(--text); }
+        .card-date { font-size:11px; color:var(--text-muted); }
+        .card-vehicle { font-size:14px; color:var(--text); margin-bottom:2px; }
+        .card-reg { font-size:13px; color:var(--text-muted); }
+        .card-desc { font-size:13px; color:var(--text-muted); margin-top:6px; padding:8px; background:#f8fafc; border-radius:8px; border-left:3px solid var(--border); }
+        .card-contact { font-size:11px; color:var(--text-muted); margin-top:6px; }
+
+        .card-badges { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+        .badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+        .b-new { background:rgba(228,30,43,0.1); color:#c41820; }
+        .b-assigned { background:#ede9fe; color:#5b21b6; }
+        .b-progress { background:#dbeafe; color:#1e40af; }
+        .b-done { background:#d1fae5; color:#065f46; }
+        .b-urgent { background:#fef3c7; color:#92400e; border:1px solid var(--accent-amber); }
+        .b-activity-blue { background:rgba(26,58,143,0.1); color:var(--primary); }
+        .b-activity-red { background:rgba(228,30,43,0.1); color:var(--accent-red); }
+
+        /* Overdue requests */
+        .request-card.is-overdue {
+            animation: overduePulse 2s ease-in-out infinite;
+            border: 2px solid #e41e2b;
+        }
+        .request-card.is-overdue::before {
+            content: '⚠ ПРОСРОЧЕНА';
+            display: block;
+            background: #e41e2b;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+        @keyframes overduePulse {
+            0%, 100% { background: var(--card); }
+            50% { background: rgba(228, 30, 43, 0.04); }
+        }
+
+        /* Request timeline */
+        .request-timeline { font-size:12px; }
+        .tl-entry { display:flex; gap:8px; padding:4px 0; }
+        .tl-dot { width:8px; height:8px; border-radius:50%; margin-top:4px; flex-shrink:0; }
+        .tl-dot-created { background:#e41e2b; }
+        .tl-dot-assigned { background:#7c3aed; }
+        .tl-dot-started { background:#3b82f6; }
+        .tl-dot-completed { background:#10b981; }
+        .tl-dot-rescheduled { background:#f59e0b; }
+        .tl-time { color:var(--text-muted); font-size:10px; }
+
+        /* Assignment section */
+        .assign-section { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+        .plan-grid { display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:8px; margin-bottom:6px; }
+        @media (max-width:520px) { .plan-grid { grid-template-columns:1fr 1fr; } .plan-grid .plan-field:first-child { grid-column:1 / -1; } }
+        .plan-field { display:flex; flex-direction:column; gap:4px; font-size:11px; font-weight:700; color:var(--text-muted); }
+        .plan-field input, .plan-field select { padding:10px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; font-family:inherit; background:#f8fafc; color:var(--text); width:100%; }
+        .plan-hint { font-size:11px; color:var(--text-muted); margin-bottom:8px; }
+        .plan-box { margin-top:8px; padding:8px 10px; border-radius:8px; background:rgba(26,58,143,0.06); font-size:12px; color:var(--text); }
+        .plan-box.muted { background:#f1f4f8; color:var(--text-muted); }
+        .plan-late { margin-top:4px; color:#c41820; font-weight:700; }
+        .plan-ok { margin-top:4px; color:#059669; font-weight:700; }
+        .full-toggle { margin-top:10px; padding:8px; text-align:center; background:rgba(26,58,143,0.06); border:1px dashed rgba(26,58,143,0.3); border-radius:8px; font-size:12px; font-weight:700; color:var(--primary); cursor:pointer; }
+        .full-info { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+        .full-toggle, .full-toggle * { cursor:pointer; user-select:none; }
+        .full-toggle:hover { background:rgba(26,58,143,0.12); }
+        .full-info img, .full-info button { cursor:pointer; }
+        .fi-title { font-size:13px; font-weight:700; margin:10px 0 6px; }
+        .fi-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:12px; }
+        .fi-grid .lbl { color:var(--text-muted); }
+        .fi-box { padding:8px; background:#f8fafc; border-radius:6px; }
+        .fi-box .cap { font-size:10px; color:var(--text-muted); font-weight:600; text-transform:uppercase; }
+        .fi-box .val { font-size:13px; font-weight:600; }
+        @media (max-width:500px) { .fi-grid { grid-template-columns:1fr; } }
+        .assign-label { font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
+
+        /* Mechanic checkboxes */
+        .mechanic-list { display:flex; flex-direction:column; gap:4px; margin-bottom:8px; }
+        .mechanic-item { display:flex; align-items:center; gap:10px; padding:8px 12px; border:1.5px solid var(--border); border-radius:8px; cursor:pointer; transition:all 0.2s; background:#f8fafc; }
+        .mechanic-item:has(input:checked) { border-color:var(--accent-purple); background:rgba(124,58,237,0.05); }
+        .mechanic-item input[type="checkbox"] { width:18px; height:18px; accent-color:var(--accent-purple); flex-shrink:0; margin:0; vertical-align:middle; }
+        .mechanic-item span { font-size:14px; vertical-align:middle; line-height:1.4; }
+
+        /* Responsible select */
+        .responsible-select { width:100%; padding:10px 14px; border:1.5px solid var(--accent-amber); border-radius:8px; font-size:14px; color:var(--text); background:rgba(245,158,11,0.05); appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; margin-bottom:8px; }
+
+        /* Assigned mechanics display */
+        .assigned-display { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+        .assigned-tag { padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(124,58,237,0.08); border:1px solid rgba(124,58,237,0.2); color:var(--accent-purple); }
+        .assigned-tag.responsible { background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.3); color:var(--accent-amber); }
+
+        /* Action buttons */
+        .card-actions { display:flex; gap:6px; margin-top:10px; }
+        .action-btn { flex:1; padding:10px; border:none; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; text-align:center; transition:all 0.2s; }
+        .action-btn:active { transform:scale(0.97); }
+        .btn-assign { background:linear-gradient(135deg,var(--accent-purple),#5b21b6); color:white; box-shadow:0 3px 0 #4c1d95,0 4px 10px rgba(124,58,237,0.25); border-top:1px solid rgba(255,255,255,0.3); }
+        .btn-complete { background:linear-gradient(135deg,var(--accent-green),#047857); color:white; box-shadow:0 3px 0 #065f46,0 4px 10px rgba(16,185,129,0.25); border-top:1px solid rgba(255,255,255,0.3); }
+
+        /* Status messages */
+        .status { text-align:center; padding:14px; border-radius:var(--radius); margin-bottom:12px; font-size:14px; font-weight:600; display:none; animation:fadeInUp 0.3s ease; }
+        .status.success { display:block; background:rgba(16,185,129,0.1); color:var(--accent-green); border:1px solid rgba(16,185,129,0.2); }
+        .status.error { display:block; background:rgba(239,68,68,0.08); color:var(--accent-red); border:1px solid rgba(239,68,68,0.15); }
+
+        .loading { text-align:center; padding:40px; }
+        .spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 10px; }
+        @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.015); } }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .empty { text-align:center; padding:40px; color:var(--text-muted); font-size:14px; }
+        .empty-icon { font-size:40px; margin-bottom:10px; opacity:0.5; }
+
+        /* Bottom nav */
+        .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:white; border-top:1px solid var(--border); display:flex; z-index:100; box-shadow:0 -2px 10px rgba(0,0,0,0.06); }
+        .bottom-nav a { flex:1; display:flex; flex-direction:column; align-items:center; padding:8px 0 10px; text-decoration:none; font-size:11px; font-weight:600; color:var(--text-muted); transition:all 0.2s; position:relative; }
+        .bottom-nav a.active { color:var(--primary); }
+        .bottom-nav a .nav-icon { font-size:20px; margin-bottom:2px; }
+        .bottom-nav a.active::after { content:''; display:block; width:24px; height:3px; background:var(--accent-red); border-radius:2px; margin-top:2px; }
+        .nav-badge { position:absolute; top:2px; right:calc(50% - 20px); background:var(--accent-red); color:white; font-size:9px; font-weight:800; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+    </style>
+<script src="compat/releases/6715e801d3476b24/office/datepicker.js"></script>
+<script src="compat/releases/6715e801d3476b24/shared/safe-render.js"></script>
+</head>
+<body>
+
+<div class="header">
+    <button onclick="window.history.back()" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">← Назад</button>
+    <button onclick="WC_AUTH.logout()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Изход</button>
+    <div class="header-top">
+        <img src="compat/releases/6715e801d3476b24/office/Repairs.png" alt="Logo">
+        <h1>РАЗПРЕДЕЛЯНЕ</h1>
+    </div>
+    <div class="header-sub">Ар Си Техник ООД</div>
+    <div class="header-user" id="headerUser">Ръководител сервизна дейност</div>
+</div>
+
+<div class="container">
+    <div id="readOnlyBanner" style="display:none;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:var(--radius);padding:10px 14px;text-align:center;font-size:13px;color:#1e40af;font-weight:600;margin-bottom:12px;">👁 Режим за преглед — само за наблюдение</div>
+    <div id="statusMsg" class="status"></div>
+
+    <div id="newRequestBanner" style="display:none;background:linear-gradient(135deg,#e41e2b,#c41820);color:white;padding:14px 18px;border-radius:var(--radius);margin-bottom:12px;align-items:center;gap:10px;animation:pulse 2s infinite;box-shadow:0 4px 16px rgba(228,30,43,0.3);">
+        <span style="font-size:24px;">🔔</span>
+        <div style="flex:1;">
+            <strong style="font-size:15px;">Нови заявки за разпределяне!</strong><br>
+            <span style="font-size:13px;opacity:0.9;" id="newRequestText">Има нови заявки от Сервизен координатор</span>
+        </div>
+        <div id="newRequestCount" style="background:white;color:#e41e2b;font-size:18px;font-weight:800;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;"></div>
+    </div>
+
+    <div class="status-tabs" id="statusTabs">
+        <button class="status-tab active" data-status="all" onclick="filterByStatus('all')">Всички</button>
+        <button class="status-tab" data-status="Нова" onclick="filterByStatus('Нова')">Нови <span class="tab-count" id="countNew">0</span></button>
+        <button class="status-tab" data-status="Разпределена" onclick="filterByStatus('Разпределена')">Разпр. <span class="tab-count" id="countAssigned">0</span></button>
+        <button class="status-tab" data-status="В изпълнение" onclick="filterByStatus('В изпълнение')">В изп. <span class="tab-count" id="countProgress">0</span></button>
+        <button class="status-tab" data-status="Изпълнена" onclick="filterByStatus('Изпълнена')">Изпълн. <span class="tab-count" id="countDone">0</span></button>
+    </div>
+
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <div style="color:var(--text-muted);font-size:13px;">Зареждане...</div>
+    </div>
+
+    <div id="requestsList" class="requests-list"></div>
+    <div id="emptyState" class="empty" style="display:none;">
+        <div class="empty-icon">📭</div>
+        Няма заявки за избрания филтър.
+    </div>
+</div>
+
+<nav class="bottom-nav" id="bottomNav">
+    <a href="requests.html"><span class="nav-icon">📝</span>Нова заявка</a>
+    <a href="assign.html" class="active"><span class="nav-icon">📋</span>Разпределяне<span class="nav-badge" id="navBadge" style="display:none;">0</span></a>
+    <a href="history.html"><span class="nav-icon">📊</span>Преглед</a>
+    <a href="schedule.html"><span class="nav-icon">📅</span>График</a>
+    <a href="dashboard.html"><span class="nav-icon">📈</span>Dashboard</a>
+</nav>
+
+<script>
+function sanitize(s){return WC_AUTH.escapeHTML(s);}
+// Safe notification — works on Android (via Service Worker) and desktop
+function safeNotify(title, options) {
+    try {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg && reg.showNotification) {
+                    reg.showNotification(title, options).catch(() => {});
+                } else {
+                    try { new Notification(title, options); } catch (e) {}
+                }
+            }).catch(() => {});
+        } else {
+            new Notification(title, options);
+        }
+    } catch (e) { console.log('Notification skipped:', e.message); }
+}
+
+// ===== Тихо обновяване: екранът се пипа само ако съдържанието наистина е различно =====
+function setHTML(el, html) {
+    if (!el) return false;
+    const c = el.__sh;
+    if (c && c.html === html && el.firstChild === c.first && el.childNodes.length === c.n) return false;
+    el.innerHTML = html;
+    el.__sh = { html: html, first: el.firstChild, n: el.childNodes.length };
+    return true;
+}
+
+// ===== Преглед на снимка в страницата (работи и за стари снимки, записани като data URL) =====
+function openPhoto(src) {
+    if (!src || !/^(https?:\/\/|data:image\/(jpeg|png|webp|gif);base64,)/.test(src)) return;
+    let ov = document.getElementById('photoViewer');
+    if (!ov) {
+        ov = document.createElement('div');
+        ov.id = 'photoViewer';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(10,16,32,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;padding:56px 12px 16px;';
+        ov.innerHTML =
+            '<button type="button" id="pvClose" aria-label="Затвори" style="position:absolute;top:10px;right:12px;width:44px;height:44px;border:none;border-radius:10px;background:rgba(255,255,255,0.15);color:#fff;font-size:24px;cursor:pointer;">✕</button>' +
+            '<button type="button" id="pvTab" style="position:absolute;top:10px;left:12px;height:44px;padding:0 14px;border:none;border-radius:10px;background:rgba(255,255,255,0.15);color:#fff;font-size:14px;font-weight:700;cursor:pointer;">↗ Отвори в нов раздел</button>' +
+            '<img id="pvImg" alt="Снимка" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.5);">' +
+            '<div id="pvErr" style="display:none;color:#fff;font-size:15px;text-align:center;max-width:520px;">Снимката не може да се зареди. Възможно е файлът да липсва в хранилището.</div>';
+        document.body.appendChild(ov);
+        const close = () => { ov.style.display = 'none'; document.body.style.overflow = ''; };
+        ov.addEventListener('click', e => { if (e.target === ov) close(); });
+        ov.querySelector('#pvClose').addEventListener('click', close);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && ov.style.display === 'flex') close(); });
+        ov.querySelector('#pvImg').addEventListener('error', () => { ov.querySelector('#pvImg').style.display = 'none'; ov.querySelector('#pvErr').style.display = 'block'; });
+        ov.querySelector('#pvTab').addEventListener('click', async () => {
+            const s = ov.dataset.src;
+            if (s.startsWith('data:')) {               // браузърите блокират data URL в нов раздел → отваряме като файл
+                try { const b = await (await fetch(s)).blob(); window.open(URL.createObjectURL(b), '_blank'); } catch (e) {}
+            } else window.open(s, '_blank');
+        });
+    }
+    ov.dataset.src = src;
+    const img = ov.querySelector('#pvImg');
+    img.style.display = 'block'; ov.querySelector('#pvErr').style.display = 'none';
+    img.src = src;
+    ov.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+const API_URL = WC_CONFIG.apiUrl;
+
+let allRequests = [];
+let mechanics = [];
+let currentFilter = 'all';
+let previousNewCount = 0;
+
+if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+}
+
+function playAlertSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        function beep(time, freq) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, time);
+            gain.gain.setValueAtTime(0.5, time);
+            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+            osc.start(time);
+            osc.stop(time + 0.3);
+        }
+        const now = ctx.currentTime;
+        beep(now, 880);
+        beep(now + 0.35, 1100);
+        beep(now + 0.7, 880);
+    } catch(e) {}
+}
+
+function showBrowserNotification(count) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+        safeNotify('Нови заявки за разпределяне', {
+            body: count + ' нови заявки чакат от Сервизен координатор',
+            icon: 'Repairs.png',
+            tag: 'new-requests',
+            requireInteraction: true
+        });
+    }
+}
+
+function showNewRequestPopup(count) {
+    const existing = document.getElementById('newReqPopup');
+    if (existing) existing.remove();
+
+    const popup = document.createElement('div');
+    popup.id = 'newReqPopup';
+    popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border-radius:16px;padding:30px 40px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);z-index:1000;animation:popupIn 0.3s ease;';
+    popup.innerHTML = '<div style="font-size:48px;margin-bottom:10px;">🔔</div>' +
+        '<div style="font-size:22px;font-weight:800;color:#e41e2b;margin-bottom:6px;">Нова заявка!</div>' +
+        '<div style="font-size:15px;color:#5a6577;">' + count + (count === 1 ? ' заявка чака' : ' заявки чакат') + ' за разпределяне</div>';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'newReqOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:999;animation:fadeIn 0.3s ease;';
+    overlay.onclick = function() { popup.remove(); overlay.remove(); };
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(popup);
+
+    setTimeout(() => { if (document.getElementById('newReqPopup')) { popup.remove(); overlay.remove(); } }, 4000);
+}
+
+function checkForNewRequests() {
+    const newCount = allRequests.filter(r => r.status === 'Нова').length;
+    const banner = document.getElementById('newRequestBanner');
+
+    if (newCount > 0) {
+        banner.style.display = 'flex';
+        document.getElementById('newRequestCount').textContent = newCount;
+        document.getElementById('newRequestText').textContent = newCount === 1
+            ? 'Има 1 нова заявка от Сервизен координатор'
+            : 'Има ' + newCount + ' нови заявки от Сервизен координатор';
+
+        // Sound + browser notification only when count increases
+        if (newCount > previousNewCount) {
+            playAlertSound();
+            showBrowserNotification(newCount);
+            showNewRequestPopup(newCount);
+        }
+    } else {
+        banner.style.display = 'none';
+    }
+    previousNewCount = newCount;
+}
+
+function updatePageTitle() {
+    const newCount = allRequests.filter(r => r.status === 'Нова').length;
+    document.title = newCount > 0 ? '(' + newCount + ') Разпределяне — Ар Си Техник' : 'Разпределяне — Ар Си Техник';
+}
+
+// Check auth
+function checkAuth() {
+    const auth = sessionStorage.getItem('workcard_auth');
+    const role = sessionStorage.getItem('workcard_role');
+    if (auth !== 'true') {
+        window.location.href = 'login.html';
+        return;
+    }
+    if (role !== 'manager' && role !== 'admin' && role !== 'coordinator') {
+        window.location.href = 'requests.html';
+        return;
+    }
+    const user = sessionStorage.getItem('workcard_user');
+    if (user) document.getElementById('headerUser').textContent = user;
+}
+
+function updateNav() {
+    const role = sessionStorage.getItem('workcard_role');
+    const nav = document.getElementById('bottomNav');
+    if (!nav) return;
+    const links = nav.querySelectorAll('a');
+    links.forEach(link => {
+        const href = link.getAttribute('href');
+        if (role === 'coordinator') {
+            // Координатор вижда: Нова заявка + Разпределяне + Преглед + Dashboard
+            link.style.display = (href === 'requests.html' || href === 'assign.html' || href === 'history.html' || href === 'schedule.html' || href === 'dashboard.html') ? 'flex' : 'none';
+        } else if (role === 'manager') {
+            // Ръководител вижда: Разпределяне + Преглед + Dashboard
+            link.style.display = (href === 'assign.html' || href === 'history.html' || href === 'schedule.html' || href === 'dashboard.html') ? 'flex' : 'none';
+        } else if (role === 'admin') {
+            // Управител вижда всичко
+            link.style.display = 'flex';
+        }
+    });
+}
+
+// API helper
+async function apiCall(path, method = 'GET', body = undefined) {
+    const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path, method, body })
+    });
+    if (!res.ok && res.status !== 204) throw new Error(`${method} ${path}: ${res.status}`);
+    if (res.status === 204) return null;
+    return res.json();
+}
+
+// Load mechanics
+async function loadMechanics() {
+    try {
+        mechanics = await apiCall('nomenclatures?group_name=eq.mechanics&is_active=eq.true&order=sort_order');
+    } catch(e) { console.error(e); }
+}
+
+// Load requests
+async function loadRequests() {
+    const formState = saveAssignState();
+    const firstLoad = !document.getElementById('requestsList').children.length;
+    if (firstLoad) {
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('emptyState').style.display = 'none';
+    }
+
+    try {
+        allRequests = await apiCall('service_requests?order=created_at.desc');
+        updateCounts();
+        renderRequests();
+        restoreAssignState(formState);
+        checkForNewRequests();
+        updatePageTitle();
+    } catch(e) {
+        console.error(e);
+        showStatus('Грешка при зареждане: ' + e.message, 'error');
+    } finally {
+        document.getElementById('loading').style.display = 'none';
+    }
+}
+
+function updateCounts() {
+    const counts = { 'Нова': 0, 'Разпределена': 0, 'В изпълнение': 0, 'Изпълнена': 0 };
+    allRequests.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
+    document.getElementById('countNew').textContent = counts['Нова'];
+    document.getElementById('countAssigned').textContent = counts['Разпределена'];
+    document.getElementById('countProgress').textContent = counts['В изпълнение'];
+    document.getElementById('countDone').textContent = counts['Изпълнена'];
+
+    const badge = document.getElementById('navBadge');
+    if (counts['Нова'] > 0) { badge.textContent = counts['Нова']; badge.style.display = 'flex'; }
+    else { badge.style.display = 'none'; }
+}
+
+function getWaitingTime(createdAt) {
+    const diff = (Date.now() - new Date(createdAt).getTime()) / 1000;
+    if (diff < 3600) return Math.floor(diff / 60) + ' мин.';
+    if (diff < 86400) return Math.floor(diff / 3600) + ' ч.';
+    return Math.floor(diff / 86400) + ' дни';
+}
+
+function filterByStatus(status) {
+    currentFilter = status;
+    document.querySelectorAll('.status-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.status-tab[data-status="${status}"]`).classList.add('active');
+    renderRequests();
+}
+
+function renderRequests() {
+    const list = document.getElementById('requestsList');
+    const empty = document.getElementById('emptyState');
+    const filtered = currentFilter === 'all' ? allRequests : allRequests.filter(r => r.status === currentFilter);
+
+    if (filtered.length === 0) { setHTML(list, ''); empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    setHTML(list, filtered.map((r, i) => {
+        const stripeClass = r.status === 'Нова' ? 'stripe-new' : r.status === 'Разпределена' ? 'stripe-assigned' : r.status === 'В изпълнение' ? 'stripe-progress' : 'stripe-done';
+        const statusBadge = r.status === 'Нова' ? '<span class="badge b-new">Нова</span>' : r.status === 'Разпределена' ? '<span class="badge b-assigned">Разпределена</span>' : r.status === 'В изпълнение' ? '<span class="badge b-progress">В изпълнение</span>' : '<span class="badge b-done">Изпълнена</span>';
+        const urgentBadge = r.priority === 'Спешен' ? '<span class="badge b-urgent">🔥 Спешна</span>' : '';
+        const activityBadges = (r.activity_type || []).map(a => `<span class="badge ${a === 'РЕМОНТ' || a === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'b-activity-red' : 'b-activity-blue'}">${WC_SAFE.text(a)}</span>`).join('');
+        const newClass = r.status === 'Нова' ? 'is-new' : '';
+        const today = new Date().toISOString().split('T')[0];
+        const isOverdue = r.desired_date && r.desired_date < today && r.status !== 'Изпълнена';
+        const overdueClass = isOverdue ? 'is-overdue' : '';
+
+        const date = new Date(r.created_at);
+        const dateStr = `${String(date.getDate()).padStart(2,'0')}.${String(date.getMonth()+1).padStart(2,'0')}.${date.getFullYear()}`;
+        const waitTime = getWaitingTime(r.created_at);
+        const waitColor = waitTime.includes('дни') ? 'var(--accent-red)' : waitTime.includes('ч.') && parseInt(waitTime) > 4 ? 'var(--accent-amber)' : 'var(--text-muted)';
+
+        let assignSection = '';
+        if (r.status === 'Нова') {
+            const mechChecks = mechanics.map(m => `<label class="mechanic-item"><input type="checkbox" name="mech-${WC_SAFE.id(r.id)}" value="${sanitize(m.value)}" onchange="updateResponsibleOptions('${WC_SAFE.id(r.id)}')"><span>${sanitize(m.label)}</span></label>`).join('');
+            assignSection = `
+                <div class="assign-section">
+                    <div class="assign-label">Назначи механик(ци):</div>
+                    <div class="mechanic-list">${mechChecks}</div>
+                    <div class="assign-label">★ Отговорник:</div>
+                    <select class="responsible-select" id="resp-${WC_SAFE.id(r.id)}"><option value="">— Избери отговорник —</option></select>
+                    <div class="assign-label">🕒 Планирано изпълнение:</div>
+                    <div class="plan-grid">
+                        <label class="plan-field">Дата *<input type="date" id="pdate-${WC_SAFE.id(r.id)}" min="${todayIso()}" value="${r.desired_date && r.desired_date >= todayIso() ? r.desired_date : ''}"></label>
+                        <label class="plan-field">Час *<select id="ptime-${WC_SAFE.id(r.id)}">${timeOptions()}</select></label>
+                        <label class="plan-field">Продължителност *<select id="pdur-${WC_SAFE.id(r.id)}">${durationOptions()}</select></label>
+                    </div>
+                    ${r.desired_date ? `<div class="plan-hint">Желана дата от клиента: ${fmtPlanDate(r.desired_date + 'T00:00:00')}</div>` : ''}
+                    <div class="card-actions">
+                        <button class="action-btn btn-assign" onclick="assignRequest('${WC_SAFE.id(r.id)}')">✓ Разпредели</button>
+                    </div>
+                </div>`;
+        } else if (r.status === 'Разпределена' || r.status === 'В изпълнение') {
+            const assignedTags = (r.assigned_mechanics || []).map(m => `<span class="assigned-tag ${m === r.responsible_mechanic ? 'responsible' : ''}">${m === r.responsible_mechanic ? '★ ' : ''}${WC_SAFE.text(m)}</span>`).join('');
+            assignSection = `
+                <div class="assign-section">
+                    <div class="assign-label">Назначени:</div>
+                    <div class="assigned-display">${assignedTags}</div>
+                    ${planHtml(r)}
+                </div>`;
+        } else if (r.status === 'Изпълнена') {
+            const assignedTags = (r.assigned_mechanics || []).map(m => `<span class="assigned-tag ${m === r.responsible_mechanic ? 'responsible' : ''}">${m === r.responsible_mechanic ? '★ ' : ''}${WC_SAFE.text(m)}</span>`).join('');
+            const completedDate = r.completed_at ? new Date(r.completed_at) : null;
+            const completedStr = completedDate ? `${String(completedDate.getDate()).padStart(2,'0')}.${String(completedDate.getMonth()+1).padStart(2,'0')}.${completedDate.getFullYear()} ${String(completedDate.getHours()).padStart(2,'0')}:${String(completedDate.getMinutes()).padStart(2,'0')}` : '';
+            assignSection = `
+                <div class="assign-section">
+                    <div class="assign-label">Изпълнена от:</div>
+                    <div class="assigned-display">${assignedTags}</div>
+                    ${completedStr ? `<div style="font-size:11px;color:var(--accent-green);margin-top:4px;font-weight:600;">✓ ${completedStr}</div>` : ''}
+                    ${planHtml(r)}
+                </div>`;
+        }
+
+        return `
+        <div class="request-card ${newClass} ${overdueClass}" data-request-id="${WC_SAFE.id(r.id)}" style="animation-delay:${i*0.04}s">
+            <div class="card-main">
+                <div class="card-stripe ${stripeClass}"></div>
+                <div class="card-content">
+                    <div class="card-top">
+                        <div class="card-client">${WC_SAFE.text(r.client_name)}</div>
+                        <div class="card-date">${dateStr}</div>
+                    </div>
+                    <div style="font-size:10px;color:${waitColor};font-weight:600;">⏱ Чака ${waitTime}</div>
+                    <div class="card-vehicle">${WC_SAFE.text(r.vehicle)} — ${WC_SAFE.text(r.reg_number)}</div>
+                    ${r.description ? `<div class="card-desc">${WC_SAFE.text(r.description)}</div>` : ''}
+                    <div class="card-contact">📞 ${WC_SAFE.text(r.client_phone || '—')} ${r.client_email ? '· 📧 ' + WC_SAFE.text(r.client_email) : ''}</div>
+                    <div class="card-badges">${activityBadges}${statusBadge}${urgentBadge}</div>
+                    <div class="full-toggle" onclick="toggleFullInfo('${WC_SAFE.id(r.id)}', this)">▾ Пълна информация за заявката</div>
+                    <div id="full-${WC_SAFE.id(r.id)}" class="full-info" style="display:none;">${buildFullInfo(r)}</div>
+                    ${assignSection}
+                    <div style="margin-top:8px;cursor:pointer;color:var(--primary);font-size:11px;font-weight:600;" onclick="toggleRequestTimeline('${WC_SAFE.id(r.id)}', this)">📜 История ▾</div>
+                    <div id="timeline-${WC_SAFE.id(r.id)}" class="request-timeline" style="display:none;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);"></div>
+                </div>
+            </div>
+        </div>`;
+    }).join(''));
+    openFullInfo.forEach(id => {
+        const box = document.getElementById('full-' + id);
+        if (box) { box.style.display = 'block'; const t = box.previousElementSibling; if (t) t.textContent = '▴ Скрий информацията'; }
+    });
+}
+
+function esc(v) { return (v === null || v === undefined || v === '') ? '—' : sanitize(String(v)); }
+
+function buildFullInfo(r) {
+    const desired = r.desired_date ? new Date(r.desired_date).toLocaleDateString('bg-BG') : '—';
+    let html = '';
+    html += '<div class="fi-title" style="color:#b45309;">📝 Описание на проблема</div>';
+    html += '<div style="font-size:13px;padding:8px;background:#f8fafc;border-radius:6px;border-left:3px solid #f59e0b;">' + esc(r.description) + '</div>';
+    html += '<div class="fi-grid" style="margin-top:10px;">' +
+        '<div class="fi-box"><div class="cap">Вид дейност</div><div class="val">' + esc((r.activity_type || []).join(', ')) + '</div></div>' +
+        '<div class="fi-box"><div class="cap">Желана дата</div><div class="val">' + desired + '</div></div>' +
+        '<div class="fi-box"><div class="cap">Приоритет</div><div class="val">' + (r.priority === 'Спешен' ? '🔥 Спешен' : 'Нормален') + '</div></div>' +
+        '<div class="fi-box"><div class="cap">Номер на заявка</div><div class="val">' + esc(r.request_number) + '</div></div>' +
+    '</div>';
+    html += '<div class="fi-title" style="color:#059669;">👤 Данни на клиента</div>';
+    html += '<div class="fi-grid">' +
+        '<div><span class="lbl">Тип:</span> <strong>' + (r.client_type === 'ЮЛ' ? 'Юридическо лице' : 'Физическо лице') + '</strong></div>' +
+        '<div><span class="lbl">Име, Фамилия:</span> <strong>' + esc(r.client_name) + '</strong></div>' +
+        (r.client_type === 'ЮЛ' ?
+            '<div><span class="lbl">Фирма:</span> <strong>' + esc(r.company_name) + '</strong></div>' +
+            '<div><span class="lbl">Булстат:</span> <strong>' + esc(r.bulstat) + '</strong></div>' +
+            '<div><span class="lbl">Контактно лице:</span> <strong>' + esc(r.contact_person) + '</strong></div>' : '') +
+        '<div><span class="lbl">Телефон:</span> <strong>' + esc(r.client_phone) + '</strong></div>' +
+        '<div><span class="lbl">Имейл:</span> <strong>' + esc(r.client_email) + '</strong></div>' +
+    '</div>';
+    html += '<div class="fi-title" style="color:#1a3a8f;">🚗 Данни за машината</div>';
+    html += '<div class="fi-grid">' +
+        '<div><span class="lbl">Марка:</span> <strong>' + esc(r.brand) + '</strong></div>' +
+        '<div><span class="lbl">Модел:</span> <strong>' + esc(r.model) + '</strong></div>' +
+        '<div><span class="lbl">рег № / сер № / Инв №:</span> <strong>' + esc(r.reg_number) + '</strong></div>' +
+        '<div><span class="lbl">Година на производство:</span> <strong>' + esc(r.year_of_manufacture) + '</strong></div>' +
+        '<div><span class="lbl">рама №:</span> <strong>' + esc(r.frame_number) + '</strong></div>' +
+        '<div><span class="lbl">изминати км / мч:</span> <strong>' + esc(r.km_hours) + '</strong></div>' +
+    '</div>';
+    if (r.photo_data) {
+        html += '<div class="fi-title">📷 Снимка на талон</div>' +
+            '<img src="' + WC_SAFE.text(WC_SAFE.image(r.photo_data)) + '" alt="Талон" style="max-width:100%;max-height:250px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);cursor:pointer;" onclick="event.stopPropagation();openPhoto(this.src)">';
+    }
+    if (r.notes) {
+        html += '<div class="fi-title">💬 Бележки</div><div style="font-size:12px;">' + sanitize(r.notes).replace(/\n/g, '<br>') + '</div>';
+    }
+    if (r.created_by) {
+        html += '<div style="font-size:11px;color:var(--text-muted);margin-top:8px;">Регистрирал: ' + sanitize(r.created_by) + '</div>';
+    }
+    return html;
+}
+
+function toggleFullInfo(id, el) {
+    const box = document.getElementById('full-' + id);
+    const open = box.style.display !== 'none';
+    box.style.display = open ? 'none' : 'block';
+    el.textContent = open ? '▾ Пълна информация за заявката' : '▴ Скрий информацията';
+    if (open) openFullInfo.delete(id); else openFullInfo.add(id);
+}
+
+const openFullInfo = new Set();
+
+function toggleRequestTimeline(requestId, el) {
+    const container = document.getElementById('timeline-' + requestId);
+    const isHidden = container.style.display === 'none' || !container.style.display;
+    if (isHidden) {
+        container.style.display = 'block';
+        el.textContent = '📜 История ▲';
+        loadRequestTimeline(requestId).then(logs => renderTimeline(logs, 'timeline-' + requestId));
+    } else {
+        container.style.display = 'none';
+        el.textContent = '📜 История ▾';
+    }
+}
+
+async function loadRequestTimeline(requestId) {
+    try {
+        const logs = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'request_log?request_id=eq.' + requestId + '&order=created_at.asc', method: 'GET' })
+        });
+        const data = await logs.json();
+        return data;
+    } catch(e) { return []; }
+}
+
+function renderTimeline(logs, containerId) {
+    const actionLabels = {
+        'created': 'Регистрирана',
+        'assigned': 'Разпределена',
+        'started': 'Поета',
+        'completed': 'Изпълнена',
+        'rescheduled': 'Преместена'
+    };
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = logs.map(log => {
+        const dt = new Date(log.created_at);
+        const time = String(dt.getDate()).padStart(2,'0') + '.' + String(dt.getMonth()+1).padStart(2,'0') + ' ' + String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+        return '<div class="tl-entry"><div class="tl-dot tl-dot-' + WC_SAFE.text(log.action) + '"></div><div><strong>' + WC_SAFE.text(log.performed_by) + '</strong> — ' + (actionLabels[log.action] || WC_SAFE.text(log.action)) + (log.details ? ' (' + WC_SAFE.text(log.details) + ')' : '') + '<div class="tl-time">' + time + '</div></div></div>';
+    }).join('');
+    if (logs.length === 0) container.innerHTML = '<div style="color:var(--text-muted);font-style:italic;">Няма записи</div>';
+}
+
+// ===== Планиране: дата, час, продължителност =====
+const WORK_START = 7, WORK_END = 19;   // работно време в графика
+const DURATIONS = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+const DAYS_BG = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+
+function p2(n) { return String(n).padStart(2, '0'); }
+function todayIso() { const d = new Date(); return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); }
+function addHours(d, h) { return new Date(new Date(d).getTime() + h * 3600000); }
+function fmtTime(d) { d = new Date(d); return p2(d.getHours()) + ':' + p2(d.getMinutes()); }
+function fmtPlanDate(d) { d = new Date(d); return DAYS_BG[d.getDay()] + ' ' + p2(d.getDate()) + '.' + p2(d.getMonth() + 1) + '.' + d.getFullYear(); }
+function fmtDur(h) { h = parseFloat(h); if (!h) return '—'; return h < 1 ? Math.round(h * 60) + ' мин' : (String(h).replace('.', ',') + ' ч'); }
+
+function timeOptions() {
+    let o = '<option value="">— час —</option>';
+    for (let h = WORK_START; h < WORK_END; h++) {
+        o += '<option value="' + p2(h) + ':00">' + p2(h) + ':00</option><option value="' + p2(h) + ':30">' + p2(h) + ':30</option>';
+    }
+    return o;
+}
+function durationOptions() {
+    return '<option value="">— —</option>' + DURATIONS.map(d => '<option value="' + d + '">' + fmtDur(d) + '</option>').join('');
+}
+
+function planHtml(r) {
+    if (!r.scheduled_at) return '<div class="plan-box muted">🕒 Няма планирана дата и час</div>';
+    const start = new Date(r.scheduled_at);
+    const dur = parseFloat(r.estimated_hours) || 0;
+    const end = addHours(start, dur || 1);
+    let late = '';
+    if (r.status === 'Изпълнена' && r.completed_at) {
+        const d = (new Date(r.completed_at) - end) / 3600000;
+        late = d > 0.25 ? '<div class="plan-late">⚠ Изпълнена ' + fmtDur(Math.round(d * 2) / 2 || 0.5) + ' след плана</div>' : '<div class="plan-ok">✓ В рамките на плана</div>';
+    } else if (r.status !== 'Изпълнена' && new Date() > end) {
+        const d = (new Date() - end) / 3600000;
+        late = '<div class="plan-late">⚠ Закъснява спрямо плана с ' + (d >= 24 ? Math.floor(d / 24) + ' дн ' + Math.round(d % 24) + ' ч' : fmtDur(Math.max(0.5, Math.round(d * 2) / 2))) + '</div>';
+    }
+    return '<div class="plan-box">🕒 Планирано: <strong>' + fmtPlanDate(start) + ', ' + fmtTime(start) + ' – ' + fmtTime(end) + '</strong> (' + fmtDur(dur) + ')' + late + '</div>';
+}
+
+// Проверка за застъпване с други задачи на механиците в същия ден
+async function findConflicts(mechs, start, durH, excludeId) {
+    const day0 = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const day1 = addHours(day0, 24);
+    const rows = await apiCall('service_requests?select=id,request_number,client_name,assigned_mechanics,scheduled_at,estimated_hours&status=in.(Разпределена,В изпълнение)&scheduled_at=gte.' + day0.toISOString() + '&scheduled_at=lt.' + day1.toISOString());
+    const end = addHours(start, durH);
+    const out = [];
+    rows.forEach(x => {
+        if (x.id === excludeId || !x.scheduled_at) return;
+        const xs = new Date(x.scheduled_at), xe = addHours(xs, parseFloat(x.estimated_hours) || 1);
+        if (xs < end && xe > start) {
+            const common = (x.assigned_mechanics || []).filter(m => mechs.includes(m));
+            if (common.length) out.push(common.join(', ') + ' — ' + (x.client_name || '') + ' ' + fmtTime(xs) + '–' + fmtTime(xe));
+        }
+    });
+    return out;
+}
+
+// Запазва въведеното при автоматично обновяване на списъка
+function saveAssignState() {
+    const st = {};
+    document.querySelectorAll('.assign-section select, .assign-section input').forEach(el => {
+        if (!el.id && !el.name) return;
+        const key = el.id || (el.name + '|' + el.value);
+        st[key] = el.type === 'checkbox' ? el.checked : el.value;
+    });
+    return st;
+}
+function restoreAssignState(st) {
+    if (!st) return;
+    document.querySelectorAll('.assign-section input[type="checkbox"]').forEach(el => {
+        const key = el.name + '|' + el.value;
+        if (key in st) el.checked = st[key];
+    });
+    // обнови списъците за отговорник, после възстанови стойностите
+    const ids = new Set();
+    document.querySelectorAll('.assign-section input[type="checkbox"]').forEach(el => ids.add(el.name.replace('mech-', '')));
+    ids.forEach(id => { if (typeof updateResponsibleOptions === 'function') updateResponsibleOptions(id); });
+    Object.keys(st).forEach(k => {
+        if (k.includes('|')) return;
+        const el = document.getElementById(k);
+        if (el && st[k] !== undefined && st[k] !== '') el.value = st[k];
+    });
+}
+
+function updateResponsibleOptions(requestId) {
+    const checked = Array.from(document.querySelectorAll(`input[name="mech-${requestId}"]:checked`)).map(cb => cb.value);
+    const select = document.getElementById(`resp-${requestId}`);
+    select.innerHTML = '<option value="">— Избери отговорник —</option>';
+    checked.forEach(m => { select.innerHTML += `<option value="${sanitize(m)}">★ ${sanitize(m)}</option>`; });
+    if (checked.length === 1) select.value = checked[0];
+}
+
+async function assignRequest(requestId) {
+    const checked = Array.from(document.querySelectorAll(`input[name="mech-${requestId}"]:checked`)).map(cb => cb.value);
+    const responsible = document.getElementById(`resp-${requestId}`).value;
+
+    if (checked.length === 0) { showStatus('Избери поне един механик', 'error'); return; }
+    if (!responsible) { showStatus('Избери отговорник', 'error'); return; }
+
+    const pDate = document.getElementById(`pdate-${requestId}`).value;
+    const pTime = document.getElementById(`ptime-${requestId}`).value;
+    const pDur = parseFloat(document.getElementById(`pdur-${requestId}`).value);
+    if (!pDate || !pTime || !pDur) { showStatus('Избери дата, час и продължителност на изпълнението', 'error'); return; }
+    const scheduledAt = new Date(pDate + 'T' + pTime + ':00');
+
+    // Застъпване с други задачи на същите механици
+    let conflictText = '';
+    try {
+        const conflicts = await findConflicts(checked, scheduledAt, pDur, requestId);
+        if (conflicts.length) {
+            conflictText = '\n\n⚠ ЗАСТЪПВАНЕ:\n' + conflicts.map(c => '• ' + c).join('\n') + '\n';
+        }
+    } catch (e) { console.log('Conflict check skipped', e); }
+
+    const mechNames = checked.join(', ');
+    const confirmed = confirm('Сигурен ли си?\n\nНазначаване към: ' + mechNames + '\nОтговорник: ' + responsible +
+        '\nПланирано: ' + fmtPlanDate(scheduledAt) + ', ' + pTime + ' – ' + fmtTime(addHours(scheduledAt, pDur)) + ' (' + fmtDur(pDur) + ')' +
+        conflictText + (conflictText ? '\nПродължаваш ли въпреки застъпването?' : ''));
+    if (!confirmed) return;
+
+    try {
+        await apiCall(`service_requests?id=eq.${requestId}`, 'PATCH', {
+            assigned_mechanics: checked,
+            responsible_mechanic: responsible,
+            status: 'Разпределена',
+            scheduled_at: scheduledAt.toISOString(),
+            estimated_hours: pDur,
+            assigned_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+
+        await apiCall('request_log', 'POST', {
+            request_id: requestId,
+            action: 'assigned',
+            performed_by: sessionStorage.getItem('workcard_user') || 'Ръководител',
+            details: `Назначени: ${checked.join(', ')}. Отговорник: ${responsible}. Планирано: ${fmtPlanDate(scheduledAt)} ${pTime} (${fmtDur(pDur)})`
+        });
+
+        showStatus(`✓ Заявката е разпределена → ${checked.join(', ')} (★ ${responsible})`, 'success');
+        await loadRequests();
+    } catch(e) {
+        console.error(e);
+        showStatus('Грешка при разпределяне: ' + e.message, 'error');
+    }
+}
+
+function showStatus(msg, type) {
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    el.className = 'status ' + type;
+    el.scrollIntoView({ behavior:'smooth', block:'center' });
+    if (type === 'success') setTimeout(() => { el.className = 'status'; }, 6000);
+}
+
+// Auto-refresh every 30 seconds
+let refreshInterval;
+function startAutoRefresh() {
+    refreshInterval = setInterval(() => { loadRequests(); }, 30000);
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', async () => {
+    checkAuth();
+    updateNav();
+    if (sessionStorage.getItem('workcard_role') === 'coordinator') {
+        document.body.classList.add('read-only');
+        document.getElementById('readOnlyBanner').style.display = 'block';
+    }
+    await loadMechanics();
+    await loadRequests();
+    startAutoRefresh();
+});
+</script>
+
+</body>
+</html>
