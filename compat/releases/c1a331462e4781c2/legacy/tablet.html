@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Табло — Ар Си Техник</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a3a8f">
+    <style>
+        :root {
+            --primary: #1a3a8f; --primary-dark: #0d1f52; --primary-light: #2955c7;
+            --accent-red: #e41e2b; --accent-green: #10b981; --accent-amber: #f59e0b;
+            --accent-purple: #7c3aed; --accent-blue: #3b82f6;
+            --bg: #f0f4f8; --card: #ffffff; --text: #1a2332; --text-muted: #5a6577; --border: #d8dfe8;
+            --radius: 14px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+
+        /* Header - larger for tablet */
+        .header { background:linear-gradient(135deg,var(--primary-dark),var(--primary),var(--primary-light)); color:white; padding:16px 24px; text-align:center; position:sticky; top:0; z-index:100; box-shadow:0 4px 20px rgba(30,41,59,0.3); }
+        .header-top { display:flex; align-items:center; justify-content:center; gap:12px; }
+        .header img { width:44px; height:44px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:3px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); }
+        .header h1 { font-size:28px; font-weight:700; letter-spacing:1px; }
+        .header-sub { font-size:12px; opacity:0.7; margin-top:2px; }
+        .header-clock { font-size:18px; opacity:0.9; margin-top:4px; font-weight:600; }
+        @media (max-width:600px) { .header { padding-left:84px !important; padding-right:12px !important; } .header h1 { font-size:20px !important; } .header img { width:34px !important; height:34px !important; } }
+
+        .mechanic-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; padding:0 14px 14px; }
+        .mechanic-card { background:var(--card); border-radius:16px; padding:24px 16px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.06); cursor:pointer; transition:all 0.25s; border:3px solid transparent; position:relative; }
+        .mechanic-card:hover { transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,0.1); }
+        .mechanic-card:active { transform:scale(0.97); }
+        .mechanic-avatar { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:800; color:white; margin:0 auto 10px; background:linear-gradient(135deg,var(--primary),var(--primary-light)); }
+        .mechanic-card-name { font-size:18px; font-weight:700; color:var(--text); }
+        .mechanic-card.has-tasks { border-color:var(--accent-red); animation:mechanicPulse 1.5s ease-in-out infinite; }
+        .mechanic-card.has-tasks .mechanic-avatar { background:linear-gradient(135deg,var(--accent-red),#c41820); }
+        @keyframes mechanicPulse {
+            0%, 100% { background:var(--card); box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+            50% { background:rgba(228,30,43,0.04); box-shadow:0 4px 16px rgba(228,30,43,0.15); }
+        }
+        .task-count-badge { position:absolute; top:10px; right:10px; background:var(--accent-red); color:white; font-size:16px; font-weight:800; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(228,30,43,0.3); }
+        .mechanic-card.no-tasks { opacity:0.6; }
+        .mechanic-card.no-tasks .mechanic-avatar { background:linear-gradient(135deg,#94a3b8,#64748b); }
+        .container { max-width:900px; margin:0 auto; padding:14px; }
+
+        /* Summary bar */
+        .summary { display:flex; gap:8px; margin-bottom:14px; }
+        .summary-item { flex:1; background:var(--card); border-radius:var(--radius); padding:12px 8px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06); border-top:4px solid var(--border); }
+        .summary-item:nth-child(1) { border-top-color:var(--accent-red); }
+        .summary-item:nth-child(2) { border-top-color:var(--accent-purple); }
+        .summary-item:nth-child(3) { border-top-color:var(--accent-blue); }
+        .summary-item:nth-child(4) { border-top-color:var(--accent-green); }
+        .summary-icon { font-size:26px; }
+        .summary-val { font-size:36px; font-weight:800; color:var(--primary); }
+        .summary-label { font-size:14px; color:var(--text-muted); font-weight:600; text-transform:uppercase; }
+
+        /* Task cards - large for tablet */
+        .tasks-list { display:flex; flex-direction:column; gap:12px; }
+
+        .task-card {
+            background:var(--card); border-radius:var(--radius); overflow:hidden;
+            box-shadow:0 2px 6px rgba(0,0,0,0.06); transition:all 0.25s;
+            animation:fadeInUp 0.3s ease backwards;
+        }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+        .task-urgent {
+            animation: urgentPulse 2s ease-in-out infinite;
+        }
+        @keyframes urgentPulse {
+            0%, 100% { background: var(--card); }
+            50% { background: rgba(228, 30, 43, 0.06); }
+        }
+        .task-urgent .task-stripe {
+            animation: urgentStripe 2s ease-in-out infinite;
+        }
+        @keyframes urgentStripe {
+            0%, 100% { background: var(--accent-red); }
+            50% { background: #ff4757; box-shadow: 0 0 10px rgba(228,30,43,0.4); }
+        }
+
+        .task-new-pulse {
+            animation: newRequestPulse 1.5s ease-in-out infinite;
+            border: 2px solid #e41e2b;
+        }
+        @keyframes newRequestPulse {
+            0%, 100% { background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+            50% { background:rgba(228,30,43,0.05); box-shadow:0 4px 16px rgba(228,30,43,0.15); }
+        }
+
+        .task-main { display:flex; }
+        .task-stripe { width:6px; flex-shrink:0; }
+        .stripe-new { background:var(--accent-red); }
+        .stripe-assigned { background:var(--accent-purple); }
+        .stripe-progress { background:var(--accent-blue); }
+        .stripe-done { background:var(--accent-green); }
+
+        .task-content { flex:1; padding:16px; }
+        .task-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+        .task-client { font-size:22px; font-weight:700; color:var(--text); }
+        .task-date { font-size:13px; color:var(--text-muted); }
+        .task-vehicle { font-size:19px; color:var(--text); margin-bottom:2px; }
+        .task-reg { font-size:16px; color:var(--text-muted); }
+        .task-plan { display:inline-block; margin-top:8px; padding:6px 12px; border-radius:10px; font-size:17px; font-weight:800; background:rgba(26,58,143,0.08); color:var(--primary); }
+        .task-plan.today { background:rgba(16,185,129,0.12); color:#047857; }
+        .task-plan.late { background:rgba(228,30,43,0.1); color:#c41820; }
+        .task-plan.muted { background:#f1f4f8; color:var(--text-muted); font-weight:600; font-size:15px; }
+        .btn-free-card { display:block; width:100%; margin:0 0 14px; padding:16px; border:2px dashed var(--primary); border-radius:var(--radius); background:white; color:var(--primary); font-size:18px; font-weight:800; cursor:pointer; }
+        .btn-free-card:active { transform:scale(0.98); }
+        .task-desc { font-size:16px; color:var(--text-muted); margin-top:8px; padding:10px; background:#f8fafc; border-radius:10px; border-left:4px solid var(--border); }
+
+        .task-badges { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+        .badge { padding:4px 12px; border-radius:20px; font-size:15px; font-weight:700; }
+        .b-new { background:rgba(228,30,43,0.1); color:#c41820; }
+        .b-assigned { background:#ede9fe; color:#5b21b6; }
+        .b-progress { background:#dbeafe; color:#1e40af; }
+        .b-done { background:#d1fae5; color:#065f46; }
+        .b-urgent { background:rgba(245,158,11,0.1); color:#92400e; border:1.5px solid var(--accent-amber); }
+        .b-act-blue { background:rgba(26,58,143,0.1); color:var(--primary); }
+        .b-act-red { background:rgba(228,30,43,0.1); color:var(--accent-red); }
+
+        /* Mechanics display */
+        .task-mechanics { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+        .mech-label { font-size:15px; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
+        .mech-tags { display:flex; flex-wrap:wrap; gap:5px; }
+        .mech-tag { padding:5px 14px; border-radius:20px; font-size:16px; font-weight:600; background:rgba(124,58,237,0.08); border:1px solid rgba(124,58,237,0.2); color:var(--accent-purple); }
+        .mech-tag.responsible { background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.3); color:var(--accent-amber); font-weight:700; }
+
+        /* Action section - large buttons for tablet */
+        .task-actions { margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+
+        /* Mechanic select for claiming */
+        .claim-section { margin-bottom:10px; }
+        .claim-label { font-size:17px; font-weight:600; color:var(--text); margin-bottom:6px; }
+        .claim-select { width:100%; padding:14px 16px; border:2px solid var(--primary-light); border-radius:10px; font-size:19px; color:var(--text); background:rgba(41,85,199,0.05); appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 16px center; padding-right:40px; }
+
+        /* Large action buttons */
+        .action-btn {
+            display:block; width:100%; padding:16px; border:none; border-radius:var(--radius);
+            font-size:22px; font-weight:700; cursor:pointer; text-align:center;
+            transition:all 0.2s; margin-bottom:8px; letter-spacing:0.5px;
+        }
+        .action-btn:active { transform:scale(0.97); }
+
+        .btn-claim {
+            background:linear-gradient(135deg,var(--accent-blue),#2563eb);
+            color:white; box-shadow:0 4px 0 #1d4ed8,0 6px 16px rgba(59,130,246,0.3);
+            border-top:1px solid rgba(255,255,255,0.3);
+        }
+        .btn-workcard {
+            background:linear-gradient(135deg,var(--accent-red),#c41820);
+            color:white; box-shadow:0 4px 0 #a11018,0 6px 16px rgba(228,30,43,0.3);
+            border-top:1px solid rgba(255,255,255,0.3);
+        }
+        .btn-workcard:disabled { background:#94a3b8; box-shadow:0 4px 0 #64748b; cursor:not-allowed; }
+
+        /* Info banner for non-responsible */
+        .info-banner { background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.2); border-radius:10px; padding:12px 16px; font-size:17px; color:#1e40af; text-align:center; margin-top:8px; }
+
+        /* Status messages */
+        .status { text-align:center; padding:16px; border-radius:var(--radius); margin-bottom:14px; font-size:16px; font-weight:600; display:none; animation:fadeInUp 0.3s ease; }
+        .status.success { display:block; background:rgba(16,185,129,0.1); color:var(--accent-green); border:1px solid rgba(16,185,129,0.2); }
+        .status.error { display:block; background:rgba(239,68,68,0.08); color:var(--accent-red); border:1px solid rgba(239,68,68,0.15); }
+
+        .loading { text-align:center; padding:50px; }
+        .spinner { width:40px; height:40px; border:3px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .empty { text-align:center; padding:50px; color:var(--text-muted); font-size:16px; }
+        .empty-icon { font-size:48px; margin-bottom:12px; opacity:0.5; }
+
+        /* Notification sound */
+        .notif-banner {
+            background:linear-gradient(135deg,var(--accent-red),#c41820);
+            color:white; margin:0 14px 14px; padding:14px 18px; border-radius:var(--radius);
+            font-size:18px; display:none; align-items:center; gap:10px;
+            animation:pulse 2s infinite; box-shadow:0 4px 16px rgba(228,30,43,0.3);
+        }
+        .notif-banner.show { display:flex; }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.85; } }
+        .notif-count { background:white; color:var(--accent-red); font-size:18px; font-weight:800; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+    </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap&subset=cyrillic">
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ===== Табло на механиците — телефон и таблет ===== */
+.header { display:none !important; }
+.app-bar { height:64px; }
+.app-bar .title { font-size:19px; }
+.app-bar .clock { font-size:15px; font-weight:600; color:#dfe6f7; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.container { max-width:900px; }
+.summary-item { border-top-width:0 !important; border:1px solid var(--border); box-shadow:none; }
+.summary-icon { font-size:0 !important; height:12px; margin-bottom:4px; }
+.summary-icon .dot { display:inline-block; width:12px; height:12px; border-radius:50%; }
+.summary-label { text-transform:none !important; letter-spacing:0 !important; font-size:14px !important; }
+.task-card { border:1px solid var(--border); box-shadow:none !important; }
+.action-btn { min-height:60px; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:none !important; border-top:none !important; }
+.btn-claim { background:var(--accent-blue) !important; }
+.btn-workcard { background:var(--accent-red) !important; }
+.btn-free-card { display:flex; align-items:center; justify-content:center; gap:10px; min-height:60px; }
+.notif-banner { background:var(--accent-red) !important; box-shadow:none !important; margin:0 0 14px !important; }
+.mechanic-card { border:1px solid var(--border); box-shadow:none; min-height:150px; }
+.mechanic-card-name { font-size:19px !important; }
+#soundBar { display:none; }
+/* ===== Хоризонтален режим (завъртян телефон) — същият изглед, по-компактен ===== */
+@media (orientation: landscape) and (max-height: 520px) {
+    .app-bar { height: 48px; }
+    .app-bar .mark { display: none; }
+    .container { max-width: 760px; padding-top: 8px; }
+    .summary { margin-bottom: 8px !important; }
+    .summary-item { padding: 6px 4px !important; }
+    .summary-val { font-size: 22px !important; }
+    .action-btn, .btn-free-card { min-height: 48px !important; }
+    .td-bar { height: 48px; }
+    .td-body { padding-top: 10px; }
+}
+button, .task-card { touch-action: manipulation; }
+.task-card { cursor:pointer; }
+.task-content::after { content:'Натисни картата за подробности ›'; display:block; margin-top:12px; font-size:13px; font-weight:600; color:var(--primary); }
+
+/* ===== Задача на цял екран ===== */
+.td-overlay { position:fixed; inset:0; z-index:4000; background:var(--bg); display:none; flex-direction:column; }
+.td-overlay.open { display:flex; }
+.td-bar { height:60px; flex-shrink:0; background:var(--navy); color:#fff; display:flex; align-items:center; gap:8px; padding:0 10px; }
+.td-bar .td-back { min-width:48px; height:48px; border:none; background:rgba(255,255,255,0.12); color:#fff; border-radius:12px; font-size:16px; font-weight:700; display:flex; align-items:center; gap:6px; padding:0 14px; cursor:pointer; }
+.td-bar .td-title { flex:1; font-size:18px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.td-body { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px 14px 24px; }
+.td-wrap { max-width:720px; margin:0 auto; }
+.td-plate { background:linear-gradient(180deg,#f7f9fb,#edf1f6); border:1.5px solid #c6cfdb; border-radius:14px; padding:16px; position:relative; text-align:center; margin-bottom:14px; }
+.td-plate::before, .td-plate::after { content:''; position:absolute; top:10px; width:8px; height:8px; border-radius:50%; background:#b6c0cd; box-shadow:inset 0 0 0 1px #9eaaba; }
+.td-plate::before { left:10px; } .td-plate::after { right:10px; }
+.td-client { font-size:16px; font-weight:600; color:var(--text-muted); }
+.td-reg { font-size:34px; font-weight:700; letter-spacing:2px; margin:4px 0 2px; font-variant-numeric:tabular-nums; color:var(--text); }
+.td-machine { font-size:20px; font-weight:600; color:var(--text); }
+.td-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; text-align:left; }
+.td-grid div { background:rgba(255,255,255,0.75); border-radius:9px; padding:8px 10px; font-size:17px; font-weight:600; }
+.td-grid span { display:block; font-size:13px; font-weight:600; color:var(--text-muted); }
+.td-section { background:#fff; border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:12px; }
+.td-label { font-size:14px; font-weight:700; color:var(--navy); margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.td-desc { font-size:20px; line-height:1.45; color:var(--text); }
+.td-plan .task-plan { font-size:20px !important; margin-top:0 !important; }
+.td-chips { display:flex; flex-wrap:wrap; gap:8px; }
+.td-chips span { font-size:17px; font-weight:600; padding:6px 14px; border-radius:20px; background:#eef2fb; color:var(--primary); }
+.td-chips span.resp { background:#fff3cc; color:#6f4c00; }
+.td-photo { width:100%; max-height:360px; object-fit:contain; border-radius:10px; background:#f1f4f8; }
+.td-hist-btn { width:100%; min-height:52px; border:1.5px solid var(--primary); background:#fff; color:var(--primary); border-radius:12px; font-size:17px; font-weight:700; cursor:pointer; }
+.td-hist-item { border:1px solid var(--border); border-left:4px solid var(--accent-green); border-radius:10px; padding:10px 12px; margin-bottom:8px; font-size:16px; }
+.td-hist-top { display:flex; justify-content:space-between; gap:8px; font-weight:700; }
+.td-hist-sub { font-size:14px; color:var(--text-muted); margin-top:2px; }
+.td-hist-empty { font-size:15px; color:var(--text-muted); padding:6px 0; }
+.td-actions .action-btn { font-size:20px !important; min-height:64px; margin-bottom:10px; }
+.td-actions .info-banner { font-size:17px !important; }
+@media (max-width:420px) { .td-reg { font-size:28px; } .td-grid div { font-size:16px; } }
+#soundBar[style*="flex"] { display:flex !important; }
+@media (max-width:600px) {
+    .app-bar .title small { display:none; }
+    .app-bar .mark { display:none; }
+    .app-bar .title { font-size:17px; }
+    .app-bar .clock { font-size:13px; }
+    .summary { gap:6px !important; }
+    .summary-val { font-size:26px !important; }
+    .task-client { font-size:19px !important; }
+}
+</style>
+<script src="ui.js"></script>
+<script src="compat/releases/c1a331462e4781c2/shared/pending-cards.js"></script>
+<script src="compat/releases/c1a331462e4781c2/shared/legacy-resume.js"></script>
+<script src="compat/releases/c1a331462e4781c2/shared/safe-render.js"></script>
+</head>
+<body>
+
+<div class="header" style="display:none"><div id="clockHidden"></div></div>
+<div class="app-bar">
+    <button class="icon-btn" onclick="window.history.back()" aria-label="Назад" data-icon="back" data-icon-class="lg"></button>
+    <div class="mark"><img src="Repairs.png" alt=""></div>
+    <div class="title">Табло на механиците<small>Ар Си Техник ООД</small></div>
+    <div class="clock" id="clock"></div>
+</div>
+
+<div class="container">
+    <div id="statusMsg" class="status"></div>
+<div id="soundBar" onclick="unlockAudio()" style="display:none;align-items:center;justify-content:center;gap:8px;background:#f59e0b;color:white;padding:12px;font-size:16px;font-weight:700;cursor:pointer;"><span data-icon="sound" data-icon-class="lg"></span>&nbsp;Натисни тук, за да включиш звука и известията</div>
+
+    <!-- Екран 1: Избор на механик -->
+    <div id="screenMechanics" class="screen-active">
+        <div style="text-align:center;padding:20px;">
+            <div style="font-size:28px;font-weight:800;color:var(--primary);margin-bottom:4px;">Избери механик</div>
+            <div style="font-size:16px;color:var(--text-muted);">Натисни своето име за да видиш задачите си</div>
+        </div>
+        <div id="mechanicGrid" class="mechanic-grid"></div>
+    </div>
+
+    <!-- Екран 2: Задачи на механика -->
+    <div id="screenTasks" style="display:none;">
+    <div id="selectedMechanicBar" style="background:var(--primary);color:white;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;margin:0 0 14px;border-radius:var(--radius);">
+        <div>
+            <div style="font-size:20px;font-weight:700;" id="selectedMechanicName"></div>
+            <div style="font-size:13px;opacity:0.8;">Назначени задачи</div>
+        </div>
+        <button onclick="backToMechanics()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:8px 18px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">← Назад</button>
+    </div>
+    <button class="btn-free-card" onclick="createCardWithoutRequest()"><span data-icon="plus" data-icon-class="lg"></span>Създай работна карта (без заявка)</button>
+
+    <div id="notifBanner" class="notif-banner">
+        <span data-icon="bell" data-icon-class="lg"></span>
+        <div style="flex:1;"><strong style="font-size:16px;">Нови задачи!</strong><br>Има назначени задачи за изпълнение</div>
+        <div class="notif-count" id="notifCount">0</div>
+    </div>
+
+    <div class="summary" id="summaryBar">
+        <div class="summary-item"><div class="summary-icon"><span class="dot" style="background:#e41e2b"></span></div><div class="summary-val" id="sNew">0</div><div class="summary-label">Нови</div></div>
+        <div class="summary-item"><div class="summary-icon"><span class="dot" style="background:#6d34d6"></span></div><div class="summary-val" id="sAssigned">0</div><div class="summary-label">Разпред.</div></div>
+        <div class="summary-item"><div class="summary-icon"><span class="dot" style="background:#2f6fe0"></span></div><div class="summary-val" id="sProgress">0</div><div class="summary-label">В изпълн.</div></div>
+        <div class="summary-item"><div class="summary-icon"><span class="dot" style="background:#0f8a5f"></span></div><div class="summary-val" id="sDone">0</div><div class="summary-label">Изпълнени</div></div>
+    </div>
+
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <div style="color:var(--text-muted);font-size:15px;">Зареждане на задачи...</div>
+    </div>
+
+    <div id="tasksList" class="tasks-list"></div>
+    <div id="emptyState" class="empty" style="display:none;">
+        <div class="empty-icon">✅</div>
+        Няма активни задачи в момента.
+    </div>
+    </div>
+</div>
+
+<script>
+function sanitize(s){if(!s)return s;var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+// ===== Тихо обновяване: екранът се пипа само ако съдържанието наистина е различно =====
+function setHTML(el, html) {
+    if (!el) return false;
+    const c = el.__sh;
+    if (c && c.html === html && el.firstChild === c.first && el.childNodes.length === c.n) return false;
+    el.innerHTML = html;
+    el.__sh = { html: html, first: el.firstChild, n: el.childNodes.length };
+    return true;
+}
+
+// ===== Преглед на снимка в страницата (работи и за стари снимки, записани като data URL) =====
+function openPhoto(src) {
+    if (!src) return;
+    let ov = document.getElementById('photoViewer');
+    if (!ov) {
+        ov = document.createElement('div');
+        ov.id = 'photoViewer';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(10,16,32,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;padding:56px 12px 16px;';
+        ov.innerHTML =
+            '<button type="button" id="pvClose" aria-label="Затвори" style="position:absolute;top:10px;right:12px;width:44px;height:44px;border:none;border-radius:10px;background:rgba(255,255,255,0.15);color:#fff;font-size:24px;cursor:pointer;">✕</button>' +
+            '<button type="button" id="pvTab" style="position:absolute;top:10px;left:12px;height:44px;padding:0 14px;border:none;border-radius:10px;background:rgba(255,255,255,0.15);color:#fff;font-size:14px;font-weight:700;cursor:pointer;">↗ Отвори в нов раздел</button>' +
+            '<img id="pvImg" alt="Снимка" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.5);">' +
+            '<div id="pvErr" style="display:none;color:#fff;font-size:15px;text-align:center;max-width:520px;">Снимката не може да се зареди. Възможно е файлът да липсва в хранилището.</div>';
+        document.body.appendChild(ov);
+        const close = () => { ov.style.display = 'none'; document.body.style.overflow = ''; };
+        ov.addEventListener('click', e => { if (e.target === ov) close(); });
+        ov.querySelector('#pvClose').addEventListener('click', close);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && ov.style.display === 'flex') close(); });
+        ov.querySelector('#pvImg').addEventListener('error', () => { ov.querySelector('#pvImg').style.display = 'none'; ov.querySelector('#pvErr').style.display = 'block'; });
+        ov.querySelector('#pvTab').addEventListener('click', async () => {
+            const s = ov.dataset.src;
+            if (s.startsWith('data:')) {               // браузърите блокират data URL в нов раздел → отваряме като файл
+                try { const b = await (await fetch(s)).blob(); window.open(URL.createObjectURL(b), '_blank'); } catch (e) {}
+            } else window.open(s, '_blank');
+        });
+    }
+    ov.dataset.src = src;
+    const img = ov.querySelector('#pvImg');
+    img.style.display = 'block'; ov.querySelector('#pvErr').style.display = 'none';
+    img.src = src;
+    ov.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
+
+let allTasks = [];
+let mechanics = [];
+let previousNewCount = 0;
+let selectedMechanic = null;
+let mechanicTaskCounts = {};
+let previousTotalMechTasks = null;
+
+// API helper
+async function apiCall(path, method = 'GET', body = undefined) {
+    const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path, method, body })
+    });
+    if (!res.ok && res.status !== 204) throw new Error(`${method}: ${res.status}`);
+    if (res.status === 204) return null;
+    return res.json();
+}
+
+// Clock
+function updateClock() {
+    const now = new Date();
+    const str = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} · ${String(now.getDate()).padStart(2,'0')}.${String(now.getMonth()+1).padStart(2,'0')}.${now.getFullYear()}`;
+    document.getElementById('clock').textContent = str;
+}
+
+// Load mechanics
+async function loadMechanics() {
+    try {
+        mechanics = await apiCall('nomenclatures?group_name=eq.mechanics&is_active=eq.true&order=sort_order');
+    } catch(e) { console.error(e); }
+}
+
+// Format date
+function fmtDate(d) { const dt = new Date(d); return `${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}.${dt.getFullYear()}`; }
+
+// Shared audio — browsers allow sound only after the user has tapped the page
+let sharedAudioCtx = null;
+function getAudioCtx() {
+    if (!sharedAudioCtx) {
+        try { sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; }
+    }
+    return sharedAudioCtx;
+}
+function unlockAudio() {
+    const ctx = getAudioCtx();
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+    const bar = document.getElementById('soundBar');
+    if (bar) bar.style.display = 'none';
+}
+document.addEventListener('click', unlockAudio, { once: true });
+document.addEventListener('touchstart', unlockAudio, { once: true });
+
+// Safe notification — works on Android (via Service Worker) and desktop
+function safeNotify(title, options) {
+    try {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg && reg.showNotification) reg.showNotification(title, options).catch(() => {});
+                else { try { new Notification(title, options); } catch(e) {} }
+            }).catch(() => {});
+        } else {
+            new Notification(title, options);
+        }
+    } catch(e) { console.log('Notification skipped:', e.message); }
+}
+
+// Notification sound
+function playNotificationSound() {
+    try {
+        const audioCtx = getAudioCtx();
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        function beep(startTime) {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, startTime); // A5 note
+            gainNode.gain.setValueAtTime(0.5, startTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+            oscillator.start(startTime);
+            oscillator.stop(startTime + 0.3);
+        }
+
+        const now = audioCtx.currentTime;
+        beep(now);
+        beep(now + 0.4);
+        beep(now + 0.8);
+    } catch(e) { console.log('Audio error:', e); }
+}
+
+// Load mechanics screen
+async function loadMechanicScreen() {
+    try {
+        const mechs = await apiCall('nomenclatures?group_name=eq.mechanics&is_active=eq.true&order=sort_order');
+        const requests = await apiCall('service_requests?status=in.(Разпределена,В изпълнение)');
+
+        mechanicTaskCounts = {};
+        requests.forEach(r => {
+            (r.assigned_mechanics || []).forEach(m => {
+                mechanicTaskCounts[m] = (mechanicTaskCounts[m] || 0) + 1;
+            });
+        });
+
+        // Sound only when the total number of tasks increases
+        const total = Object.values(mechanicTaskCounts).reduce((a, b) => a + b, 0);
+        if (previousTotalMechTasks !== null && total > previousTotalMechTasks) playNotificationSound();
+        previousTotalMechTasks = total;
+
+        // Ignore the result if a mechanic was selected while loading
+        if (selectedMechanic) return;
+
+        const grid = document.getElementById('mechanicGrid');
+        setHTML(grid, mechs.map(m => {
+            const count = mechanicTaskCounts[m.value] || 0;
+            const hasTasksClass = count > 0 ? 'has-tasks' : 'no-tasks';
+            const initials = m.value.split(' ').map(n => n[0]).join('').substring(0, 2);
+            const badge = count > 0 ? '<div class="task-count-badge">' + count + '</div>' : '';
+            return '<div class="mechanic-card ' + hasTasksClass + '" data-name="' + m.value.replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '" onclick="selectMechanic(this.dataset.name)">' +
+                badge +
+                '<div class="mechanic-avatar">' + initials + '</div>' +
+                '<div class="mechanic-card-name">' + m.value + '</div>' +
+                (count > 0 ? '<div style="font-size:14px;color:var(--accent-red);font-weight:600;margin-top:4px;">' + count + ' задачи</div>' : '<div style="font-size:14px;color:var(--text-muted);margin-top:4px;">Няма задачи</div>') +
+            '</div>';
+        }).join(''));
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+function selectMechanic(name) {
+    selectedMechanic = name;
+    previousNewCount = Infinity; // no sound on first load after selection
+    allTasks = [];
+    document.getElementById('tasksList').innerHTML = '';
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('screenMechanics').style.display = 'none';
+    document.getElementById('screenTasks').style.display = 'block';
+    document.getElementById('selectedMechanicName').textContent = name;
+    loadTasksForMechanic(name);
+}
+
+function isLoggedMechanic() {
+    return sessionStorage.getItem('workcard_role') === 'mechanic' && !!sessionStorage.getItem('workcard_user');
+}
+
+function backToMechanics() {
+    if (isLoggedMechanic()) {
+        if (!confirm('Изход от профила на ' + sessionStorage.getItem('workcard_user') + '?')) return;
+        sessionStorage.clear();
+        window.location.href = 'login.html';
+        return;
+    }
+    selectedMechanic = null;
+    document.getElementById('screenTasks').style.display = 'none';
+    document.getElementById('screenMechanics').style.display = 'block';
+    loadMechanicScreen();
+}
+
+// Load tasks assigned to the selected mechanic
+async function loadTasksForMechanic(mechanicName) {
+    try {
+        const tasks = await apiCall('service_requests?status=in.(Разпределена,В изпълнение)&order=priority.desc,created_at.desc');
+        if (selectedMechanic !== mechanicName) return;
+        allTasks = tasks.filter(t => (t.assigned_mechanics || []).includes(mechanicName));
+        // Подредба по планиран час; без план — накрая, спешните първи
+        allTasks.sort((a, b) => {
+            if (a.scheduled_at && b.scheduled_at) return new Date(a.scheduled_at) - new Date(b.scheduled_at);
+            if (a.scheduled_at) return -1;
+            if (b.scheduled_at) return 1;
+            return (b.priority === 'Спешен') - (a.priority === 'Спешен');
+        });
+        updateSummary();
+        renderTasks();
+        checkNewTasks();
+    } catch(e) {
+        console.error(e);
+    } finally {
+        document.getElementById('loading').style.display = 'none';
+    }
+}
+
+function updateSummary() {
+    const counts = { 'Нова':0, 'Разпределена':0, 'В изпълнение':0, 'Изпълнена':0 };
+    allTasks.forEach(t => { if (counts[t.status] !== undefined) counts[t.status]++; });
+
+    // Also count completed today
+    apiCall('service_requests?status=eq.Изпълнена&completed_at=gte.' + new Date().toISOString().split('T')[0]).then(done => {
+        document.getElementById('sDone').textContent = done ? done.length : 0;
+    });
+
+    document.getElementById('sNew').textContent = counts['Нова'];
+    document.getElementById('sAssigned').textContent = counts['Разпределена'];
+    document.getElementById('sProgress').textContent = counts['В изпълнение'];
+}
+
+function checkNewTasks() {
+    const assignedCount = allTasks.filter(t => t.status === 'Разпределена').length;
+    const banner = document.getElementById('notifBanner');
+    if (assignedCount > 0) {
+        document.getElementById('notifCount').textContent = assignedCount;
+        banner.classList.add('show');
+        if (assignedCount > previousNewCount) {
+            playNotificationSound();
+            if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]);
+            safeNotify('Нова задача за ' + (selectedMechanic || 'механик'), {
+                body: assignedCount === 1 ? 'Имаш 1 разпределена задача' : 'Имаш ' + assignedCount + ' разпределени задачи',
+                icon: 'Repairs.png',
+                tag: 'mechanic-tasks',
+                renotify: true,
+                vibrate: [300, 150, 300]
+            });
+        }
+    } else {
+        banner.classList.remove('show');
+    }
+    previousNewCount = assignedCount;
+}
+
+function renderTasks() {
+    const list = document.getElementById('tasksList');
+    const empty = document.getElementById('emptyState');
+
+    if (allTasks.length === 0) { setHTML(list, ''); empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    setHTML(list, allTasks.map((t, i) => {
+        const stripeClass = t.status === 'Нова' ? 'stripe-new' : t.status === 'Разпределена' ? 'stripe-assigned' : 'stripe-progress';
+        const statusBadge = t.status === 'Нова' ? '<span class="badge b-new">Нова</span>' : t.status === 'Разпределена' ? '<span class="badge b-assigned">Разпределена</span>' : '<span class="badge b-progress">В изпълнение</span>';
+        const urgentBadge = t.priority === 'Спешен' ? '<span class="badge b-urgent">🔥 Спешна</span>' : '';
+        const urgentClass = t.priority === 'Спешен' ? 'task-urgent' : '';
+        const newClass = t.status === 'Нова' ? 'task-new-pulse' : '';
+        const actBadges = (t.activity_type || []).map(a => `<span class="badge ${a === 'РЕМОНТ' || a === 'ГАРАНЦИОНЕН РЕМОНТ' ? 'b-act-red' : 'b-act-blue'}">${WC_SAFE.text(a)}</span>`).join('');
+
+        // Mechanics display
+        let mechSection = '';
+        if (t.assigned_mechanics && t.assigned_mechanics.length > 0) {
+            const tags = t.assigned_mechanics.map(m => `<span class="mech-tag ${m === t.responsible_mechanic ? 'responsible' : ''}">${m === t.responsible_mechanic ? '★ ' : ''}${WC_SAFE.text(m)}</span>`).join('');
+            mechSection = `<div class="task-mechanics"><div class="mech-label">Назначени механици:</div><div class="mech-tags">${tags}</div></div>`;
+        }
+
+        // Actions based on status
+        let actionsSection = '';
+        if (t.status === 'Разпределена') {
+            actionsSection = `
+                <div class="task-actions">
+                    <button class="action-btn btn-claim" onclick="claimTask('${WC_SAFE.id(t.id)}')">${UI.icon('play','lg')}Поемам задачата</button>
+                </div>`;
+        } else if (t.status === 'В изпълнение') {
+            actionsSection = `
+                <div class="task-actions">
+                    ${selectedMechanic === t.responsible_mechanic ? `<button class="action-btn btn-workcard" onclick="fillWorkCard('${WC_SAFE.id(t.id)}')">${UI.icon('file','lg')}Попълни работна карта</button>` : ''}
+                    <div class="info-banner">★ Само отговорникът <strong>${WC_SAFE.text(t.responsible_mechanic)}</strong> попълва работната карта</div>
+                </div>`;
+        }
+
+        return `
+        <div class="task-card ${urgentClass} ${newClass}" data-task-id="${WC_SAFE.id(t.id)}" style="animation-delay:${i*0.05}s">
+            <div class="task-main">
+                <div class="task-stripe ${stripeClass}"></div>
+                <div class="task-content">
+                    <div class="task-top">
+                        <div class="task-client">${WC_SAFE.text(t.client_name)}</div>
+                        <div class="task-date">${fmtDate(t.created_at)}</div>
+                    </div>
+                    <div class="task-vehicle">${WC_SAFE.text(t.vehicle)} — ${WC_SAFE.text(t.reg_number)}</div>
+                    ${t.description ? `<div class="task-desc">${WC_SAFE.text(t.description)}</div>` : ''}
+                    <div class="task-badges">${actBadges}${statusBadge}${urgentBadge}</div>
+                    ${planLine(t)}
+                    ${mechSection}
+                    ${actionsSection}
+                </div>
+            </div>
+        </div>`;
+    }).join(''));
+}
+
+// Claim task
+async function claimTask(taskId) {
+    const mechanic = selectedMechanic;
+    if (!mechanic) return;
+
+    const task = allTasks.find(t => t.id === taskId);
+    if (!task.assigned_mechanics.includes(mechanic)) {
+        showStatus('Не си назначен за тази задача', 'error');
+        return;
+    }
+
+    try {
+        await apiCall(`service_requests?id=eq.${taskId}`, 'PATCH', {
+            status: 'В изпълнение',
+            started_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+
+        await apiCall('request_log', 'POST', {
+            request_id: taskId,
+            action: 'started',
+            performed_by: mechanic,
+            details: `${mechanic} пое задачата`
+        });
+
+        showStatus(`✓ ${mechanic} пое задачата!`, 'success');
+        await loadTasksForMechanic(mechanic);
+    } catch(e) {
+        console.error(e);
+        showStatus('Грешка: ' + e.message, 'error');
+    }
+}
+
+// Fill work card - redirect to index.html with request data
+// ===== Планиран час на задачата =====
+const DAYS_BG_T = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+function tp2(n) { return String(n).padStart(2, '0'); }
+function planLine(t) {
+    if (!t.scheduled_at) return '<div class="task-plan muted">' + UI.icon('clock','sm') + ' Без планиран час</div>';
+    const s = new Date(t.scheduled_at);
+    const dur = parseFloat(t.estimated_hours) || 1;
+    const e = new Date(s.getTime() + dur * 3600000);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const day0 = new Date(s); day0.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((day0 - today) / 86400000);
+    const dayLabel = diffDays === 0 ? 'Днес' : diffDays === 1 ? 'Утре' : DAYS_BG_T[s.getDay()] + ' ' + tp2(s.getDate()) + '.' + tp2(s.getMonth() + 1);
+    const late = t.status !== 'Изпълнена' && new Date() > e;
+    return '<div class="task-plan' + (late ? ' late' : diffDays === 0 ? ' today' : '') + '">' + UI.icon('clock','sm') + ' ' + dayLabel + ', ' +
+        tp2(s.getHours()) + ':' + tp2(s.getMinutes()) + ' – ' + tp2(e.getHours()) + ':' + tp2(e.getMinutes()) +
+        (late ? ' · закъснява' : '') + '</div>';
+}
+
+// ===== Работна карта без заявка =====
+function createCardWithoutRequest() {
+    if (!selectedMechanic) return;
+    sessionStorage.removeItem('workcard_request_id');
+    sessionStorage.removeItem('workcard_request_data');
+    sessionStorage.setItem('workcard_prefill_mechanic', selectedMechanic);
+    sessionStorage.setItem('workcard_from_tablet', '1');
+    if (!sessionStorage.getItem('workcard_role')) sessionStorage.setItem('workcard_role', 'mechanic');
+    sessionStorage.setItem('workcard_auth', 'true');
+    window.location.href = 'index.html';
+}
+
+function fillWorkCard(taskId) {
+    const task = allTasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // Store task data for index.html to pick up
+    sessionStorage.setItem('workcard_request_id', task.id);
+    sessionStorage.setItem('workcard_request_data', JSON.stringify({
+        client_name: task.client_name,
+        company_name: task.company_name || null,
+        vehicle: task.vehicle,
+        brand: task.brand || null,
+        model: task.model || null,
+        reg_number: task.reg_number,
+        year_of_manufacture: task.year_of_manufacture || null,
+        frame_number: task.frame_number || null,
+        km_hours: task.km_hours || null,
+        activity_type: task.activity_type,
+        description: task.description,
+        assigned_mechanics: task.assigned_mechanics,
+        responsible_mechanic: task.responsible_mechanic
+    }));
+    sessionStorage.setItem('workcard_from_tablet', '1');
+    if (!sessionStorage.getItem('workcard_role')) sessionStorage.setItem('workcard_role', 'mechanic');
+    sessionStorage.setItem('workcard_auth', 'true');
+
+    window.location.href = 'index.html';
+}
+
+function showStatus(msg, type) {
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    el.className = 'status ' + type;
+    el.scrollIntoView({ behavior:'smooth', block:'center' });
+    if (type === 'success') setTimeout(() => { el.className = 'status'; }, 5000);
+}
+
+// Auto-refresh every 15 seconds
+setInterval(() => {
+    if (selectedMechanic) {
+        loadTasksForMechanic(selectedMechanic);
+    } else {
+        loadMechanicScreen();
+    }
+}, 15000);
+
+// ===== Задача на цял екран (едър шрифт) =====
+let detailTaskId = null;
+
+function tdEsc(v) { return (v === null || v === undefined) ? '' : String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+function ensureDetailOverlay() {
+    let ov = document.getElementById('taskDetail');
+    if (ov) return ov;
+    ov = document.createElement('div');
+    ov.id = 'taskDetail';
+    ov.className = 'td-overlay';
+    ov.setAttribute('role', 'dialog');
+    ov.setAttribute('aria-modal', 'true');
+    ov.innerHTML = '<div class="td-bar"><button type="button" class="td-back" onclick="closeTaskDetail()">' + UI.icon('back') + 'Назад</button><div class="td-title" id="tdTitle"></div></div>' +
+        '<div class="td-body"><div class="td-wrap" id="tdContent"></div></div>';
+    document.body.appendChild(ov);
+    return ov;
+}
+
+function renderTaskDetail() {
+    const t = (allTasks || []).find(x => x.id === detailTaskId);
+    const card = document.querySelector('.task-card[data-task-id="' + detailTaskId + '"]');
+    if (!t || !card) { hideTaskDetail(); return; }
+    const machine = (t.brand || t.model) ? ((t.brand || '') + ' ' + (t.model || '')).trim() : (t.vehicle || '');
+    const cell = (label, val) => val ? '<div><span>' + label + '</span>' + tdEsc(val) + '</div>' : '';
+    const mechs = (t.assigned_mechanics || []).map(m =>
+        '<span class="' + (m === t.responsible_mechanic ? 'resp' : '') + '">' + (m === t.responsible_mechanic ? '★ ' : '') + tdEsc(m) + '</span>').join('');
+
+    document.getElementById('tdTitle').textContent = t.company_name || t.client_name || 'Задача';
+    let h = '<div class="td-plate">' +
+        '<div class="td-client">' + tdEsc(t.company_name || t.client_name) + '</div>' +
+        '<div class="td-reg">' + tdEsc(t.reg_number || '—') + '</div>' +
+        '<div class="td-machine">' + tdEsc(machine) + '</div>' +
+        '<div class="td-grid">' + cell('Година', t.year_of_manufacture) + cell('Рама №', t.frame_number) + cell('Км / мч', t.km_hours) + cell('Вид дейност', (t.activity_type || []).join(', ')) + '</div>' +
+    '</div>';
+    h += '<div class="td-section td-plan"><div class="td-label">' + UI.icon('clock', 'sm') + 'Планирано</div>' + planLine(t) +
+        (t.priority === 'Спешен' ? '<div style="margin-top:8px;font-size:18px;font-weight:700;color:#c41820;">' + UI.icon('flame', 'sm') + ' Спешна задача</div>' : '') + '</div>';
+    if (t.description) h += '<div class="td-section"><div class="td-label">' + UI.icon('note', 'sm') + 'Описание на проблема</div><div class="td-desc">' + tdEsc(t.description) + '</div></div>';
+    if (mechs) h += '<div class="td-section"><div class="td-label">' + UI.icon('users', 'sm') + 'Механици</div><div class="td-chips">' + mechs + '</div></div>';
+    h += '<div class="td-section"><div class="td-label">' + UI.icon('clock', 'sm') + 'История на машината</div>' +
+        '<div id="tdHistory"><button type="button" class="td-hist-btn" onclick="loadMachineHistory(\'' + tdEsc(t.reg_number || '') + '\')">Покажи последните посещения</button></div></div>';
+    if (t.photo_data) h += '<div class="td-section"><div class="td-label">' + UI.icon('photo', 'sm') + 'Снимка на талон</div><img class="td-photo" src="' + tdEsc(t.photo_data) + '" alt="Талон" onclick="openPhoto(this.src)"></div>';
+
+    // Действията са огледало на бутоните в картата — натискането задейства оригиналния бутон
+    const acts = card.querySelector('.task-actions');
+    if (acts) {
+        let a = '<div class="td-actions">';
+        acts.querySelectorAll('.action-btn').forEach((b, i) => {
+            a += '<button type="button" class="action-btn ' + tdEsc(b.className.replace('action-btn', '').trim()) + '" data-mirror="' + i + '">' + b.innerHTML + '</button>';
+        });
+        const info = acts.querySelector('.info-banner');
+        if (info) a += '<div class="info-banner">' + info.innerHTML + '</div>';
+        h += a + '</div>';
+    }
+    const box = document.getElementById('tdContent');
+    if (!setHTML(box, h)) return;   // нищо ново — не пипай отворения изглед
+    box.querySelectorAll('[data-mirror]').forEach(btn => btn.addEventListener('click', () => {
+        const live = document.querySelector('.task-card[data-task-id="' + detailTaskId + '"] .task-actions');
+        const orig = live ? live.querySelectorAll('.action-btn')[+btn.dataset.mirror] : null;
+        hideTaskDetail();
+        if (orig) orig.click();
+    }));
+}
+
+// ===== История на машината (последните 5 посещения) =====
+const TD_LAT2CYR = { A:'А', B:'В', C:'С', E:'Е', H:'Н', K:'К', M:'М', O:'О', P:'Р', T:'Т', X:'Х', Y:'У' };
+function tdNormReg(r) { return String(r || '').toUpperCase().replace(/[\s\-\.\/_]/g, '').replace(/[ABCEHKMOPTXY]/g, ch => TD_LAT2CYR[ch] || ch); }
+
+async function loadMachineHistory(reg) {
+    const box = document.getElementById('tdHistory');
+    if (!box) return;
+    const key = tdNormReg(reg);
+    if (!key) { box.innerHTML = '<div class="td-hist-empty">Няма рег. номер</div>'; return; }
+    box.innerHTML = '<div class="td-hist-empty">Зареждане…</div>';
+    try {
+        const cards = await apiCall('work_cards?select=id,work_date,activity_type,services,repair_type,repair_description,mechanic,reg_number,other_materials,has_materials&order=work_date.desc&limit=1000');
+        const mine = cards.filter(c => tdNormReg(c.reg_number) === key).slice(0, 5);
+        if (!mine.length) { box.innerHTML = '<div class="td-hist-empty">Няма предишни работни карти за тази машина</div>'; return; }
+        let mats = [];
+        const ids = mine.filter(c => c.has_materials).map(c => c.id);
+        if (ids.length) mats = await apiCall('work_card_materials?select=work_card_id,item_type,quantity,unit&work_card_id=in.(' + ids.join(',') + ')').catch(() => []);
+        const u = x => String(x || '').toLowerCase().startsWith('лит') ? 'л' : 'бр.';
+        const d = v => { const p = String(v || '').split('-'); return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0] : (v || ''); };
+        box.innerHTML = mine.map(c => {
+            const m = mats.filter(x => x.work_card_id === c.id).map(x => x.item_type + ' ' + x.quantity + ' ' + u(x.unit)).join(', ') + (c.other_materials ? ', ' + c.other_materials : '');
+            const what = [c.repair_type, c.repair_description, (c.services || []).join(', ')].filter(Boolean).join(' — ');
+            return '<div class="td-hist-item"><div class="td-hist-top"><span>' + tdEsc(c.activity_type || '') + '</span><span>' + d(c.work_date) + '</span></div>' +
+                (what ? '<div>' + tdEsc(what) + '</div>' : '') +
+                (m ? '<div class="td-hist-sub">Материали: ' + tdEsc(m.replace(/^, /, '')) + '</div>' : '') +
+                '<div class="td-hist-sub">' + tdEsc(Array.isArray(c.mechanic) ? c.mechanic.join(', ') : (c.mechanic || '')) + '</div></div>';
+        }).join('');
+    } catch (e) {
+        box.innerHTML = '<div class="td-hist-empty">Историята не може да се зареди</div>';
+    }
+}
+
+function openTaskDetail(id) {
+    detailTaskId = id;
+    const ov = ensureDetailOverlay();
+    renderTaskDetail();
+    if (!detailTaskId) return;
+    ov.classList.add('open');
+    ov.querySelector('.td-body').scrollTop = 0;
+    document.body.style.overflow = 'hidden';
+    try { history.pushState({ tabletDetail: true }, ''); } catch (e) {}
+}
+
+function hideTaskDetail() {
+    detailTaskId = null;
+    const ov = document.getElementById('taskDetail');
+    if (ov) ov.classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function closeTaskDetail() {
+    if (history.state && history.state.tabletDetail) history.back();   // затваря и при бутона „Назад“ на телефона
+    else hideTaskDetail();
+}
+
+window.addEventListener('popstate', () => { if (detailTaskId) hideTaskDetail(); });
+
+// Натискане върху картата (не върху бутон или поле) отваря цял екран
+document.addEventListener('click', e => {
+    const card = e.target.closest('#tasksList .task-card');
+    if (!card) return;
+    if (e.target.closest('button, a, select, input, textarea, label')) return;
+    openTaskDetail(card.dataset.taskId);
+});
+
+// При автоматичното обновяване — обнови и отворения изглед
+const _origRenderTasks = renderTasks;
+renderTasks = function () {
+    const r = _origRenderTasks.apply(this, arguments);
+    if (detailTaskId) renderTaskDetail();
+    return r;
+};
+
+// Update clock every second
+setInterval(updateClock, 1000);
+
+// Init
+document.addEventListener('DOMContentLoaded', async () => {
+    updateClock();
+    await loadMechanics();
+    await loadMechanicScreen();
+
+    // Mechanic who logged in via login.html goes straight to own tasks
+    if (isLoggedMechanic()) {
+        const name = sessionStorage.getItem('workcard_user');
+        selectMechanic(name);
+        const backBtn = document.querySelector('#selectedMechanicBar button');
+        if (backBtn) backBtn.textContent = 'Изход';
+    }
+
+    // Ask the user to tap once so sound can play
+    const ctx = getAudioCtx();
+    if (ctx && ctx.state === 'suspended') {
+        const bar = document.getElementById('soundBar');
+        if (bar) bar.style.display = 'flex';
+    }
+});
+</script>
+
+</body>
+</html>
