@@ -15,7 +15,7 @@ function harness(data=new Map(),fail=false){
   context.window=context;vm.createContext(context);scripts.forEach(s=>vm.runInContext(s,context));context.WC_DRAFTS.init();
   return {context,store:context.WC_DRAFTS,data,form,fields,listeners,handlers};
 }
-const card={vehicle:'Демо машина',work_hours:2},materials=[];
+const card={vehicle:'Демо машина',work_hours:2,mechanic:['Механик']},materials=[];
 test('an ambiguous network result survives reload with the same submission key and frozen fields',()=>{
   const first=harness();const payload=first.store.submission(card,materials);assert.equal(first.form.inert,true);
   first.listeners.pagehide();
@@ -31,4 +31,12 @@ test('definite server rejection unlocks editing; storage failure prevents an unt
   const h=harness();const old=h.store.submission(card,materials).submissionId;h.store.reject();assert.equal(h.form.inert,false);
   assert.notEqual(h.store.submission(card,materials).submissionId,old);
   const blocked=harness(new Map(),true);assert.throws(()=>blocked.store.submission(card,materials),/черновата/);assert.equal(blocked.form.inert,false);
+});
+test('legacy pending IDs and quantities survive reload; storage failure prevents the first write',()=>{
+  const first=harness();const pending=first.store.legacySubmission(card,[{quantity:10}]);
+  const restored=harness(first.data);assert.equal(restored.form.inert,true);
+  assert.deepEqual(JSON.parse(JSON.stringify(restored.store.legacyPending())),JSON.parse(JSON.stringify(pending)));
+  assert.equal(restored.store.legacySubmission({...card,work_hours:7},[]).card.id,pending.card.id);
+  assert.equal(restored.store.legacyPending().materials[0].quantity,10);
+  const blocked=harness(new Map(),true);assert.throws(()=>blocked.store.legacySubmission(card,[]),/не може да се запази/);
 });

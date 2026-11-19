@@ -61,7 +61,10 @@ async function legacyHarness({cancel=false,invalid=false}={}){
   const plan=createPlanSession(record);plan.tasks[0].done=true;plan.materials[0].used=true;plan.materials[0].quantity=invalid?0:10;
   const values={workDate:'2026-11-17',vehicle:'Машина',regNumber:'ДЕМО',kmHours:'100',client:'Клиент',workHours:'2',otherMaterials:'',kmTraveled:'',workNotes:'Бележка'};
   const writes=[],messages=[];let cleared=0;
-  const context={navigator:{onLine:true},validate:()=>true,confirm:text=>{messages.push(text);return !cancel;},document:{getElementById:id=>({value:values[id]??'',disabled:false,textContent:''}),querySelectorAll:()=>[{dataset:{value:'Механик'}}]},getActivities:()=>['ТО / ППП'],hasTO:()=>true,hasRepair:()=>false,hasMaterials:true,getCheckedValues:()=>[],collectMaterials:()=>[],WC_REQUEST_PLAN:plan,WC_DRAFTS:{save:()=>true,clear:()=>cleared++},supabaseInsert:async(table,data)=>{writes.push({table,data});return [{id}];},fetch:async()=>({ok:true,json:async()=>[]}),API_URL:'http://mock.invalid',sessionStorage:{getItem:()=>null,removeItem(){}},resetForm(){},showStatus:()=>{},setTimeout(){},console:{error(){}},window:{_currentRequestId:null}};
+  const context={navigator:{onLine:true},validate:()=>true,confirm:text=>{messages.push(text);return !cancel;},document:{getElementById:id=>({value:values[id]??'',disabled:false,textContent:''}),querySelectorAll:()=>[{dataset:{value:'Механик'}}]},getActivities:()=>['ТО / ППП'],hasTO:()=>true,hasRepair:()=>false,hasMaterials:true,getCheckedValues:()=>[],collectMaterials:()=>[],WC_REQUEST_PLAN:plan,
+    WC_DRAFTS:{save:()=>true,clear:()=>cleared++,legacyPending:()=>null,legacySubmission:(card,materials)=>({card,materials})},
+    WC_LEGACY_SUBMIT:{submit:async(_,pending)=>{writes.push({table:'work_cards',data:pending.card},{table:'work_card_materials',data:pending.materials});return id;}},
+    API_URL:'http://mock.invalid',sessionStorage:{getItem:()=>null,removeItem(){}},resetForm(){},showStatus:()=>{},setTimeout(){},console:{error(){}},window:{_currentRequestId:null}};
   vm.runInNewContext(source,context);await context.submitForm();
   return {writes,messages,cleared};
 }

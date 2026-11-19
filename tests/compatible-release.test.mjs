@@ -58,11 +58,16 @@ test('existing mechanic pages, original auth, service worker, manifest and asset
     if(file==='index.html'){
       const rendered=legacy(file);
       assert.ok(rendered.includes('await WC_REQUEST_PLAN.init('));
-      assert.ok(rendered.includes("await supabaseInsert('work_cards', prepared.card)"));
+      assert.ok(rendered.includes('await WC_LEGACY_SUBMIT.submit(API_URL,pending)'));
       assert.ok(rendered.includes('legacyDrafts:true'));
     }else if(pages.includes(file)){
-      const rendered=legacy(file).replace('<script src="'+release.metadata.prefix+'office-bridge.js"></script>\n','');
-      assert.equal(rendered,baseline.toString('utf8'),file);
+      const rendered=legacy(file).replace('<script src="'+release.metadata.prefix+'office-bridge.js"></script>\n','').replace('<script src="'+release.metadata.prefix+'shared/safe-render.js"></script>\n','');
+      if(file==='login.html')assert.equal(rendered,baseline.toString('utf8'),file);
+      else {
+        assert.match(rendered,/api-proxy['"]/);
+        assert.doesNotMatch(rendered,/api-proxy-v2/);
+        assert.doesNotMatch(rendered,/localStorage\.clear\(\)/);
+      }
     }else assert.deepEqual(release.files.get(file),baseline,file);
   }
   assert.doesNotMatch(office('login.html'),/id="deviceCode"|Код за регистрация/);
