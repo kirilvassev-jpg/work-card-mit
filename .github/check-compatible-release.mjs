@@ -10,6 +10,17 @@ const read=file=>readFile(path.join(root,file));
 const hash=(data,algorithm='sha256')=>createHash(algorithm).update(data).digest('hex');
 const blob=data=>createHash('sha1').update(Buffer.from('blob '+data.length+'\0')).update(data).digest('hex');
 const manifest=JSON.parse(await read('.github/compatible-release-checks.json'));
+const requiredPages=['login.html','requests.html','assign.html','schedule.html','history.html','dashboard.html','index.html','tablet.html'];
+const requiredAssets=['auth.js','sw.js','manifest.json','theme.css','ui.js','datepicker.js','Repairs.png','icons/icon-192.png','icons/icon-512.png'];
+assert.deepEqual([...manifest.pages].sort(),[...requiredPages].sort(),'The complete public page set is required');
+assert.match(manifest.prefix,/^compat\/releases\/[0-9a-f]{16}\/$/);
+for(const file of [...requiredPages,...requiredAssets]){
+  assert.match(manifest.baselineGit[file]||'',/^[0-9a-f]{40}$/,'Missing baseline: '+file);
+  assert.match(manifest.releaseHashes[file]||'',/^[0-9a-f]{64}$/,'Missing release entry: '+file);
+}
+for(const file of [...requiredPages.flatMap(p=>['office/'+p,'legacy/'+p]),'router.js','office-bridge.js','shared/safe-render.js','shared/legacy-submit.js']){
+  assert.match(manifest.releaseHashes[manifest.prefix+file]||'',/^[0-9a-f]{64}$/,'Missing runtime dependency: '+file);
+}
 const pages=manifest.pages;
 const current=new Map(await Promise.all(pages.map(async file=>[file,await read(file)])));
 const release=pages.every(file=>hash(current.get(file))===manifest.releaseHashes[file]);

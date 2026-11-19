@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Нова заявка — Ар Си Техник</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a3a8f">
+    <style>
+        :root {
+            --primary: #1a3a8f; --primary-dark: #0d1f52; --primary-light: #2955c7;
+            --accent-red: #e41e2b; --accent-green: #10b981; --accent-amber: #f59e0b;
+            --bg: #f0f4f8; --card: #ffffff; --text: #1a2332; --text-muted: #5a6577; --border: #d8dfe8;
+            --radius: 12px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; padding-bottom:80px; }
+
+        .header { background:linear-gradient(135deg,var(--primary-dark),var(--primary),var(--primary-light)); color:white; padding:16px 20px; text-align:center; position:sticky; top:0; z-index:100; box-shadow:0 4px 20px rgba(30,41,59,0.3); }
+        .header-top { display:flex; align-items:center; justify-content:center; gap:10px; }
+        .header img { width:36px; height:36px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:2px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); }
+        .header h1 { font-size:18px; font-weight:700; letter-spacing:1px; }
+        .header-sub { font-size:11px; opacity:0.7; margin-top:2px; }
+        .header-user { font-size:11px; opacity:0.9; margin-top:4px; background:rgba(255,255,255,0.15); display:inline-block; padding:2px 12px; border-radius:12px; }
+
+        .form-container { max-width:600px; margin:0 auto; padding:12px; }
+
+        .section { background:var(--card); border-radius:var(--radius); padding:16px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.08); border-left:4px solid var(--border); animation:fadeInUp 0.4s ease backwards; }
+        .s-green { border-left-color:var(--accent-green); }
+        .s-blue { border-left-color:var(--primary); }
+        .s-red { border-left-color:var(--accent-red); }
+        .s-amber { border-left-color:var(--accent-amber); }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+        .section-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
+        .s-green .section-title { color:var(--accent-green); }
+        .s-blue .section-title { color:var(--primary); }
+        .s-red .section-title { color:var(--accent-red); }
+        .s-amber .section-title { color:var(--accent-amber); }
+
+        .field { margin-bottom:14px; }
+        .field:last-child { margin-bottom:0; }
+        .field label { display:block; font-size:13px; font-weight:500; color:var(--text); margin-bottom:5px; }
+        .field label .required { color:var(--accent-red); margin-left:2px; }
+        .field label .optional { color:var(--text-muted); font-size:11px; font-weight:400; }
+
+        select, input[type="text"], input[type="email"], input[type="tel"], textarea {
+            width:100%; padding:11px 14px; border:1.5px solid var(--border); border-radius:10px;
+            font-size:15px; color:var(--text); background:#f8fafc; transition:all 0.25s;
+            font-family:inherit;
+        }
+        select { appearance:none; -webkit-appearance:none; background:#f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 14px center; padding-right:36px; }
+        textarea { resize:vertical; min-height:80px; }
+        select:focus, input:focus, textarea:focus { outline:none; border-color:var(--primary-light); background:white; box-shadow:0 0 0 3px rgba(41,85,199,0.15); }
+
+        /* Multi-select dropdown for activity type */
+        .ms-dropdown { position:relative; }
+        .ms-display { width:100%; padding:11px 14px; border:1.5px solid var(--border); border-radius:10px; font-size:15px; color:var(--text); background:#f8fafc; cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition:all 0.25s; }
+        .ms-display.open { border-color:var(--primary-light); background:white; box-shadow:0 0 0 3px rgba(41,85,199,0.15); border-radius:10px 10px 0 0; }
+        .ms-display .placeholder { color:#9ca3af; }
+        .ms-arrow { font-size:10px; color:var(--text-muted); transition:transform 0.3s; }
+        .ms-arrow.open { transform:rotate(180deg); }
+        .ms-options { display:none; position:absolute; left:0; right:0; background:white; border:1.5px solid var(--primary-light); border-top:none; border-radius:0 0 10px 10px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:10; }
+        .ms-options.open { display:block; }
+        .ms-option { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; transition:background 0.15s; font-size:14px; border-bottom:1px solid #f3f4f6; }
+        .ms-option:last-child { border-bottom:none; }
+        .ms-option:hover { background:#f8fafc; }
+        .ms-option.selected { background:rgba(26,58,143,0.05); }
+        .ms-check { width:18px; height:18px; border-radius:4px; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:12px; color:white; }
+        .ms-option.selected .ms-check { background:var(--primary); border-color:var(--primary); }
+        .ms-tags { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+        .ms-tag { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; background:rgba(26,58,143,0.08); border:1px solid rgba(26,58,143,0.2); border-radius:20px; font-size:11px; color:var(--primary); font-weight:600; }
+        .ms-tag .remove { cursor:pointer; opacity:0.6; font-size:14px; }
+        .ms-tag .remove:hover { opacity:1; }
+
+        /* Activity tiles — tap to select */
+        .act-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        @media (max-width:420px) { .act-grid { grid-template-columns:1fr; } }
+        .act-tile { display:flex; align-items:center; gap:10px; padding:12px 14px; border:1.5px solid var(--border); border-radius:10px; background:#f8fafc; cursor:pointer; font-size:14px; font-weight:700; color:var(--text); user-select:none; transition:all 0.15s; -webkit-tap-highlight-color:transparent; }
+        .act-tile:hover { border-color:var(--primary-light); }
+        .act-tile:active { transform:scale(0.98); }
+        .act-box { width:22px; height:22px; border-radius:6px; border:2px solid var(--border); background:white; display:flex; align-items:center; justify-content:center; font-size:14px; color:transparent; flex-shrink:0; transition:all 0.15s; }
+        .act-tile.selected { border-color:var(--accent-red); background:rgba(228,30,43,0.06); color:var(--accent-red); }
+        .act-tile.selected .act-box { background:var(--accent-red); border-color:var(--accent-red); color:white; }
+        .field.invalid .act-tile { border-color:var(--accent-red); }
+        .act-hint { font-size:11px; color:var(--text-muted); margin-top:6px; }
+
+        /* Success toast */
+        .toast { position:fixed; top:16px; left:50%; transform:translateX(-50%) translateY(-120%); z-index:2000; max-width:92%; width:520px; padding:14px 18px; border-radius:12px; font-size:14px; font-weight:700; box-shadow:0 10px 30px rgba(0,0,0,0.2); transition:transform 0.3s ease; text-align:center; }
+        .toast.show { transform:translateX(-50%) translateY(0); }
+        .toast.success { background:#059669; color:white; }
+        .toast.error { background:#e41e2b; color:white; }
+
+        /* Priority toggle */
+        .priority-group { display:flex; gap:8px; }
+        .priority-btn { flex:1; padding:11px; border:1.5px solid var(--border); border-radius:10px; background:#f8fafc; font-size:14px; font-weight:700; cursor:pointer; text-align:center; transition:all 0.3s; }
+        .priority-btn.active-normal { border-color:var(--primary); background:rgba(26,58,143,0.06); color:var(--primary); }
+        .priority-btn.active-urgent { border-color:var(--accent-amber); background:rgba(245,158,11,0.08); color:var(--accent-amber); }
+
+        /* Client type toggle */
+        .ct-btn { flex:1; padding:11px; border:1.5px solid var(--border); border-radius:10px; background:#f8fafc; font-size:14px; font-weight:700; cursor:pointer; text-align:center; transition:all 0.3s; }
+        .ct-btn.active { border-color:var(--accent-green); background:rgba(16,185,129,0.08); color:var(--accent-green); }
+
+        /* Submit */
+        .submit-btn { display:block; width:100%; padding:15px; background:linear-gradient(135deg,var(--accent-green),#047857); color:white; border:none; border-radius:var(--radius); font-size:16px; font-weight:700; cursor:pointer; letter-spacing:0.5px; box-shadow:0 4px 0 #065f46,0 6px 16px rgba(16,185,129,0.3); border-top:1px solid rgba(255,255,255,0.3); transition:all 0.2s; }
+        .submit-btn:hover { transform:translateY(-1px); }
+        .submit-btn:active { transform:translateY(3px); box-shadow:0 1px 0 #065f46; }
+        .submit-btn:disabled { background:#94a3b8; box-shadow:0 4px 0 #64748b; cursor:not-allowed; transform:none; }
+
+        /* Status messages */
+        .status { text-align:center; padding:14px; border-radius:var(--radius); margin-bottom:12px; font-size:14px; font-weight:600; display:none; animation:fadeInUp 0.3s ease; }
+        .status.success { display:block; background:rgba(16,185,129,0.1); color:var(--accent-green); border:1px solid rgba(16,185,129,0.2); }
+        .status.error { display:block; background:rgba(239,68,68,0.08); color:var(--accent-red); border:1px solid rgba(239,68,68,0.15); }
+
+        /* Validation */
+        .field.invalid select, .field.invalid input, .field.invalid textarea { border-color:var(--accent-red); background:rgba(239,68,68,0.03); }
+        .field.invalid .ms-display { border-color:var(--accent-red); }
+        .field .error-msg { color:var(--accent-red); font-size:12px; margin-top:4px; display:none; }
+        .field.invalid .error-msg { display:block; }
+
+        /* Bottom nav */
+        .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:white; border-top:1px solid var(--border); display:flex; z-index:100; box-shadow:0 -2px 10px rgba(0,0,0,0.06); }
+        .bottom-nav a { flex:1; display:flex; flex-direction:column; align-items:center; padding:8px 0 10px; text-decoration:none; font-size:11px; font-weight:600; color:var(--text-muted); transition:all 0.2s; }
+        .bottom-nav a.active { color:var(--primary); }
+        .bottom-nav a .nav-icon { font-size:20px; margin-bottom:2px; }
+        .bottom-nav a.active::after { content:''; display:block; width:24px; height:3px; background:var(--accent-red); border-radius:2px; margin-top:2px; }
+    </style>
+<script src="auth.js"></script>
+<script src="datepicker.js"></script>
+<script src="compat/releases/6715e801d3476b24/shared/safe-render.js"></script>
+</head>
+<body>
+
+<div class="header">
+    <button onclick="window.history.back()" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">← Назад</button>
+    <button onclick="WC_SAFE.logout();" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;">Изход</button>
+    <div class="header-top">
+        <img src="Repairs.png" alt="Logo">
+        <h1>НОВА ЗАЯВКА</h1>
+    </div>
+    <div class="header-sub">Ар Си Техник ООД</div>
+    <div class="header-user" id="headerUser">Сервизен координатор</div>
+</div>
+
+<div id="statusMsg" class="status"></div>
+<div id="toast" class="toast"></div>
+
+<form class="form-container" id="requestForm" onsubmit="return false;">
+
+    <!-- ОПИСАНИЕ -->
+    <div class="section s-amber" style="animation-delay:0.05s;">
+        <div class="section-title">📝 Описание на проблема</div>
+        <div class="field" id="fDescription">
+            <label>Описание на проблема <span class="required">*</span></label>
+            <textarea id="description" placeholder="Опиши проблема или исканата дейност..." rows="4"></textarea>
+            <div class="error-msg">Въведи описание на проблема</div>
+        </div>
+    </div>
+
+    <!-- ВИД ДЕЙНОСТ -->
+    <div class="section s-red" style="animation-delay:0.1s;">
+        <div class="section-title">⚡ Вид дейност + Желана дата</div>
+        <div class="field" id="fActivity">
+            <label>Вид дейност <span class="required">*</span></label>
+            <div class="act-grid" id="activityTiles">
+                <div class="act-tile" data-value="ТО / ППП" onclick="toggleActivityOption(this)"><span class="act-box">✓</span><span>ТО / ППП</span></div>
+                <div class="act-tile" data-value="РЕМОНТ" onclick="toggleActivityOption(this)"><span class="act-box">✓</span><span>РЕМОНТ</span></div>
+                <div class="act-tile" data-value="ГАРАНЦИОНЕН РЕМОНТ" onclick="toggleActivityOption(this)"><span class="act-box">✓</span><span>ГАРАНЦИОНЕН РЕМОНТ</span></div>
+                <div class="act-tile" data-value="ДРУГО" onclick="toggleActivityOption(this)"><span class="act-box">✓</span><span>ДРУГО</span></div>
+            </div>
+            <div class="act-hint">Може да избереш една или няколко дейности</div>
+            <div class="error-msg">Избери поне един вид дейност</div>
+        </div>
+        <div class="field">
+            <label>Желана дата за ремонт / ТО <span class="optional">(по избор)</span></label>
+            <input type="date" id="desiredDate">
+        </div>
+        <div class="field">
+            <label>Приоритет</label>
+            <div class="priority-group">
+                <button type="button" class="priority-btn active-normal" id="btnNormal" onclick="setPriority('Нормален')">Нормален</button>
+                <button type="button" class="priority-btn" id="btnUrgent" onclick="setPriority('Спешен')">🔥 Спешен</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- КЛИЕНТ -->
+    <div class="section s-green" style="animation-delay:0.15s;">
+        <div class="section-title">👤 Данни на клиента</div>
+        <div class="client-type-toggle" style="display:flex;gap:8px;margin-bottom:14px;">
+            <button type="button" class="ct-btn active" id="btnFL" onclick="setClientType('ФЛ')">Физическо лице</button>
+            <button type="button" class="ct-btn" id="btnUL" onclick="setClientType('ЮЛ')">Юридическо лице</button>
+        </div>
+        <div class="field" id="fClientName">
+            <label>Име, Фамилия <span class="required">*</span></label>
+            <input type="text" id="clientName" placeholder="напр. Петър Георгиев">
+            <div class="error-msg">Въведи име на клиента</div>
+        </div>
+        <div id="ulFields" style="display:none;">
+            <div class="field" id="fCompanyName">
+                <label>Име на фирма <span class="required">*</span></label>
+                <input type="text" id="companyName" placeholder="напр. Ар Си Техник ООД">
+                <div class="error-msg">Въведи име на фирма</div>
+            </div>
+            <div class="field" id="fBulstat">
+                <label>Булстат <span class="required">*</span></label>
+                <input type="text" id="bulstat" placeholder="напр. 123456789">
+                <div class="error-msg">Въведи булстат</div>
+            </div>
+            <div class="field">
+                <label>Контактно лице (Име, Фамилия) <span class="optional">(по избор)</span></label>
+                <input type="text" id="contactPerson" placeholder="напр. Иван Иванов">
+            </div>
+        </div>
+        <div class="field">
+            <label>Имейл <span class="optional">(по избор)</span></label>
+            <input type="email" id="clientEmail" placeholder="напр. p.georgiev@company.bg">
+        </div>
+        <div class="field" id="fClientPhone">
+            <label>Телефон <span class="required">*</span></label>
+            <input type="tel" id="clientPhone" placeholder="напр. 0888 123 456">
+            <div class="error-msg">Въведи телефон</div>
+        </div>
+    </div>
+
+    <!-- МАШИНА -->
+    <div class="section s-blue" style="animation-delay:0.2s;">
+        <div class="section-title">🚗 Данни за машината</div>
+        <div class="field" id="fBrand">
+            <label>Марка <span class="required">*</span></label>
+            <input type="text" id="brand" placeholder="напр. JCB, Iveco, Peugeot...">
+            <div class="error-msg">Въведи марка</div>
+        </div>
+        <div class="field" id="fModel">
+            <label>Модел <span class="required">*</span></label>
+            <input type="text" id="model" placeholder="напр. 3CX, Daily, Partner...">
+            <div class="error-msg">Въведи модел</div>
+        </div>
+        <div class="field" id="fRegNumber">
+            <label>рег № / сер № / Инв № <span class="required">*</span></label>
+            <input type="text" id="regNumber" placeholder="напр. СА 9876 ВМ">
+            <div class="error-msg">Въведи номер</div>
+        </div>
+        <div class="field" id="fYear">
+            <label>Година на производство <span class="required">*</span></label>
+            <input type="number" id="yearOfManufacture" min="1950" max="2030" step="1" placeholder="напр. 2019">
+            <div class="error-msg">Въведи година на производство</div>
+        </div>
+        <div class="field" id="fFrameNumber">
+            <label>рама №</label>
+            <input type="text" id="frameNumber" placeholder="напр. WVWZZZ3CZWE123456">
+        </div>
+        <div class="field" id="fReqKmHours">
+            <label>изминати км / мч</label>
+            <input type="text" id="reqKmHours" placeholder="напр. 125000 км или 3200 мч">
+        </div>
+        <div class="field">
+            <label>📷 Снимка на талон</label>
+            <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="previewPhoto(this)" style="width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:10px;background:#f8fafc;font-size:14px;cursor:pointer;">
+            <div id="photoPreview" style="display:none;margin-top:8px;">
+                <img id="photoImg" style="max-width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                <button type="button" onclick="removePhoto()" style="display:block;margin-top:6px;background:none;border:none;color:var(--accent-red);font-size:12px;font-weight:600;cursor:pointer;">✕ Премахни снимката</button>
+            </div>
+        </div>
+    </div>
+
+    <button type="button" class="submit-btn" id="submitBtn" onclick="submitRequest()">
+        📨 Регистрирай заявка
+    </button>
+</form>
+
+<nav class="bottom-nav" id="bottomNav">
+    <a href="requests.html" class="active"><span class="nav-icon">📝</span>Нова заявка</a>
+    <a href="history.html"><span class="nav-icon">📋</span>Заявки</a>
+    <a href="schedule.html"><span class="nav-icon">📅</span>График</a>
+    <a href="dashboard.html"><span class="nav-icon">📊</span>Dashboard</a>
+</nav>
+
+<script>
+function sanitize(s){if(!s)return s;var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+const API_URL = 'https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy';
+
+// Check auth
+function checkAuth() {
+    const auth = sessionStorage.getItem('workcard_auth');
+    const role = sessionStorage.getItem('workcard_role');
+    if (auth !== 'true' || (role !== 'coordinator' && role !== 'admin')) {
+        window.location.href = 'login.html';
+        return;
+    }
+    const user = sessionStorage.getItem('workcard_user');
+    if (user) document.getElementById('headerUser').textContent = user;
+}
+
+function updateNav() {
+    const role = sessionStorage.getItem('workcard_role');
+    const nav = document.getElementById('bottomNav');
+    if (!nav) return;
+    const links = nav.querySelectorAll('a');
+    links.forEach(link => {
+        const href = link.getAttribute('href');
+        if (role === 'coordinator') {
+            // Координатор вижда: Нова заявка + Разпределяне + Преглед + Dashboard
+            link.style.display = (href === 'requests.html' || href === 'assign.html' || href === 'history.html' || href === 'schedule.html' || href === 'dashboard.html') ? 'flex' : 'none';
+        } else if (role === 'manager') {
+            // Ръководител вижда: Разпределяне + Преглед + Dashboard
+            link.style.display = (href === 'assign.html' || href === 'history.html' || href === 'schedule.html' || href === 'dashboard.html') ? 'flex' : 'none';
+        } else if (role === 'admin') {
+            // Управител вижда всичко
+            link.style.display = 'flex';
+        }
+    });
+}
+
+// Activity type multi-select
+let selectedActivities = [];
+
+function toggleActivityOption(el) {
+    const value = el.dataset.value;
+    el.classList.toggle('selected');
+    if (el.classList.contains('selected')) {
+        if (!selectedActivities.includes(value)) selectedActivities.push(value);
+    } else {
+        selectedActivities = selectedActivities.filter(v => v !== value);
+    }
+    updateActivityDisplay();
+}
+
+function updateActivityDisplay() {
+    document.querySelectorAll('.act-tile').forEach(t => t.classList.toggle('selected', selectedActivities.includes(t.dataset.value)));
+    if (selectedActivities.length) document.getElementById('fActivity').classList.remove('invalid');
+    if (typeof updateDescriptionHint === 'function') updateDescriptionHint();
+}
+
+// Priority
+let priority = 'Нормален';
+function setPriority(val) {
+    priority = val;
+    document.getElementById('btnNormal').className = 'priority-btn' + (val === 'Нормален' ? ' active-normal' : '');
+    document.getElementById('btnUrgent').className = 'priority-btn' + (val === 'Спешен' ? ' active-urgent' : '');
+}
+
+// Client type (ФЛ / ЮЛ)
+let clientType = 'ФЛ';
+function setClientType(type) {
+    clientType = type;
+    document.getElementById('btnFL').classList.toggle('active', type === 'ФЛ');
+    document.getElementById('btnUL').classList.toggle('active', type === 'ЮЛ');
+    document.getElementById('ulFields').style.display = type === 'ЮЛ' ? 'block' : 'none';
+}
+
+// Photo attachment
+let photoBase64 = null;
+
+function previewPhoto(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Снимката е прекалено голяма (макс. 5MB)');
+            input.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Compress image
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const maxSize = 1200;
+                let w = img.width, h = img.height;
+                if (w > maxSize || h > maxSize) {
+                    if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+                    else { w = Math.round(w * maxSize / h); h = maxSize; }
+                }
+                canvas.width = w;
+                canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                photoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                document.getElementById('photoImg').src = photoBase64;
+                document.getElementById('photoPreview').style.display = 'block';
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function removePhoto() {
+    photoBase64 = null;
+    document.getElementById('photoInput').value = '';
+    document.getElementById('photoPreview').style.display = 'none';
+}
+
+// Validation
+function validate() {
+    let valid = true;
+    const checks = [
+        { id: 'fDescription', test: () => document.getElementById('description').value.trim() !== '' },
+        { id: 'fActivity', test: () => selectedActivities.length > 0 },
+        { id: 'fClientName', test: () => document.getElementById('clientName').value.trim() !== '' },
+        { id: 'fClientPhone', test: () => document.getElementById('clientPhone').value.trim() !== '' },
+        { id: 'fCompanyName', test: () => clientType !== 'ЮЛ' || document.getElementById('companyName').value.trim() !== '' },
+        { id: 'fBulstat', test: () => clientType !== 'ЮЛ' || document.getElementById('bulstat').value.trim() !== '' },
+        { id: 'fBrand', test: () => document.getElementById('brand').value.trim() !== '' },
+        { id: 'fModel', test: () => document.getElementById('model').value.trim() !== '' },
+        { id: 'fRegNumber', test: () => document.getElementById('regNumber').value.trim() !== '' },
+        { id: 'fYear', test: () => document.getElementById('yearOfManufacture').value !== '' },
+    ];
+    checks.forEach(c => {
+        const el = document.getElementById(c.id);
+        if (!c.test()) { el.classList.add('invalid'); valid = false; }
+        else { el.classList.remove('invalid'); }
+    });
+    if (!valid) {
+        const first = document.querySelector('.field.invalid');
+        if (first) first.scrollIntoView({ behavior:'smooth', block:'center' });
+    }
+    return valid;
+}
+
+// Generate unique request number: СП-ПН_ДД_ММ_ГГ_Фамилия
+async function generateRequestNumber(clientName) {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2,'0');
+    const mm = String(now.getMonth()+1).padStart(2,'0');
+    const yy = String(now.getFullYear()).slice(-2);
+    const nameParts = clientName.trim().split(' ');
+    const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : nameParts[0];
+
+    // Count today's requests for sequential number
+    const todayStart = now.toISOString().split('T')[0] + 'T00:00:00';
+    try {
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'service_requests?created_at=gte.' + todayStart + '&select=id', method: 'GET' })
+        });
+        const todayRequests = await res.json();
+        const seqNum = String(todayRequests.length + 1).padStart(3, '0');
+        return 'СП-' + seqNum + '_' + dd + '_' + mm + '_' + yy + '_' + lastName;
+    } catch(e) {
+        return 'СП-001_' + dd + '_' + mm + '_' + yy + '_' + lastName;
+    }
+}
+
+// Submit
+async function submitRequest() {
+    if (!validate()) return;
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Регистриране...';
+
+    // Check for duplicate
+    const today = new Date().toISOString().split('T')[0];
+    const clientName = document.getElementById('clientName').value.trim();
+    const regNum = document.getElementById('regNumber').value.trim();
+
+    try {
+        const dupeCheck = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: 'service_requests?client_name=eq.' + encodeURIComponent(clientName) + '&reg_number=eq.' + encodeURIComponent(regNum) + '&created_at=gte.' + today + 'T00:00:00',
+                method: 'GET'
+            })
+        });
+        const dupes = await dupeCheck.json();
+        if (dupes.length > 0) {
+            if (!confirm('⚠ Вече има заявка от "' + clientName + '" за машина "' + regNum + '" днес.\n\nПродължаваш ли с регистрацията?')) {
+                btn.disabled = false;
+                btn.textContent = '📨 Регистрирай заявка';
+                return;
+            }
+        }
+    } catch(e) { console.log('Dupe check failed, continuing:', e); }
+
+    try {
+        const requestNumber = await generateRequestNumber(document.getElementById('clientName').value.trim());
+        const requestData = {
+            request_number: requestNumber,
+            description: document.getElementById('description').value.trim(),
+            activity_type: selectedActivities,
+            desired_date: document.getElementById('desiredDate').value || null,
+            priority: priority,
+            client_type: clientType,
+            client_name: document.getElementById('clientName').value.trim(),
+            client_email: document.getElementById('clientEmail').value.trim() || null,
+            client_phone: document.getElementById('clientPhone').value.trim(),
+            company_name: clientType === 'ЮЛ' ? document.getElementById('companyName').value.trim() : null,
+            bulstat: clientType === 'ЮЛ' ? document.getElementById('bulstat').value.trim() : null,
+            contact_person: clientType === 'ЮЛ' ? document.getElementById('contactPerson').value.trim() || null : null,
+            brand: document.getElementById('brand').value.trim(),
+            model: document.getElementById('model').value.trim(),
+            vehicle: document.getElementById('brand').value.trim() + ' ' + document.getElementById('model').value.trim(),
+            reg_number: document.getElementById('regNumber').value.trim(),
+            year_of_manufacture: document.getElementById('yearOfManufacture').value ? parseInt(document.getElementById('yearOfManufacture').value) : null,
+            frame_number: document.getElementById('frameNumber').value.trim() || null,
+            km_hours: document.getElementById('reqKmHours').value.trim() || null,
+            photo_data: photoBase64 || null,
+            status: 'Нова',
+            created_by: sessionStorage.getItem('workcard_user') || 'Координатор'
+        };
+
+        // Insert request
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'service_requests', method: 'POST', body: requestData, token: sessionStorage.getItem('workcard_token') || null })
+        });
+        if (!res.ok) throw new Error(`POST: ${res.status}`);
+        const result = await res.json();
+
+        // Log action (in background — no waiting)
+        fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: 'request_log',
+                method: 'POST',
+                body: {
+                    request_id: result[0].id,
+                    action: 'created',
+                    performed_by: sessionStorage.getItem('workcard_user') || 'Координатор',
+                    details: `Заявка от ${requestData.client_name} за ${requestData.vehicle} (${requestData.reg_number})`
+                }
+            })
+        }).catch(() => {});
+
+        resetForm();
+        showStatus('✓ Заявка ' + requestNumber + ' е регистрирана — ' + requestData.client_name + ' — ' + requestData.vehicle, 'success');
+    } catch(e) {
+        console.error(e);
+        showStatus('Грешка при регистриране: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '📨 Регистрирай заявка';
+    }
+}
+
+let toastTimer = null;
+function showStatus(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + type + ' show';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.className = 'toast ' + type; }, type === 'success' ? 6000 : 9000);
+}
+
+function resetForm() {
+    document.getElementById('description').value = '';
+    document.getElementById('desiredDate').value = '';
+    document.getElementById('clientName').value = '';
+    document.getElementById('clientEmail').value = '';
+    document.getElementById('clientPhone').value = '';
+    document.getElementById('companyName').value = '';
+    document.getElementById('bulstat').value = '';
+    document.getElementById('contactPerson').value = '';
+    document.getElementById('brand').value = '';
+    document.getElementById('model').value = '';
+    document.getElementById('regNumber').value = '';
+    document.getElementById('yearOfManufacture').value = '';
+    document.getElementById('frameNumber').value = '';
+    document.getElementById('reqKmHours').value = '';
+    removePhoto();
+    selectedActivities = [];
+    updateActivityDisplay();
+    setPriority('Нормален');
+    setClientType('ФЛ');
+    window.scrollTo({ top:0, behavior:'auto' });
+    const d = document.getElementById('description');
+    if (d) setTimeout(() => d.focus({ preventScroll:true }), 50);
+}
+
+// Logout
+function logout() {
+    sessionStorage.clear();
+    window.location.href = 'login.html';
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+    // Warm up Edge Function
+    fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: 'nomenclatures?limit=1', method: 'GET' }) }).catch(() => {});
+    checkAuth();
+    updateNav();
+});
+</script>
+
+</body>
+</html>
