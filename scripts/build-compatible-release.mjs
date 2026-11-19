@@ -3,12 +3,14 @@ import {createHash} from 'node:crypto';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import path from 'node:path';
 import {hardenPage} from './harden-pages.mjs';
+import {compatibleWorkerSource} from './compatible-worker.mjs';
 
 const root=new URL('../',import.meta.url);
 const baselineRoot=new URL('compat/baseline/',root);
 export const pages=['login.html','requests.html','assign.html','schedule.html','history.html','dashboard.html','index.html','tablet.html'];
-const officeAssets=['app-config.js','auth.js','login.js','draft-store.js','drafts.js','plan-model.mjs','plan-editor.mjs','request-plan.mjs','work-plan.css','theme.css','ui.js','datepicker.js','Repairs.png','icons/icon-192.png','icons/icon-512.png'];
-const sharedAssets=['draft-store.js','drafts.js','plan-model.mjs','request-plan.mjs','work-plan.css','safe-render.js','legacy-submit.js'];
+const officeAssets=['app-config.js','auth.js','login.js','plan-editor.mjs','theme.css','ui.js','datepicker.js','Repairs.png','icons/icon-192.png','icons/icon-512.png'];
+const sharedAssets=['draft-store.js','drafts.js','plan-model.mjs','request-plan.mjs','work-plan.css','safe-render.js','legacy-submit.js','pending-cards.js','legacy-resume.js'];
+const vendorSources={'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js':'vendor/chartjs-4.4.1/chart.umd.js','https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js':'vendor/msal-browser-2.38.0/msal-browser.min.js'};
 const apiUrl='https://wcsdjfsohqanxcppcvvk.supabase.co/functions/v1/api-proxy-v2';
 const digest=data=>createHash('sha256').update(data).digest('hex');
 
@@ -46,11 +48,15 @@ window.loginMSAL = function () {
 
 function officePage(source,prefix){
   let html=source.toString('utf8');
-  html=html.replace(/\s*<link\b[^>]*rel="manifest"[^>]*>/g,'');
   html=html.replace(/if\s*\(\s*['"]serviceWorker['"]\s+in\s+navigator\s*\)\s*\{\s*navigator\.serviceWorker\.register\(['"]sw\.js['"]\)\.catch\([^\n]*\);\s*\}/g,'');
   if(/navigator\.serviceWorker\.register\(/.test(html))throw Error('Unexpected service worker registration; review before release');
-  html=html.replace(/\b(src|href)="([^"#?]+)"/g,(match,attribute,file)=>officeAssets.includes(file)?attribute+'="'+prefix+'office/'+file+'"':match);
-  return hardenPage(html,prefix);
+  html=html.replace(/\b(src|href)="([^"#?]+)"/g,(match,attribute,file)=>sharedAssets.includes(file)?attribute+'="'+prefix+'shared/'+file+'"':officeAssets.includes(file)?attribute+'="'+prefix+'office/'+file+'"':match);
+  return localLibraries(hardenPage(html,prefix),prefix);
+}
+
+function localLibraries(html,prefix){
+  for(const [remote,file] of Object.entries(vendorSources))html=html.replaceAll(remote,prefix+file);
+  return html;
 }
 
 export function legacyWorkCard(source,prefix){
@@ -63,6 +69,7 @@ export function legacyWorkCard(source,prefix){
   replace('if (hasMaterials) { const materials = collectMaterials();','if (hasMaterials) { const materials = prepared.materials;');
   replace('        resetForm();','        WC_DRAFTS.clear();\n        WC_REQUEST_PLAN.clear();\n        resetForm();');
   replace('</head>','<script src="'+prefix+'shared/legacy-submit.js"></script>\n</head>');
+  replace('</head>','<script src="'+prefix+'shared/pending-cards.js"></script>\n<script src="'+prefix+'shared/legacy-resume.js"></script>\n</head>');
   replace('    if (!validate()) return;','    if (!WC_DRAFTS.legacyPending() && !validate()) return;');
   replace('        const prepared=WC_REQUEST_PLAN.prepare(cardData,hasMaterials?collectMaterials():[]);','        const resumed=WC_DRAFTS.legacyPending();\n        const prepared=resumed?{card:resumed.card,materials:resumed.materials}:WC_REQUEST_PLAN.prepare(cardData,hasMaterials?collectMaterials():[]);');
   const start=html.indexOf('        const result = await supabaseInsert(\'work_cards\', prepared.card);');
@@ -79,6 +86,24 @@ export function legacyWorkCard(source,prefix){
         }
 
 `+html.slice(end);
+  replace("    } catch (e) { console.error('Грешка при запис:', e); showStatus('Грешка при запис: ' + e.message, 'error'); }",`    } catch (e) {
+        console.error('Грешка при запис:', e);
+        if(e.terminal){
+            try{
+                const receipt=WC_DRAFTS.archivePending(e.message);
+                WC_REQUEST_PLAN.clear();
+                sessionStorage.removeItem('workcard_request_id');sessionStorage.removeItem('workcard_request_data');sessionStorage.removeItem('workcard_from_tablet');
+                window._currentRequestId=null;
+                document.getElementById('requestBanner')?.remove();
+                resetForm();
+                WC_LEGACY_RESUME.receipt(receipt);
+                // A new card must bind a fresh draft key after this request context is cleared.
+                document.getElementById('workCardForm').inert=true;
+                window.location.href='tablet.html';
+            }catch(storageError){showStatus('Данните не могат да се запазят за проверка. Черновата е запазена; освободи памет и опитай отново.', 'error');return;}
+        }
+        showStatus('Грешка при запис: ' + e.message, 'error');
+    }`);
   return html;
 }
 
@@ -91,29 +116,47 @@ export async function renderCompatibleRelease(){
     legacy.set(file,data);
   }
   for(const file of new Set([...pages,...officeAssets,...sharedAssets]))modern.set(file,await readFile(new URL(file,root)));
+  const inventory=JSON.parse(await readFile(new URL('vendor/manifest.json',root),'utf8'));
+  if(inventory.length!==2||inventory[0].name!=='chart.js'||inventory[0].version!=='4.4.1'||inventory[1].name!=='@azure/msal-browser'||inventory[1].version!=='2.38.0')throw Error('Unexpected vendor versions');
+  const vendors=new Map();
+  for(const vendor of inventory){
+    if(!Object.values(vendorSources).includes(vendor.path)||!vendor.licenseFile.startsWith('vendor/'))throw Error('Unexpected vendor path');
+    for(const [file,expected] of [[vendor.path,vendor.sha256],[vendor.licenseFile,vendor.licenseSha256]]){
+      const data=await readFile(new URL(file,root));if(digest(data)!==expected)throw Error('Vendor integrity mismatch: '+file);vendors.set(file,data);
+    }
+  }
+  vendors.set('vendor/manifest.json',await readFile(new URL('vendor/manifest.json',root)));
   const config={apiUrl,demo:false,legacyMechanicLogin:true,deviceRegistration:false};
   modern.set('app-config.js',Buffer.from(modern.get('app-config.js').toString('utf8')+'\nObject.assign(window.WC_CONFIG,'+JSON.stringify(config)+');\n'));
   let officeLogin=modern.get('login.html').toString('utf8');
   officeLogin=officeLogin.replace(/<div id="deviceCodeWrap">[\s\S]*?<\/div>/,'');
   officeLogin=officeLogin.replaceAll('С регистрирано устройство','Вход за механици').replaceAll('Регистриран таблет','Сегашен вход');
   modern.set('login.html',Buffer.from(officeLogin));
-  const version=digest(Buffer.concat([...legacy.values(),...modern.values(),await readFile(fileURLToPath(import.meta.url)),await readFile(new URL('./harden-pages.mjs',import.meta.url))])).slice(0,16);
+  const version=digest(Buffer.concat([...legacy.values(),...modern.values(),...vendors.values(),await readFile(fileURLToPath(import.meta.url)),await readFile(new URL('./harden-pages.mjs',import.meta.url)),await readFile(new URL('./compatible-worker.mjs',import.meta.url))])).slice(0,16);
   const prefix='compat/releases/'+version+'/';
   const files=new Map(legacy);
   for(const page of pages){
     let old=legacy.get(page).toString('utf8');
     if(page==='login.html')old=old.replace('</body>','<script src="'+prefix+'office-bridge.js"></script>\n</body>');
     if(page==='index.html')old=legacyWorkCard(old,prefix);
-    files.set(prefix+'legacy/'+page,Buffer.from(hardenPage(old,prefix)));
+    if(page==='tablet.html')old=old.replace('</head>','<script src="'+prefix+'shared/pending-cards.js"></script>\n<script src="'+prefix+'shared/legacy-resume.js"></script>\n</head>');
+    files.set(prefix+'legacy/'+page,Buffer.from(localLibraries(hardenPage(old,prefix),prefix)));
     files.set(prefix+'office/'+page,Buffer.from(officePage(modern.get(page),prefix)));
-    files.set(page,Buffer.from('<!doctype html>\n<html lang="bg"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Работни карти</title></head><body><p id="loadStatus">Зареждане…</p><button id="retry" hidden onclick="location.reload()">Опитай отново</button><noscript>Включи JavaScript, за да отвориш приложението.</noscript><script src="'+prefix+'router.js"></script></body></html>\n'));
+    files.set(page,Buffer.from('<!doctype html>\n<html lang="bg"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#1a3a8f"><title>Работни карти</title></head><body><p id="loadStatus">Зареждане…</p><button id="retry" hidden onclick="location.reload()">Опитай отново</button><noscript>Включи JavaScript, за да отвориш приложението.</noscript><script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).catch(function(){});</script><script src="'+prefix+'router.js"></script></body></html>\n'));
   }
-  for(const asset of officeAssets)files.set(prefix+'office/'+asset,modern.get(asset));
+  for(const asset of officeAssets){
+    let data=modern.get(asset);
+    if(asset==='plan-editor.mjs')data=Buffer.from(data.toString('utf8').replace("from './plan-model.mjs'","from '../shared/plan-model.mjs'"));
+    if(asset==='auth.js')data=Buffer.from(localLibraries(data.toString('utf8'),prefix));
+    files.set(prefix+'office/'+asset,data);
+  }
   for(const asset of sharedAssets)files.set(prefix+'shared/'+asset,modern.get(asset));
+  for(const [file,data] of vendors)files.set(prefix+file,data);
   files.set(prefix+'router.js',Buffer.from(routerSource(prefix)));
   files.set(prefix+'office-bridge.js',Buffer.from(bridgeSource()));
+  files.set('sw.js',Buffer.from(compatibleWorkerSource(version,[...files.keys()])));
   const metadata={version,prefix,baselineCommit:source.commit,baselineTree:source.tree,apiUrl,changedRootPages:pages,
-    preservedRootAssets:source.files.filter(file=>!pages.includes(file)),
+    changedRootAssets:['sw.js'],preservedRootAssets:source.files.filter(file=>!pages.includes(file)&&file!=='sw.js'),
     files:Object.fromEntries([...files].map(([file,data])=>[file,digest(data)]))};
   files.set('compat/release.json',Buffer.from(JSON.stringify(metadata,null,2)+'\n'));
   return {files,metadata};

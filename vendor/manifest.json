@@ -1,0 +1,24 @@
+[
+  {
+    "name": "chart.js",
+    "version": "4.4.1",
+    "license": "MIT",
+    "url": "https://registry.npmjs.org/chart.js/-/chart.js-4.4.1.tgz",
+    "integrity": "sha512-C74QN1bxwV1v2PEujhmKjOZ7iUM4w6BWs23Md/6aOZZSlwMzeCIDGuZay++rBgChYru7/+QFeoQW0fQoP534Dg==",
+    "path": "vendor/chartjs-4.4.1/chart.umd.js",
+    "licenseFile": "vendor/chartjs-4.4.1/LICENSE",
+    "sha256": "74401d738dd3e03ee5dfb3b6841210fe2c4ead8a960c4011ca4ba0b78a9fd8f3",
+    "licenseSha256": "5a0877ad6d818529be4f33009d0942cdf7e2ed7656156f4aba7308459a546030"
+  },
+  {
+    "name": "@azure/msal-browser",
+    "version": "2.38.0",
+    "license": "MIT",
+    "url": "https://registry.npmjs.org/@azure/msal-browser/-/msal-browser-2.38.0.tgz",
+    "integrity": "sha512-gxBh83IumHgEP9uMCm9pJLKLRwICMQTxG9TX3AytdNt3oLUI3tytm/szYD5u5zKJgSkhHvwFSM+NPnM04hYw3w==",
+    "path": "vendor/msal-browser-2.38.0/msal-browser.min.js",
+    "licenseFile": "vendor/msal-browser-2.38.0/LICENSE",
+    "sha256": "bfa99b60ac2d94293ad9559f2acf95e1d6f139d6b71244de004b71ab5b3caef2",
+    "licenseSha256": "eecf13f9303f60f108dda760b66b8f8188d9f985e37c63965fe4adf1921ce2fe"
+  }
+]

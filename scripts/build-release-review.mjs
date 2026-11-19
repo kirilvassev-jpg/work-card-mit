@@ -54,7 +54,7 @@ jobs:
   await cp(path.join(root,'.cache','compat-baseline'),candidate,{recursive:true});
   for(const [file,data] of files){const target=path.join(candidate,file);await mkdir(path.dirname(target),{recursive:true});await writeFile(target,data);}
   await cp(candidate,rollback,{recursive:true});
-  for(const file of metadata.changedRootPages)await writeFile(path.join(rollback,file),await readFile(path.join(root,'compat','baseline',file)));
+  for(const file of [...metadata.changedRootPages,...metadata.changedRootAssets])await writeFile(path.join(rollback,file),await readFile(path.join(root,'compat','baseline',file)));
   const entries=[];
   for(const [file,data] of files){
     const sha=createHash('sha1').update(Buffer.from('blob '+data.length+'\0')).update(data).digest('hex');
@@ -63,7 +63,7 @@ jobs:
     entries.push(existing?{path:file,mode:'100644',type:'blob',sha}:{path:file,mode:'100644',type:'blob',content:data.toString('utf8')});
   }
   await writeFile(path.join(output,'upload.json'),JSON.stringify(entries));
-  await writeFile(path.join(output,'rollback.json'),JSON.stringify(metadata.changedRootPages.map(file=>({path:file,mode:'100644',type:'blob',sha:baselineGit[file]}))));
+  await writeFile(path.join(output,'rollback.json'),JSON.stringify([...metadata.changedRootPages,...metadata.changedRootAssets].map(file=>({path:file,mode:'100644',type:'blob',sha:baselineGit[file]}))));
   return {output,candidate,rollback,version:metadata.version,files:entries.length};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href){

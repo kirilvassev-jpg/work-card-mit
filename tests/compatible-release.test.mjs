@@ -51,7 +51,7 @@ test('the common login stays legacy for mechanics and recognizes an office hando
   assert.ok((await route('login.html',session)).fetched[0].endsWith('/office/login.html'));
 });
 
-test('existing mechanic pages, original auth, service worker, manifest and assets are preserved',async()=>{
+test('existing mechanic login, original auth, manifest and assets are preserved while the worker is versioned',async()=>{
   const source=JSON.parse(await readFile(new URL('../compat/baseline/source.json',import.meta.url),'utf8'));
   for(const file of source.files){
     const baseline=await readFile(new URL('../compat/baseline/'+file,import.meta.url));
@@ -62,12 +62,16 @@ test('existing mechanic pages, original auth, service worker, manifest and asset
       assert.ok(rendered.includes('legacyDrafts:true'));
     }else if(pages.includes(file)){
       const rendered=legacy(file).replace('<script src="'+release.metadata.prefix+'office-bridge.js"></script>\n','').replace('<script src="'+release.metadata.prefix+'shared/safe-render.js"></script>\n','');
-      if(file==='login.html')assert.equal(rendered,baseline.toString('utf8'),file);
+      if(file==='login.html')assert.equal(rendered.replace(release.metadata.prefix+'vendor/msal-browser-2.38.0/msal-browser.min.js','https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js'),baseline.toString('utf8'),file);
       else {
         assert.match(rendered,/api-proxy['"]/);
         assert.doesNotMatch(rendered,/api-proxy-v2/);
         assert.doesNotMatch(rendered,/localStorage\.clear\(\)/);
       }
+    }else if(file==='sw.js'){
+      assert.notDeepEqual(release.files.get(file),baseline);
+      assert.match(text(file),new RegExp('work-card-compatible-'+release.metadata.version));
+      assert.deepEqual(release.metadata.changedRootAssets,['sw.js']);
     }else assert.deepEqual(release.files.get(file),baseline,file);
   }
   assert.doesNotMatch(office('login.html'),/id="deviceCode"|Код за регистрация/);
@@ -95,11 +99,13 @@ test('legacy mechanic login retains the selected name and existing device regist
   assert.match(select.innerHTML,/Име/);
 });
 
-test('office payloads parse, retain public navigation, and do not replace the mechanic PWA or its cache',()=>{
+test('office payloads parse, keep public navigation and share the existing PWA manifest and worker',()=>{
   for(const page of pages){
     const source=office(page);
     assert.doesNotMatch(source,/navigator\.serviceWorker\.register\(/,page);
-    assert.doesNotMatch(source,/<link\b[^>]*rel="manifest"/,page);
+    assert.match(source,/<link\b[^>]*rel="manifest"[^>]*href="manifest.json"/,page);
+    assert.match(text(page),/<link\b[^>]*rel="manifest"[^>]*href="manifest.json"/,page);
+    assert.match(text(page),/navigator.serviceWorker.register\("sw.js"/,page);
     for(const [i,s] of [...source.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)].entries())assert.doesNotThrow(()=>new vm.Script(s[1],{filename:page+':'+i}));
     const markup=source.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi,'').replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi,'');
     for(const [,ref] of markup.matchAll(/(?:src|href)="([^"#?]+)"/g)){
@@ -169,4 +175,14 @@ test('explicit real-backend preview keeps production endpoints and device identi
   assert.match(old,/wcsdjfsohqanxcppcvvk\.supabase\.co/);assert.match(old,/РЕАЛНАТА БАЗА/);
   assert.equal(await(await fetch(base+'/auth.js')).text(),text('auth.js'));
   for(const endpoint of ['__demo/api','__legacy/api'])assert.equal((await fetch(base+'/'+endpoint,{method:'POST',body:'{}'})).status,405);
+});
+
+test('offline preview controls stay outside embedded print HTML and never appear in the real-backend preview',async(t)=>{
+  for(const backend of [false,true]){
+    const server=await createCompatibilityPreview({backend,offlineControls:true});await new Promise(ok=>server.listen(0,'127.0.0.1',ok));t.after(()=>new Promise(ok=>server.close(ok)));
+    const base='http://127.0.0.1:'+server.address().port;
+    const html=await(await fetch(base+'/'+release.metadata.prefix+'legacy/history.html')).text();
+    for(const script of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi))assert.doesNotThrow(()=>new vm.Script(script[1]));
+    if(backend)assert.doesNotMatch(html,/previewOffline/);else assert.ok(html.indexOf('id="previewOffline"')>html.indexOf('function exportCardPDF'));
+  }
 });

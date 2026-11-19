@@ -1,5 +1,5 @@
 (function () {
-  var timer, store, status, suspended = false, pendingPayload = null, legacyPending = null, cleared = false;
+  var timer, store, draftKey, status, suspended = false, pendingPayload = null, legacyPending = null, cleared = false;
   var submissionId = crypto.randomUUID();
   function lockPending() { document.getElementById('workCardForm').inert = !!(pendingPayload || legacyPending); }
   function notice(text) { if (status) status.textContent = text; }
@@ -43,7 +43,8 @@
     init: function () {
       var identity = sessionStorage.getItem('workcard_identity') || (window.WC_CONFIG?.legacyDrafts ? sessionStorage.getItem('workcard_user') : null);
       if (!identity) return;
-      store = WC_DRAFT_STORE(localStorage, 'wc_draft:v1:' + (WC_CONFIG.storageScope || (WC_CONFIG.demo ? 'demo' : 'real')) + ':' + identity + ':' + (window._currentRequestId || 'new'));
+      draftKey = 'wc_draft:v1:' + (WC_CONFIG.storageScope || (WC_CONFIG.demo ? 'demo' : 'real')) + ':' + identity + ':' + (window._currentRequestId || 'new');
+      store = WC_DRAFT_STORE(localStorage, draftKey);
       status = document.createElement('div'); status.setAttribute('role', 'status'); status.style.cssText = 'font-size:13px;padding:10px;color:#475569';
       document.getElementById('workCardForm').prepend(status);
       var data = store.read();
@@ -74,6 +75,11 @@
       return legacyPending;
     },
     legacyPending: function () { return legacyPending; },
+    archivePending: function (reason) {
+      const receipt=WC_PENDING_CARDS.archive(localStorage,draftKey,snapshot(),reason);
+      window.WC_DRAFTS.clear();
+      return receipt;
+    },
     submission: function (card, materials) {
       // An ambiguous network result must be retried with the SAME key AND payload.
       // Editing afterwards cannot silently turn that retry into a second card.
